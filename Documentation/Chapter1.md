@@ -36,6 +36,9 @@ Rails가 이렇게 많은 인기를 끄는 것은 왜일까요? 한 가지 이�
 ### 1.1.1 전제 조건
 
 본 튜토리얼을 배우기 이전에 알고 있으면 좋은 지식들이 있지만, 필수는 아닙니다. 그렇다기보다 Rails 튜토리얼에서는 웹 개발에서 중요시하는 내용이 전부 포함되어 있기 때문입니다. 본 튜토리얼의 중심은 물론 Rails에 의한 웹 개발입니다만, 다른 프로그래밍 언어 Ruby나 Minitest(Rails 의 테스트툴) , 유닉스 커맨드 라인,  [HTML](https://en.wikipedia.org/wiki/HTML) , [CSS](https://en.wikipedia.org/wiki/CSS) , 약간의  [JavaScript](https://en.wikipedia.org/wiki/JavaScript) , 그리고 약간의  [SQL](https://en.wikipedia.org/wiki/SQL) . 이러한 지식들은 본 튜토리얼을 진행하는 것으로 배울 수 있으며 읽기 전에 다른 학습서비스 등으로 배워보는 것도 좋을 것 같습니다. 저는 [Learn Enough](https://www.learnenough.com/) 의 튜토리얼들도 추천드립니다.
+
+
+
 	1. Developer Fundamentals
 	*1.* [Learn Enough Command Line to Be Dangerous](https://www.learnenough.com/command-line) 
 	*2.*  [Learn Enough Text Editor to Be Dangerous](https://www.learnenough.com/text-editor) 
@@ -48,6 +51,8 @@ Rails가 이렇게 많은 인기를 끄는 것은 왜일까요? 한 가지 이�
   *2.*  [Learn Enough Ruby to Be Dangerous](https://www.learnenough.com/ruby) 
 	4. Application Development
   *1.*  [The Ruby on Rails Tutorial](https://www.railstutorial.org/) 
+
+
 
 Ruby를 공부한 다음 Rails를 공부하는 것이 좋냐는 질문들을 많이 받습니다. 이 질문에 대한 답변으로, 독자들의 학습 스타일이나 프로그래밍 경험에 따라 다르기 때문에, 확답드리기는 어렵습니다.  Web개발을 처음부터 체계적으로 배우고 싶은 분이나 프로그래밍 경험이 전혀 없는 분들에게는 Ruby의 기초를 습득하시고 나서, 본 튜토리얼을 추천드립니다만, 반대로 지금부터 Rails를 이용하여 개발하고 싶은 분은 “어찌되었던 지금 당장 웹 개발을 하고 싶어!!” 라고 생각하시는 분들이 대부분일 것입니다. 그러한 분들은 싱글웹페이지를 만드는데 엄청 두꺼운 Ruby책을 보시지는 않을 것입니다. 그런 분들은 그냥 이대로 이 튜토리얼을 진행해도 괜찮을 것입니다. 진행하는 도중에 기초지식이 부족하다고 느낀다면, Ruby의 기초를 그때부터 배우신다던지, 혹은 아래에서 소개하는사이트에서 배우는 것도 추천드립니다.
 
@@ -219,33 +224,41 @@ Use `bundle show [gemname]` to see where a bundled gem is installed.
 Rails에서 사용되는 기본 파일에 대해서는 아래의 내용을 확인해주세요. 이것들의파일이나 디렉토리의 의미나 목적에 ㅐ해서는 본 튜토리얼 전체에 걸쳐 설명하겠습니다. 특히 5.2.1 이후에는 Rails 3.1이후에 탑재된 `Asset Pipeline` 의 일부인 `app/assets` 의 디렉토리에 대해 상세히 설명해드립니다. 에셋 파이프라인에 의해 CSS이나 Javascript 파일 등의 에셋을 간단하게 구성하거나 배포할 수 있습니다.
 
 ![](image/Chapter1/directory_structure_rails_4th_edition.png)
-	- app/ : 모델, 뷰, 컨트롤러, 헬퍼등을 포함한 주요 어플리케이션 코드
-	- app/assets : 어플리케이션에서 쓰이는 CSS, Javascript파일, 영상 등의 에셋
-	- bin/ : 바이너리 실행가능 파일
-	- config/ : 어플리케이션의 설정
-	- db/ : 데이터베이스 관련 파일
-	- doc/ : 메뉴얼등 어플리케이션의 도큐먼트
-	- lib/ : 라이브러리 모듈
-	- lib/assets : 라이브러리 CSS, Javascript, 영상 파일
-	- log/ : 어플리케이션의 로그파일
-	- public/ : 에러페이지, 일반적으로 직접 공개되는 데이터
-	- bin/rails : 코드의 생성, 콘솔의 기동, 로컬의 웹서버 기동 등에 쓰이는 Rails script
-	- test/ : 어플리케이션의 테스트
-	- tmp/ : 일시 파일
-	- vendor/ : 서드파티의 플러그인이나 gem
-	- vendor/assets : 서드파티의 플러그인이나 gem에서 쓰이는 CSS, Javascript, 영상 파일 등
-	- README.md : 어플리케이션의 간단한 설명
-	- Rakefile : rake커맨드에서 쓰이는 task
-	- Gemfile : 해당 어플리케이션에서 필요한 gem의 정의 파일
-	- Gemfile.lock : 어플리케이션에서 쓰이는 gem의 버전을 확인하기 위한 리스트 파일
-	- config.ru :  [Rack 미들웨어](http://rack.github.io/) 용의 설정 파일
-	- .gitignore : Git에 포함시키고 싶지 않은 파일들을 지정하기 위한 파일
+
+
+
+ - app/ : 모델, 뷰, 컨트롤러, 헬퍼등을 포함한 주요 어플리케이션 코드
+- app/assets : 어플리케이션에서 쓰이는 CSS, Javascript파일, 영상 등의 에셋
+- bin/ : 바이너리 실행가능 파일
+- config/ : 어플리케이션의 설정
+- db/ : 데이터베이스 관련 파일
+- doc/ : 메뉴얼등 어플리케이션의 도큐먼트
+- lib/ : 라이브러리 모듈
+- lib/assets : 라이브러리 CSS, Javascript, 영상 파일
+- log/ : 어플리케이션의 로그파일
+- public/ : 에러페이지, 일반적으로 직접 공개되는 데이터
+- bin/rails : 코드의 생성, 콘솔의 기동, 로컬의 웹서버 기동 등에 쓰이는 Rails script
+- test/ : 어플리케이션의 테스트
+- tmp/ : 일시 파일
+- vendor/ : 서드파티의 플러그인이나 gem
+- vendor/assets : 서드파티의 플러그인이나 gem에서 쓰이는 CSS, Javascript, 영상 파일 등
+- README.md : 어플리케이션의 간단한 설명
+- Rakefile : rake커맨드에서 쓰이는 task
+- Gemfile : 해당 어플리케이션에서 필요한 gem의 정의 파일
+- Gemfile.lock : 어플리케이션에서 쓰이는 gem의 버전을 확인하기 위한 리스트 파일
+- config.ru :  [Rack 미들웨어](http://rack.github.io/) 용의 설정 파일
+- .gitignore : Git에 포함시키고 싶지 않은 파일들을 지정하기 위한 파일
+
+
 
 ### 1.3.1 Bundler
 Rails 어플리케이션을 신규작성한다면, 다음은 *Bundler* 를 실행하여 어플리케이션에 필요한 gem을 인스톨해봅시다. 1.3에서도 간단히 설명드렸듯, Bundler는 `rails` 에 의해 자동적으로 실행 (이 경우에는 `bundle install` ) 됩니다. 여기서는 기본 어플리케이션 gem을 변경하여 Bundler를 다시 실행해봅니다. 그러기 위해서 텍스트에디터에서 Gemfile을 엽니다. (클라우드IDE 에서는 파일 네비게이터에서 화살표 모양을 클릭하여 샘플 어플리케이션의 디렉토리를 열고, `Gemfile` 이라고 하는 파일을 클릭합니다.) Gemfile의 내용은 대강 아래와 같은 내용으로 구성되어 있습니다. 버전등의 자세한 부분에서는 다소 차이가 있을 수 있습니다.
 Gemfile의 내용은 Ruby코드입니다만 여기서 문법은 신경쓰지 않아도 됩니다. Ruby에 대해서는 제4장에서 설명하겠습니다. 파일이나 디렉토리가 제대로 표시되지 않을때는 네비게이터의 톱니바퀴 모양을 클릭하여 *Refresh File Tree* 를 선택합니다. (보통 파일이나 디렉토리가 제대로 표시되지 않을 때에는 파일트리를 닫았다가 열어보세요. )
 
 ![](image/Chapter1/cloud9_gemfile_aws.png)
+
+
+
 ```ruby
 source 'https://rubygems.org'
 
@@ -309,6 +322,8 @@ end
 gem ‘tzinfo-data’, platforms: [:mingw, :mswin, :x64_mingw, :jruby]
 ```
 
+
+
 대부분의 행에서는 해시심볼 # 로 코멘트아웃되어져있습니다. 이 행들은 자주 쓰이는 gem과 bundler의 문법의 예를 코멘트형식으로 설명하고 있습니다. 지금은 기본이외의 gem을 설치할 필요는 없습니다.
 
 `gem` 커맨드로 특정 버전을 지정하지 않는한, Bundler는 자동으로 최신버전의 gem을 설치합니다. 예를 들어 다음과 같은 커맨드가 있다고 합시다.
@@ -320,6 +335,9 @@ gem ‘tzinfo-data’, platforms: [:mingw, :mswin, :x64_mingw, :jruby]
 이렇게 지정하면 `coffee-rails` 의 버전이 4.0.0보다 크고, 4.1보다 작으면 설치가 진행됩니다. 즉, 아래의 코드를 실행하면 `>=` 라고 하는 표기에서는 항상 최신의 gem이 설치되고, `~> 4.0.0` 이라는 표기에서는 마이너버전 부분에 해당되는 업데이트가 된 gem을 설치합니다. 두 번째 방법의 경우 메이저버전의 업데이트 (4.0에서 4.1) 릴리즈는 설치되지 않습니다. 아쉽게도, 경험상 자그마한 마이너 업데이트라도 문제를 일으킬 때도 있습니다. 그렇기 때문에 본 튜토리얼에서는 구체적으로 모든 gem에서 버전을 콕 집어 지정하여, 버전을 고정하고 있습니다. 베테랑 개발자라면 `Gemfile` 에서 `~>` 을 사용하여 지정, 최신의 gem을 써서 튜토리얼을 진행해도 괜찮습니다. 다만 버전이 다르면 본 튜토리얼에서 설명하고 있는 어플리케이션의 움직임이 다를 가능성이 있기 때문에, 적절한 대응이 필요할 것입니다.
 
 위에서의 `Gemfile` 내용을 실제로 사용하는 정확한 버전의 gem으로 바꾼 것이 아래의 리스트입니다.  또한 변경에 대해서, *sqlite3* gem을 development환경과 test환경에서만 쓸 수 있게 하는 것도 눈여겨 봐주세요. (즉 production환경에서는 사용하지 않음) 이 것은 나중에 Heroku에서 쓰일 데이터베이스와 마찰을 일으키지 않기 위한 것입니다.
+
+
+
 ```ruby
 source ‘https://rubygems.org’
 
@@ -348,7 +366,12 @@ end
 gem ‘tzinfo-data’, platforms: [:mingw, :mswin, :x64_mingw, :jruby]
 ```
 
+
+
 어플리케이션의 `Gemfile` 내용을 위 리스트의 내용으로 수정했다면, `bundle install` 을 다시 실행하여 gem을 설치해주세요.
+
+
+
 ```
 $ cd hello_app/
 $ bundle install
@@ -358,7 +381,9 @@ Fetching source index for https://rubygems.org/
 .
 ```
 
-`bundle install` 커맨드의 실행은 조금 시간이 걸릴 수도 있습니다. 성공적으로 실행된다면 어플리케이션이 실행가능한 상태가 됩니다.
+
+
+bundle install` 커맨드의 실행은 조금 시간이 걸릴 수도 있습니다. 성공적으로 실행된다면 어플리케이션이 실행가능한 상태가 됩니다.
 
 추가로, `bundle install` 을 실행하면 *일단 bundle update를 먼저 실행시켜주세요* 와 비슷한 내용의 메세지가 출력될 수도 있습니다. 그 경우에는 메세지대로 `bundle update`를 먼저 실행해주세요. (메뉴얼대로 진행되지 않을 때에는 침착하게 대응하는 것도 능력입니다. 그러한 에러메세지에는 해결대응책도 같이 기술되어있을 때도 있기 때문에 잘 읽어보세요.)
 
@@ -379,22 +404,36 @@ Javascript 런타임이 설치되어있지 않다는 에러가 출력되는 경�
 `rails server` 커맨드의 실행은 다른 터미널탭에서 실행하는 걸 추천합니다. 이렇게하면 맨 처음 실행되어져있던 터미널 탭에서는 다른 커맨드를 실행할 수 있기 때문입니다. 아래의 그림을 확인해주세요. 이미 처음에 열린 터미널에서 서버를 실행시키고 있는 경우에는, Ctrl+C 를 누르면 서버가 종료됩니다.  Rails 어플리케이션을 표시하고 싶은 경우에는, 로컬서버의 경우에는 `http://localhost:3000/` 을 브라우저로 접속해주세요. 클라우드IDE의 경우에는 *Share* 를 클릭하여 열고싶은 어플리케이션의 주소를 입력합니다. 어떤 경우에도 브라우저에 Rails 어플리케이션이 출력됩니다.
 ![](image/Chapter1/new_terminal_tab_aws.png)
 
+
+
 ![](image/Chapter1/rails_server_new_tab_aws.png)
+
 ![](image/Chapter1/share_workspace_aws.png)
+
 (클라우드IDE에서 서버를 실행하는 경우)
 ![](image/Chapter1/full_browser_window_aws.png)
+
 ![](image/Chapter1/riding_rails_4th_edition_aws.png)
 
+
+
 ##### 연습
-	1. 기본 Rails 페이지에 표시되는 것에 비해, 자신의 환경에서의 루비 버전은 몇인가요? 커맨드라인에서 `ruby -v`를 실행해봅시다.
-	2. Rails 버전도 알아봅시다. 알아본 버전은 위의 Gemfile에서 설치한 버전과 일치하나요?
+
+1. 기본 Rails 페이지에 표시되는 것에 비해, 자신의 환경에서의 루비 버전은 몇인가요? 커맨드라인에서 `ruby -v`를 실행해봅시다.
+
+2. Rails 버전도 알아봅시다. 알아본 버전은 위의 Gemfile에서 설치한 버전과 일치하나요?
+
+   
 
 ### 1.3.3 Model - View - Controller (MVC)
+
 이제 막 걸음마를 뗀 상태이지만 지금 Rails 어플리케이션의 전체적인 구조를 알아놓는것은 나중에 도움이 됩니다. 기본 Rails 어플리케이션 구조를 보면, `app/` 이라는 디렉토리가 있고, 그 안에 *models*, *views*, *controllers* 라고 하는 세 개의 서브디렉토리가 있는 것을 눈치채신 분들이 있을 겁니다. 여기서 Rails는  [MVC (model-view-controller)](https://ja.wikipedia.org/wiki/Model_View_Controller) 라고 하는 아키텍처 패턴을 채용하는 것을 알 수 있습니다. MVC는 어플리케이션 내부의 데이터(유저의 정보 등)와 데이터를 표시하는 코드를 분리합니다. 어플리케이션의 GUI는 이렇게 데이터와 분리되어 구성되어있습니다.
 
 Rails 어플리케이션과 통신할 때, 브라우저는 일반적으로 Web서버에 Request를 보내고, 이것은 Request를 처리하는 역할을 하는 Rails의 Controller로 전달됩니다. 컨트롤러는 경우에따라서는 바로 View를 생성하여 HTML을 브라우저에 보냅니다. 동적인 사이트에서는 보통 컨트롤러는 사이트의 요소를 나타내고, 데이터베이스와 통신을 담당하는 Ruby오브젝트인 Model과 통신합니다. 모델을 호출한 후, 컨트롤러는 뷰를 표시하고 완성된 Web페이지를 HTML로 바꾸어 브라우저에 보냅니다.
 
 ![](image/Chapter1/mvc_schematic.png)
+
+
 
 지금 이 설명이 아직은 추상적으로 다가올지도 모르겠습니다만, 이 장은 나중에도 계속 참고하기 때문에 안심하셔도 될 것 같습니다. 특히 1.3.4에서는 MVC를 다루는 연습용 어플리케이션을 다룹니다. 2.2.2에서는 *toy* 어플리케이션을 이용하여 MVC를 좀 더 상세히 설명하겠습니다. *Sample* 어플리케이션에서는 MVC의 3가지 요소를 모두 다룹니다. 3.2에서 일단 컨트롤러와 뷰를 다루고, 모델은 6.1부터 다루어보겠습니다. 7.1.2에서는 세 개의 요소를 모두 다루게 됩니다.
 
