@@ -2,7 +2,10 @@
 
 <div style="text-align:right">원작자 Michael Hartl (마이클 허틀)</div>
 
+
+
 ※본 자료는 Ruby on Rails Tutorial의 원본과 일어판을 번역한 것으로, 개인적인 공부를 위해 번역을 한 것입니다.
+
  - 원 본 [Learn Web Development with Rails: Michael Hartl’s Ruby on Rails Tutorial |  Softcover.io](https://www.railstutorial.org/)
 - 일어판  [https://railstutorial.jp/](https://railstutorial.jp/) 
 
@@ -14,9 +17,14 @@
 
 - 1장의 결과물 [Repository](https://github.com/Yoodahun/HelloWorldRubyMine)
 
-  
+
+
+
+
+---
 
 ## Rails Tutorial이란 ??
+
 Rails Tutorial은, 실제 Web Application의 개발에서 공개까지, 실제로 개발해가며 배워보는 대형 튜토리얼입니다.📕✨ 
 
 Rails Tutorial은, 원작자 Michael Hartl로 부터 정당한 허가를 받아 번역, 공개, 판매하고 있습니다. 원작과 마찬가지로 온라인판은 무료로 공개하고 있습니다. 본 튜토리얼이 여러분의 학습에 도움이 되었으면 좋겠습니다.
@@ -27,32 +35,32 @@ Rails Tutorial은, 원작자 Michael Hartl로 부터 정당한 허가를 받아 
 - [ ] 제 4판 목차
 	- [ ] 추천의 말씀 (생략)
 	- [ ] 감사의 말씀 (생략)
-	- [x] [저자](/Users/Yoo/Documents/Github/Ruby On Rails/Rails_Tutorials_Translation/Documentation/저자.md)
-	- [x] [저작권과 라이센스](/Users/Yoo/Documents/Github/Ruby On Rails/Rails_Tutorials_Translation/Documentation/저작권과 라이센스.md)
-	- [x] [제 1장 제로부터 배포까지](/Users/Yoo/Documents/Github/Ruby On Rails/Rails_Tutorials_Translation/Documentation/제 1장 제로부터 배포까지.md)
-		- [x] 1.1 [처음에는](/Users/Yoo/Documents/Github/Ruby On Rails/Rails_Tutorials_Translation/Documentation/제 1장 제로부터 배포까지.md#처음에는) 
-			- [ ] 1.1.1 [전제 조건](/Users/Yoo/Documents/Github/Ruby On Rails/Rails_Tutorials_Translation/Documentation/제 1장 제로부터 배포까지.md#전제조건)
-			- [ ] 1.1.2 [본 튜토리얼에서의 약속](/Users/Yoo/Documents/Github/Ruby On Rails/Rails_Tutorials_Translation/Documentation/제 1장 제로부터 배포까지.md#본-튜토리얼에서의-약속)
-		- [x] 1.2 [일단 구동시켜보자](/Users/Yoo/Documents/Github/Ruby On Rails/Rails_Tutorials_Translation/Documentation/제 1장 제로부터 배포까지.md#일단-구동시켜보자)
-			- [ ] 1.2.1 [개발 환경](/Users/Yoo/Documents/Github/Ruby On Rails/Rails_Tutorials_Translation/Documentation/제 1장 제로부터 배포까지.md#개발-환경)
-			- [ ] 1.2.2 [Rails를 설치해보자.](/Users/Yoo/Documents/Github/Ruby On Rails/Rails_Tutorials_Translation/Documentation/제 1장 제로부터 배포까지.md#Rails를-설치해보자.)
-		- [x] 1.3 [첫 Application](/Users/Yoo/Documents/Github/Ruby On Rails/Rails_Tutorials_Translation/Documentation/제 1장 제로부터 배포까지.md#첫-Application)
-			- [ ] 1.3.1 [Bundler](/Users/Yoo/Documents/Github/Ruby On Rails/Rails_Tutorials_Translation/Documentation/제 1장 제로부터 배포까지.md#Bundler)
-			- [ ] 1.3.2 [rails server](/Users/Yoo/Documents/Github/Ruby On Rails/Rails_Tutorials_Translation/Documentation/제 1장 제로부터 배포까지.md#rails-server)
-			- [ ] 1.3.3 [Model-View-Controller (MVC)](/Users/Yoo/Documents/Github/Ruby On Rails/Rails_Tutorials_Translation/Documentation/제 1장 제로부터 배포까지.md#Model-View-Controller-(MVC))
-			- [ ] 1.3.4 [Hello, world!](/Users/Yoo/Documents/Github/Ruby On Rails/Rails_Tutorials_Translation/Documentation/제 1장 제로부터 배포까지.md#Hello,-world!)
-		- [x] 1.4 [Git을 이용한 버전 관리](/Users/Yoo/Documents/Github/Ruby On Rails/Rails_Tutorials_Translation/Documentation/제 1장 제로부터 배포까지.md#Git을-이용한-버전-관리)
-			- [ ] 1.4.1 [설치](/Users/Yoo/Documents/Github/Ruby On Rails/Rails_Tutorials_Translation/Documentation/제 1장 제로부터 배포까지.md#설치)
-			- [ ] 1.4.2 [Git을 쓰면 좋은 점](/Users/Yoo/Documents/Github/Ruby On Rails/Rails_Tutorials_Translation/Documentation/제 1장 제로부터 배포까지.md#Git을-쓰면-좋은-점)
-			- [ ] 1.4.3 [Bitbucket](/Users/Yoo/Documents/Github/Ruby On Rails/Rails_Tutorials_Translation/Documentation/제 1장 제로부터 배포까지.md#Bitbucket)
-			- [ ] 1.4.4 [Branch, Edit, Commit, Merge](/Users/Yoo/Documents/Github/Ruby On Rails/Rails_Tutorials_Translation/Documentation/제 1장 제로부터 배포까지.md#Branch,-Edit,-Commit,-Merge)
-		- [x] 1.5 [배포해보자](/Users/Yoo/Documents/Github/Ruby On Rails/Rails_Tutorials_Translation/Documentation/제 1장 제로부터 배포까지.md#배포해보자)
-			- [ ] 1.5.1 [Heroku 설치](/Users/Yoo/Documents/Github/Ruby On Rails/Rails_Tutorials_Translation/Documentation/제 1장 제로부터 배포까지.md#Heroku의 설치)
-			- [ ] 1.5.2 [Heroku에 배포해보자 (1)](/Users/Yoo/Documents/Github/Ruby On Rails/Rails_Tutorials_Translation/Documentation/제 1장 제로부터 배포까지.md#Heroku에-배포해보자-(1))
-			- [ ] 1.5.3 [Heroku에 배포해보자 (2)](/Users/Yoo/Documents/Github/Ruby On Rails/Rails_Tutorials_Translation/Documentation/제 1장 제로부터 배포까지.md#Heroku에-배포해보자-(2))
-			- [ ] 1.5.4 [Heroku 명령어](/Users/Yoo/Documents/Github/Ruby On Rails/Rails_Tutorials_Translation/Documentation/제 1장 제로부터 배포까지.md#Heroku-명령어)
-		- [x] 1.6 [마지막으로](/Users/Yoo/Documents/Github/Ruby On Rails/Rails_Tutorials_Translation/Documentation/제 1장 제로부터 배포까지.md#마지막으로)
-			- [ ] 1.6.1 [1장의 정리](/Users/Yoo/Documents/Github/Ruby On Rails/Rails_Tutorials_Translation/Documentation/제 1장 제로부터 배포까지.md#1장의-정리)
+	- [x] [저자](/Documentation/저자.md)
+	- [x] [저작권과 라이센스](/Documentation/저작권과 라이센스.md)
+	- [x] [제 1장 제로부터 배포까지](/Documentation/제 1장 제로부터 배포까지.md)
+		- [x] 1.1 [처음에는](/Documentation/제 1장 제로부터 배포까지.md#처음에는) 
+			- [ ] 1.1.1 [전제 조건](/Documentation/제 1장 제로부터 배포까지.md#전제조건)
+			- [ ] 1.1.2 [본 튜토리얼에서의 약속](/Documentation/제 1장 제로부터 배포까지.md#본-튜토리얼에서의-약속)
+		- [x] 1.2 [일단 구동시켜보자](/Documentation/제 1장 제로부터 배포까지.md#일단-구동시켜보자)
+			- [ ] 1.2.1 [개발 환경](/Documentation/제 1장 제로부터 배포까지.md#개발-환경)
+			- [ ] 1.2.2 [Rails를 설치해보자.](/Documentation/제 1장 제로부터 배포까지.md#Rails를-설치해보자.)
+		- [x] 1.3 [첫 Application](/Documentation/제 1장 제로부터 배포까지.md#첫-Application)
+			- [ ] 1.3.1 [Bundler](/Documentation/제 1장 제로부터 배포까지.md#Bundler)
+			- [ ] 1.3.2 [rails server](/Documentation/제 1장 제로부터 배포까지.md#rails-server)
+			- [ ] 1.3.3 [Model-View-Controller (MVC)](/Documentation/제 1장 제로부터 배포까지.md#Model-View-Controller-(MVC))
+			- [ ] 1.3.4 [Hello, world!](/Documentation/제 1장 제로부터 배포까지.md#Hello,-world!)
+		- [x] 1.4 [Git을 이용한 버전 관리](/Documentation/제 1장 제로부터 배포까지.md#Git을-이용한-버전-관리)
+			- [ ] 1.4.1 [설치](/Documentation/제 1장 제로부터 배포까지.md#설치)
+			- [ ] 1.4.2 [Git을 쓰면 좋은 점](/Documentation/제 1장 제로부터 배포까지.md#Git을-쓰면-좋은-점)
+			- [ ] 1.4.3 [Bitbucket](/Documentation/제 1장 제로부터 배포까지.md#Bitbucket)
+			- [ ] 1.4.4 [Branch, Edit, Commit, Merge](/Documentation/제 1장 제로부터 배포까지.md#Branch,-Edit,-Commit,-Merge)
+		- [x] 1.5 [배포해보자](/Documentation/제 1장 제로부터 배포까지.md#배포해보자)
+			- [ ] 1.5.1 [Heroku 설치](/Documentation/제 1장 제로부터 배포까지.md#Heroku의 설치)
+			- [ ] 1.5.2 [Heroku에 배포해보자 (1)](/Documentation/제 1장 제로부터 배포까지.md#Heroku에-배포해보자-(1))
+			- [ ] 1.5.3 [Heroku에 배포해보자 (2)](/Documentation/제 1장 제로부터 배포까지.md#Heroku에-배포해보자-(2))
+			- [ ] 1.5.4 [Heroku 명령어](/Documentation/제 1장 제로부터 배포까지.md#Heroku-명령어)
+		- [x] 1.6 [마지막으로](/Documentation/제 1장 제로부터 배포까지.md#마지막으로)
+			- [ ] 1.6.1 [1장의 정리](/Documentation/제 1장 제로부터 배포까지.md#1장의-정리)
 	- [x] [[제 2장 Toy Application]]
 		- [x] 2.1 Application의 설계 
 			- [ ] 2.1.1 User Modeling
