@@ -6,4 +6,3 @@
  [하버드 대학](http://college.harvard.edu/) 졸업 후, [캘리포니아 공과대학](http://www.caltech.edu/) 에서  [물리학 석사](http://resolver.caltech.edu/CaltechETD:etd-05222003-161626) 학위를 받았으며, 실리콘 밸리의 유명한 창업 프로그램[YCombinator](http://ycombinator.com/) 의 졸업생이기도 합니다.
 
 
-#Ruby On Rails/Ruby on Rails Tutorial PJ#

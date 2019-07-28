@@ -4,6 +4,8 @@
 
 
 
+
+
 ※본 자료는 Ruby on Rails Tutorial의 원본과 일어판을 번역한 것으로, 개인적인 공부를 위해 번역을 한 것입니다.
 
  - 원 본 [Learn Web Development with Rails: Michael Hartl’s Ruby on Rails Tutorial |  Softcover.io](https://www.railstutorial.org/)
@@ -35,8 +37,8 @@ Rails Tutorial은, 원작자 Michael Hartl로 부터 정당한 허가를 받아 
 - [ ] 제 4판 목차
 	- [ ] 추천의 말씀 (생략)
 	- [ ] 감사의 말씀 (생략)
-	- [x] [저자](Documentation/저자.md)
-	- [x] [저작권과 라이센스](Documentation/저작권과-라이센스.md)
+	- [x] [저자](Documentation/auther.md)
+	- [x] [저작권과 라이센스](Documentation/license.md)
 	- [x] [제 1장 제로부터 배포까지](Documentation/Chapter1.md)
 		- [x] 1.1 [처음에는](Documentation/Chapter1.md#11-처음에는) 
 			- [ ] 1.1.1 [전제 조건](Documentation/Chapter1.md#111-전제-조건)
@@ -45,38 +47,38 @@ Rails Tutorial은, 원작자 Michael Hartl로 부터 정당한 허가를 받아 
 			- [ ] 1.2.1 [개발 환경](Documentation/Chapter1.md#121-개발-환경)
 			- [ ] 1.2.2 [Rails를 설치해보자.](Documentation/Chapter1.md#122-Rails를-설치해보자.)
 		- [x] 1.3 [첫 Application](Documentation/Chapter1.md#13-첫-Application)
-			- [ ] 1.3.1 [Bundler](Documentation/Chapter1.md#131-Bundler)
+			- [ ] 1.3.1 [Bundler](Documentation/Chapter1.md#131-bundler)
 			- [ ] 1.3.2 [rails server](Documentation/Chapter1.md#132-rails-server)
-			- [ ] 1.3.3 [Model-View-Controller (MVC)](Documentation/Chapter1.md#133-Model-View-Controller-(MVC))
-			- [ ] 1.3.4 [Hello, world!](Documentation/Chapter1.md#134-Hello,-world!)
-		- [x] 1.4 [Git을 이용한 버전 관리](Documentation/Chapter1.md#14-Git을-이용한-버전-관리)
+			- [ ] 1.3.3 [Model-View-Controller (MVC)](Documentation/Chapter1.md#133-model—view—controller-(mvc))
+			- [ ] 1.3.4 [Hello, world!](Documentation/Chapter1.md#134-hello,-world!)
+		- [x] 1.4 [Git을 이용한 버전 관리](Documentation/Chapter1.md#14-git을-이용한-버전-관리)
 			- [ ] 1.4.1 [설치](Documentation/Chapter1.md#141-설치)
-			- [ ] 1.4.2 [Git을 쓰면 좋은 점](Documentation/Chapter1.md#142-Git을-쓰면-좋은-점)
-			- [ ] 1.4.3 [Bitbucket](Documentation/Chapter1.md#143-Bitbucket)
-			- [ ] 1.4.4 [Branch, Edit, Commit, Merge](Documentation/Chapter1.md#144-Branch,-Edit,-Commit,-Merge)
+			- [ ] 1.4.2 [Git을 쓰면 좋은 점](Documentation/Chapter1.md#142-git을-쓰면-좋은-점)
+			- [ ] 1.4.3 [Bitbucket](Documentation/Chapter1.md#143-bitbucket)
+			- [ ] 1.4.4 [Branch, Edit, Commit, Merge](Documentation/Chapter1.md#144-branch,-edit,-commit,-merge)
 		- [x] 1.5 [배포해보자](Documentation/Chapter1.md#15-배포해보자)
-			- [ ] 1.5.1 [Heroku 설치](Documentation/Chapter1.md#151-Heroku의 설치)
-			- [ ] 1.5.2 [Heroku에 배포해보자 (1)](Documentation/Chapter1.md#152-Heroku에-배포해보자-(1))
-			- [ ] 1.5.3 [Heroku에 배포해보자 (2)](Documentation/Chapter1.md#153-Heroku에-배포해보자-(2))
-			- [ ] 1.5.4 [Heroku 명령어](Documentation/Chapter1.md#154-Heroku-명령어)
+			- [ ] 1.5.1 [Heroku 설치](Documentation/Chapter1.md#151-heroku의 설치)
+			- [ ] 1.5.2 [Heroku에 배포해보자 (1)](Documentation/Chapter1.md#152-heroku에-배포해보자-(1))
+			- [ ] 1.5.3 [Heroku에 배포해보자 (2)](Documentation/Chapter1.md#153-heroku에-배포해보자-(2))
+			- [ ] 1.5.4 [Heroku 명령어](Documentation/Chapter1.md#154-heroku-명령어)
 		- [x] 1.6 [마지막으로](Documentation/Chapter1.md#16-마지막으로)
 			- [ ] 1.6.1 [1장의 정리](Documentation/Chapter1.md#161-1장의-정리)
-	- [x] [[제 2장 Toy Application]]
-		- [x] 2.1 Application의 설계 
-			- [ ] 2.1.1 User Modeling
-			- [ ] 2.1.2 Micropost Modeling
-		- [x] 2.2 Users 리소스
-			- [ ] 2.2.1 Users 화면을 움직여보자
-			- [ ] 2.2.2 MVC의 처리
-			- [ ] 2.2.3 Users 자원의 결점
-		- [x] 2.3 Microposts 리소스
-			- [ ] 2.3.1 Microposts 화면을 움직여보자
-			- [ ] 2.3.2 Microposts를 micro하게 해보자
-			- [ ] 2.3.3 유저는 많은  Microposts를 가지고 있다.
-			- [ ] 2.3.4 상속의 계층
-			- [ ] 2.3.5 어플리케이션을 배포하자
-		- [x] 2.4 마지막으로
-			- [ ] 2.4.1 2장의 정리
+	- [x] [제 2장 Toy Application](Documentation/Chapter2.md)
+		- [x] 2.1 [Application의 설계](Documentation/Chapter2.md#21-어플리케이션의-계획)
+			- [ ] 2.1.1 [User Modeling](Documentation/Chapter2.md#211-user-modeling)
+			- [ ] 2.1.2 [Micropost Modeling](Documentation/Chapter2.md#212-micropost-modeling)
+		- [x] 2.2 [Users 리소스](Documentation/Chapter2.md#22-user-리소스)
+			- [ ] 2.2.1 [Users 화면을 움직여보자](Documentation/Chapter2.md#221-users-화면을-움직여보자)
+			- [ ] 2.2.2 [MVC의 처리](Documentation/Chapter2.md#222-mvc의-처리)
+			- [ ] 2.2.3 [Users 자원의 결점](Documentation/Chapter2.md#223-users-자원의-결점)
+		- [x] 2.3 [Microposts 리소스](Documentation/Chapter2.md#23-microposts-리소스)
+			- [ ] 2.3.1 [Microposts 화면을 움직여보자](Documentation/Chapter2.md#231-microposts-화면을-움직여보자)
+			- [ ] 2.3.2 [Microposts를 micro하게 해보자](Documentation/Chapter2.md#232-microposts를-micro하게-해보자)
+			- [ ] 2.3.3 [유저는 많은 Microposts를 가지고 있다.](Documentation/Chapter2.md#233-유저는-많은-microposts를-가지고-있다.)
+			- [ ] 2.3.4 [상속의 계층](Documentation/Chapter2.md#234-상속의-계층)
+			- [ ] 2.3.5 [어플리케이션을 배포하자](Documentation/Chapter2.md#235-어플리케이션을-배포하자)
+		- [x] 2.4 [마지막으로](Documentation/Chapter2.md#24-마지막으로)
+			- [ ] 2.4.1 [2장의 정리](Documentation/Chapter2.md#241-2장의-정리)
 	- [ ] 제 3장 정적인(Static) 페이지의 작성
 		- [ ] 3.1 설치
 		- [ ] 3.2 Static Page
