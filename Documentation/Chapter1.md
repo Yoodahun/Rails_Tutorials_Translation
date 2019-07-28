@@ -134,16 +134,17 @@ Ruby를 인스톨해서 Rails등의 서포트 소프트웨어를 하나부터 �
 
 클라우드IDE에는 Web개발에 필요한 텍스트 에디터, 파일브라우저, 커맨드라인 터미널이 제대로 갖추어져 있습니다. 또한 클라우드IDE의 텍스트에디터에서는 Ruby on Rails의 대규모 프로젝트에는 필수불가결한 파일검색도 할 수 있습니다. 설령 클라우드IDE를 나중에는 쓰지 않더라도 텍스트에디터 등의 개발툴에서 일반적으로 어떠한 것이 가능한가 알아놓는 것이 중요합니다.
 
-![](image/Chapter1/ide_anatomy_aws.png)
+![](../image/Chapter1/ide_anatomy_aws.png)
 클라우드 IDE를 사용하기 위해선 다음과 같습니다.
+
 1. Cloud9은 현재 Amazon Web Service에서 서비스중입니다. 때문에 AWS의 아이디가 필요합니다. AWS아이디를 가지신 분은 [AWS에 로그인](https://aws.amazon.com/) 해주시고,  [AWS 콘솔](https://console.aws.amazon.com/) 의 검색박스에서 *Cloud9* 입력하면, 개발환경을 작성하기 위한 페이지로 이동할 수 있습니다.
 2. AWS아이디가 없으신 경우에는  [AWS Cloud9에 회원 가입을 해주시길 바랍니다.](https://www.railstutorial.org/cloud9-signup) 악용방지를 위해 신용카드의 정보입력이 필수입니다만, Rails 튜토리얼의 워크스페이스는 1년간 무료이니 안심하셔도 될 것 같습니다. 아이디의 활성화까지 최대 24시간정도가 걸리지만, 보통 10분정도로 회원가입을 하고 활성화할 수 있을 것입니다.
 3. Cloud9의 관리페이지에 무사히 접속하셨으면, *Create environment* 를 클릭하여 생성페이지로 이동해주세요. 정보를 적절히 입력해주시고, 확인 버튼을 눌러서 진행해주시면, 최종적으로 C9의 개발환경을 만드실 수 있습니다. 이 때, *root* 유저라고 하는 경고메세지가 나올 수도 있습니다만, 여기에 대해서는 다음에 설명드리겠습니다. (AWS IAM의 권한설정이 필요)
-![](image/Chapter1/cloud9_page_aws.png)
-![](image/Chapter1/cloud9_name_environment.png)
-![](image/Chapter1/cloud9_ide_aws.png)
+![](../image/Chapter1/cloud9_page_aws.png)
+![](../image/Chapter1/cloud9_name_environment.png)
+![](../image/Chapter1/cloud9_ide_aws.png)
 Ruby의 세계에서는 들여쓰기에 2개의 스페이스를 쓰는 것이 공통 룰이 되어있습니다. C9의 에디터에서도 디폴트를 4에서 2로 변경하는 것을 추천드립니다. 들여쓰기 설정을 바꾸기 위해서는 오른쪽 상단의 톱니바퀴 아이콘을 클릭하여,  soft Tabs 설정을 열어 편집합니다. 설정의 변경은 바로 적용되기 때문에 Save 버튼을 클릭할 필요는 없습니다.
-![](image/Chapter1/cloud9_two_spaces_aws.png)
+![](../image/Chapter1/cloud9_two_spaces_aws.png)
 
 또한 클라우드IDE를 사용하는 경우에는 Bitbucket과 Heroku 커맨드를 설치할 필요가 있습니다. 자세한 설명은 다음에 하겠습니다.
 
@@ -223,7 +224,7 @@ Use `bundle show [gemname]` to see where a bundled gem is installed.
 
 Rails에서 사용되는 기본 파일에 대해서는 아래의 내용을 확인해주세요. 이것들의파일이나 디렉토리의 의미나 목적에 ㅐ해서는 본 튜토리얼 전체에 걸쳐 설명하겠습니다. 특히 5.2.1 이후에는 Rails 3.1이후에 탑재된 `Asset Pipeline` 의 일부인 `app/assets` 의 디렉토리에 대해 상세히 설명해드립니다. 에셋 파이프라인에 의해 CSS이나 Javascript 파일 등의 에셋을 간단하게 구성하거나 배포할 수 있습니다.
 
-![](image/Chapter1/directory_structure_rails_4th_edition.png)
+![](../image/Chapter1/directory_structure_rails_4th_edition.png)
 
 
 
@@ -255,7 +256,7 @@ Rails에서 사용되는 기본 파일에 대해서는 아래의 내용을 확�
 Rails 어플리케이션을 신규작성한다면, 다음은 *Bundler* 를 실행하여 어플리케이션에 필요한 gem을 인스톨해봅시다. 1.3에서도 간단히 설명드렸듯, Bundler는 `rails` 에 의해 자동적으로 실행 (이 경우에는 `bundle install` ) 됩니다. 여기서는 기본 어플리케이션 gem을 변경하여 Bundler를 다시 실행해봅니다. 그러기 위해서 텍스트에디터에서 Gemfile을 엽니다. (클라우드IDE 에서는 파일 네비게이터에서 화살표 모양을 클릭하여 샘플 어플리케이션의 디렉토리를 열고, `Gemfile` 이라고 하는 파일을 클릭합니다.) Gemfile의 내용은 대강 아래와 같은 내용으로 구성되어 있습니다. 버전등의 자세한 부분에서는 다소 차이가 있을 수 있습니다.
 Gemfile의 내용은 Ruby코드입니다만 여기서 문법은 신경쓰지 않아도 됩니다. Ruby에 대해서는 제4장에서 설명하겠습니다. 파일이나 디렉토리가 제대로 표시되지 않을때는 네비게이터의 톱니바퀴 모양을 클릭하여 *Refresh File Tree* 를 선택합니다. (보통 파일이나 디렉토리가 제대로 표시되지 않을 때에는 파일트리를 닫았다가 열어보세요. )
 
-![](image/Chapter1/cloud9_gemfile_aws.png)
+![](../image/Chapter1/cloud9_gemfile_aws.png)
 
 
 
@@ -402,18 +403,18 @@ $ rails server
 Javascript 런타임이 설치되어있지 않다는 에러가 출력되는 경우에는,  [GitHub의execjs 페이지](https://github.com/sstephenson/execjs)  에 있는 인스톨 가능한 런타임 리스트에서 Javascript 런타임 리스트를 확인해주세요. 개인적으로는 *Node.js* 를 추천합니다.
 
 `rails server` 커맨드의 실행은 다른 터미널탭에서 실행하는 걸 추천합니다. 이렇게하면 맨 처음 실행되어져있던 터미널 탭에서는 다른 커맨드를 실행할 수 있기 때문입니다. 아래의 그림을 확인해주세요. 이미 처음에 열린 터미널에서 서버를 실행시키고 있는 경우에는, Ctrl+C 를 누르면 서버가 종료됩니다.  Rails 어플리케이션을 표시하고 싶은 경우에는, 로컬서버의 경우에는 `http://localhost:3000/` 을 브라우저로 접속해주세요. 클라우드IDE의 경우에는 *Share* 를 클릭하여 열고싶은 어플리케이션의 주소를 입력합니다. 어떤 경우에도 브라우저에 Rails 어플리케이션이 출력됩니다.
-![](image/Chapter1/new_terminal_tab_aws.png)
+![](../image/Chapter1/new_terminal_tab_aws.png)
 
 
 
-![](image/Chapter1/rails_server_new_tab_aws.png)
+![](../image/Chapter1/rails_server_new_tab_aws.png)
 
-![](image/Chapter1/share_workspace_aws.png)
+![](../image/Chapter1/share_workspace_aws.png)
 
 (클라우드IDE에서 서버를 실행하는 경우)
-![](image/Chapter1/full_browser_window_aws.png)
+![](../image/Chapter1/full_browser_window_aws.png)
 
-![](image/Chapter1/riding_rails_4th_edition_aws.png)
+![](../image/Chapter1/riding_rails_4th_edition_aws.png)
 
 
 
@@ -431,7 +432,7 @@ Javascript 런타임이 설치되어있지 않다는 에러가 출력되는 경�
 
 Rails 어플리케이션과 통신할 때, 브라우저는 일반적으로 Web서버에 Request를 보내고, 이것은 Request를 처리하는 역할을 하는 Rails의 Controller로 전달됩니다. 컨트롤러는 경우에따라서는 바로 View를 생성하여 HTML을 브라우저에 보냅니다. 동적인 사이트에서는 보통 컨트롤러는 사이트의 요소를 나타내고, 데이터베이스와 통신을 담당하는 Ruby오브젝트인 Model과 통신합니다. 모델을 호출한 후, 컨트롤러는 뷰를 표시하고 완성된 Web페이지를 HTML로 바꾸어 브라우저에 보냅니다.
 
-![](image/Chapter1/mvc_schematic.png)
+![](../image/Chapter1/mvc_schematic.png)
 
 
 
@@ -464,13 +465,13 @@ Rails.application.routes.draw do
 end
 ```
 컨트롤러와 라우팅파일을 수정하고 나면, 홈화면(루트 디렉토리) 에서 *hello world!*가 출력되는 것을 확인할 수 있습니다.
-![](image/Chapter1/hello_world_hello_app.png)
+![](../image/Chapter1/hello_world_hello_app.png)
 
 ##### 연습
 1. hello 액션을 조금 수정해서 *hello world!* 대신 *hola mundo!* 가 출력되게끔 수정해봅시다.
 2. Rails에서는  **[ASCII](http://ja.wikipedia.org/wiki/ASCII) 코드가 아닌 문자** 도 지원합니다. *¡Hola, mundo!* 에는 스페인어 특유의 역느낌표 *¡*가 포함되어 있습니다. 이 문자를 복사해서 붙여넣어 표시해보도록 합시다.
 3. `hello` 액션을 참고하여, 새로운 액션 `goodbye` 를 추가해봅시다. 이 액션은 *goodbye, world!* 라는 텍스트를 출력하도록 합니다. `routes.rb` 를 수정하여 루트디렉토리를 `hello`액션에서 `goodbye` 액션으로 수정해봅시다.
- ![](image/Chapter1/goodbye_world.png)
+ ![](../image/Chapter1/goodbye_world.png)
 
 ## 1.4 Git을 이용한 버전관리
 실제로 동작하는 Rails 어플리케이션을 처음으로 완성해보았습니다. 어플리케이션의 소스코드를 버전관리 해봅시다. 버전을 관리하지 않는다면, 어플리케이션이 동작하지 않는 것은 아니지만 대부분의 Rails개발자는 버전관리를 개발현장에서만큼은 필수불가결한 것으로 인식하고 있습니다. 또한 버전관리시스템을 사용한다면 프로젝트의 코드이력을 확인한다던지, 잘못해서 삭제하고 만 파일을 복구할 수도 있습니다.(롤백) 버전관리시스템을 숙지하는 것은 지금은 어떤 소프트웨어 개발자라던지 필수기술이라고 해도 과언은 아닐 것입니다.
@@ -599,8 +600,8 @@ Bitbucket에서 프로젝트를 공개하는건 간단하지만 조금 기술적
 ![](image/Chapter1/add_public_key.png)
 공개키의 추가가 끝났으면 *Add key* 를 클릭하여  [새로운 레포지토리를 작성](https://bitbucket.org/repo/create) 합니다. 프로젝트의 정보를 입력한 후, *This is a private repository* 를 체크합니다. 또한 *Include a README?* 가 *No* 로 되어있는 것을 확인해주세요. *Create repository* 를 눌러 다음 화면의 지시에 따라주세요. 
 
-![](image/Chapter1/create_first_repository_bitbucket_4th_ed.png)
-![](image/Chapter1/add_repository.png)
+![](../image/Chapter1/create_first_repository_bitbucket_4th_ed.png)
+![](../image/Chapter1/add_repository.png)
 
 마지막으로, 아래의 커맨드를 실행해주세요. 제대로 실행되지 않으면 공개키가 제대로 추가되지 않았을 수 있으니, 다시 한 번 진행해보시길 바랍니다.
 아래의 커맨드를 실행하는 것으로 로컬환경의 레포지토리를 Bitbucket으로 푸시할 수 있습니다. 푸시 할 떄에는 *Are you sure you want to continue connecting (yes/no)?* 라고 출력될 때도 있습니다만, 이때는 *yes*를 입력해주세요.
@@ -614,13 +615,13 @@ $ git push -u origin —all
 `git remote add origin git@bitbucket.org:railstutorial/hello_app.git`
 위 커맨드를 실행하면 *hello_app* 의 레포지토리의 페이지가 Bitbucket에 작성됩니다. 이 페이지에서는 파일의 참조, 모든 커밋이력의 확인 등 많은 다른 기능을 이용할 수 있습니다.
 
-![](image/Chapter1/bitbucket_repository_page_4th_ed.png)
+![](../image/Chapter1/bitbucket_repository_page_4th_ed.png)
 
 ### 1.4.4 Branch, Edit, Commit, Merge
 위의 순서에 따라 진행한다면, `README` 파일의 내용이 자동적으로 표시되는 걸 알아차리셨을 겁니다. 이 `README.md` 파일은 `rails new` 를 실행한다면 자동생성됩니다. 파일의 확장자가 `.md` 로 되어있는 파일은 *Markdown* 이라고 하는 , 사람이 읽기 편한 표기법으로 작성되어 있는 파일입니다. Markdown은 간단하게 HTML로 변환할 수 있어서 Bitbucket 이나 Github도 `.md` 파일을 자동으로 HTML변환하여 표시합니다.
 
 Rails가 자동생성해주는 README파일을 그냥 그대로 써도 되고, 프로젝트에 맞추어 내용을 수정해도 상관없습니다. 본 튜토리얼에서는 README파일을 Rails 튜토리얼 고유의 내용으로 수정해봅시다. 동시에 Git에서 Branch, Edit, Commit, Merge를 실행 할 때 권해드리는 워크플로우의 실제 예를 봅시다.
-![](image/Chapter1/bitbucket_default_readme.png)
+![](../image/Chapter1/bitbucket_default_readme.png)
 
 #### Branch (브랜치)
 Git은, 브랜치(*branch*) 를 매우 간편하고 빠르게 만들 수 있습니다. 브랜치는 기본적으로는 레포지토리의 복사판으로, 브랜치에서는 원본 파일을 수정하지 않고 새로운 코드를 작성하는 등의 자유로운 변경과 실험을 해볼 수 있습니다. 보통 원본 레포지토리를 *master* 브랜치라고 하며 토픽 브런치(단기간 사용하는 일시적인 브랜치) 는 `checkout` 과 `-b` 옵션을 이용하여 작성합니다.
@@ -715,7 +716,7 @@ $ git branch -D topic-branch
 `README` 파일의 수정이 끝났으므로, Bitbucket에 변경사항을 푸시해서 결과를 확인해봅시다. 이미 위에서 한 번 푸시를 했기 때문에, 대부분의 시스템에서는 `git push` 를 할 때에 `origin master` 를 생략할 수 있습니다.
 `git push`	
 기본 README파일과 마찬가지로, 수정된 README파일도 Bitbucket에 의해 HTML로 변환되어 표시됩니다.
-![](image/Chapter1/new_readme_bitbucket_4th_ed.png)
+![](../image/Chapter1/new_readme_bitbucket_4th_ed.png)
 
 ## 1.5 배포해보자
 아직 1장의 튜토리얼이 한창입니다만, 이런 별거없는 어플리케이션도 실제 배포환경에 배포하려고 마음먹으면 가능한 상태이긴 합니다. 어플리케이션의 배포는 필수는 아니지만, 빈번하게 실제환경에 배포하는 것으로 개발 사이클의 문제를 빠른 단계에서 찾아 대응할 수도 있습니다. 개발환경의 테스트를 반복하기만하고 언제까지나 실제 환경에 배포하지 않으면 어플리케이션을 공개하는 단계에서 생각지도못한 사태에 직면할수도 있습니다.
@@ -818,7 +819,7 @@ Rails 어플리케이션을 실제로 Heroku에 배포하기 위해선 일단 Gi
 
 ### 1.5.3 Heroku에 배포해보자 (2)
 사실 위의 커맨드로 배포작업은 끝입니다. 배포된 어플리케이션을 웹에서 확인하기 위해선, `heroku create` 를 실행했을 때 생성된 어드레스를 브라우저로 접속하여 확인하면 됩니다. (물론 예제에서 표시된 주소가 아닌, 여러분께서 작성한 주소로 접속해주세요.)  클라우드IDE가 아닌 로컬 컴퓨터에서 작업하고 계신 경우에는, `heroku open` 커맨드로 브라우저에서 표시할 수 있습니다. 실행 결과는 아래와 같습니다. 페이지 내용은 로컬환경에서 작업한 내용과 다를 것이 없습니다만, 지금은 그 내용이 인터넷 상의 실제 환경에 하나의 웹페이지로써 당당하게 공개되어 있습니다.
-![](image/Chapter1/heroku_app_hello_world.png)
+![](../image/Chapter1/heroku_app_hello_world.png)
 
 ##### 연습
 	1. 실제 환경에서도 *hola, mundo!* 라고 출력되도록 해보세요.
