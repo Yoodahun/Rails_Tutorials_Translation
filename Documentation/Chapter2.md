@@ -68,6 +68,7 @@ $ git remote add origin git@bitbucket.org:<username>/toy_app.git
 $ git push -u origin —all
 ```
 ![](../image/Chapter2/create_demo_repo_bitbucket.png)
+
 마지막으로 1.3.4에서 소개해드린 *Hello world!* 와 같은 순서로 배포준비를 해주세요.
 
 *application_controller.rb*
@@ -99,6 +100,7 @@ $ git push heroku master
 
 1.5와 마찬가지로, 경고메세지가 표시될 수도 있습니다만, 무시하셔도 괜찮습니다. 자세한 것은 7.5에서 설명드리겠습니다. Heroku어플리케이션의 주소 이외에는 아래와 같은 상태가 되어 있을 것입니다.
 ![](../image/Chapter2/heroku_app_hello_world.png)
+
 이 것으로 어플리케이션 자체를 작성하기 위한 밑작업을 끝냈습니다. Web어플리케이션을 만들 때에는 어플리케이션의 구조를 표현하기 위한 데이터 모델을 맨 처음에 작성하는 것이 보통입니다.
 
 이번 장의 Toy 어플리케이션에서는 유저와 짧은 Micropost(Twitter에서의 트윗) 만을 표현하는 microblog를 작성해보겠습니다. 일단은 어플리케이션에서의 유저를 사용하기 위한 모델을 작성하고, 그 다음으로 micropost에서 사용하기 위한 모델을 작성합니다.
@@ -109,12 +111,14 @@ Web에서의 유저등록 방법이 매우 많은 것에서부터 알 수 있듯
 
 각 유저는, 중복이 없는 유일한 키가 되는 `integer`형의 ID번호(`id`라고 부르겠습니다.) 를 할당하고, 이 ID와 더불어 일반에 공개하는 `string`형의 이름(`name`), 그리고 `string` 형태의 이메일주소 (`email`)을 가집니다. 이메일 주소는 유저이름으로써 사용됩니다. 유저의 데이터모델의 개요는 아래와 같습니다.
 ![](../image/Chapter2/demo_user_model.png)
+
 상세한 설명은 6.1.1에서부터 말씀드리겠습니다만, 위 그림의 `user`는 데이터베이스의 테이블(table)에 해당됩니다. 또한 `id`, `name`, `email`  의 속성은 각각 테이블의 컬럼에 해당됩니다.
 
 ### 2.1.2 Micropost Modeling
 
 마이크로포스트의 데이터모델은 유저 모델보다도 좀 더 심플합니다. `id` 와 마이크로포스트의 텍스트 내용을 기록하는 `text` 형의 `context` 로 구성됩니다. 하지만 실제로는, 마이크로포스트를 유저와 관련짓게 할 필요가 있습니다. (associate)  그러기 위해서, 마이크로포스트의 포스트 작성자를 기록하기 위한 `user_id` 를 추가합니다. 이것으로 데이터 모델은 아래와 같습니다.
 ![](../image/Chapter2/demo_micropost_model.png)
+
 위 그림에서는 `user_id` 라고하는 속성을 이용하여 1명의 유저에게 여러개의 마이크로포스트를 관련짓게 할 수 있는 구조를 간결하게 설명하고 있습니다. 상세하게는 제13장에서 설명하겠습니다.
 
 
@@ -207,19 +211,26 @@ migration작업이 끝나면, 다음 커맨드로 로컬 Web서버를 실행할 
 
 일단 유저 리스트를 표시하는 `index` 액션의 URL(/users)를 확인해봅시다. 물론 이 시점에는 아직 유저가 등록되어 있지는 않습니다.
 ![](../image/Chapter2/demo_blank_user_index_3rd_edition.png)
+
 유저를 새롭게 등록하기 위해선, 위 그림의 `new` 페이지를 표시해봅니다. 또한 제 7장에서는 이 페이지가 유저 등록용 페이지로 바뀔 것입니다.
 ![](../image/Chapter2/demo_new_user_3rd_edition.png)
+
 텍스트 필드에 이름과 이메일을 입력하고 [Create User] 버튼을 눌러보세요. 아래와 같은 `show` 페이지가 표시됩니다. (녹색의 welcome 메세지는 7.4.2에서 설명드리는 *flash* 라고 하는 기능을 이용하여 출력하고 있습니다.) 여기서 URL이 /user/1 이라고 표시되고 있는 것에 대해 주목해주세요. 생각하시는 것 처럼, 여기서 *1* 이라고 하는 숫자는, id속성을 나타내는 것입니다. 7.1에서는 이 페이지를 유저의 프로필 페이지로 만들 것입니다.
 ![](../image/Chapter2/demo_show_user_3rd_edition.png)
+
 이번에는 유저의 정보를 변경하기 위해, /users/1/의 `edit` 를 출력해봅시다. 이 편집용 페이지에서 유저에 관한 정보를 변경하고, [Update User] 버튼을 누르면, Toy 어플리케이션 내부의 유저정보가 변경됩니다. (상세한 것은 제 6장에서 설명드리겠습니다만, 이 유저 정보는 Web 어플리케이션의 뒷단에 있는 데이터베이스에 저장되어 있습니다.)  Sample 어플리케이션에서도 유저를 편집 혹은 업데이트하는 기능을 10.1에서 구현합니다.
 ![](../image/Chapter2/demo_edit_user_3rd_edition.png)
 
 ![](../image/Chapter2/demo_update_user_3rd_edition.png)
+
 여기서 /user/new 페이지로 되돌아가서 유저를 한 명 더 작성해봅시다. index페이지에 접속해보면 아래와 같이 유저가 추가되어 있을 것입니다. 7.1에서는 좀 더 본격적인 유저 리스트페이지를 작성해볼 것입니다.
 ![](../image/Chapter2/demo_user_index_two_3rd_edition.png)
+
 유저의 등록, 출력, 업데이트 방법 등에 대해 설명했습니다. 이번에는 유저를 삭제해봅시다. [Destroy] 링크를 클릭하면 유저는 삭제되고, index페이지의 유저는 1명만 남게 됩니다. (만약 이 설명대로 되지 않는다면, 브라우저의 Javascript가 유효한 상태인지 아닌지 확인해주세요. Rails에서는 유저의 삭제하는 리퀘스트를 작성할 때, Javascript를 사용합니다.)
 또한 10.4에서는 Sample 어플리케이션에 유저를 삭제하는 기능을 구현해보고, 관리권한(admin)을 가진 유저 이외에는 삭제할 수 없게끔 제한을 걸 것입니다.
 ![](../image/Chapter2/demo_destroy_user_3rd_edition.png)
+
+
 
 ##### 연습
 
@@ -234,6 +245,7 @@ migration작업이 끝나면, 다음 커맨드로 로컬 Web서버를 실행할 
 
 이 것으로 Users리소스의 개요에 대해 설명은 끝났습니다. 여기서 1.3.3에서 말씀드린 MVC(Model, View, Controller) 패턴의 관점에서 이 리소스를 확인해봅시다. 구체적으로는 “/user에 있는 index페이지를 브라우저에서 접속해보자“ 라는 조작을 할 경우, 내부에서는 어떠한 처리가 일어나고 있는지 MVC의 관점에서 설명하겠습니다.
 ![](../image/Chapter2/mvc_detailed.png)
+
 위 그림에서 설명하고 있는 순서의 개요는 아래와 같습니다.
 
  1.  브라우저로부터 /user 라고 하는 URL의 리퀘스트를  Rails의 서버로 송신합니다.
@@ -436,6 +448,9 @@ User 리소스를 생성하여 내용을 확인해보았습니다. 이번에는 
 ### 2.3.1 Microposts 화면을 움직여보자
 User리소스와 마찬가지로, Microposts 리소스도 scaffold로 코드를 작성해봅시다. `rails generate scaffold` 커맨드를 사용하여 아래 그림처럼 데이터 모델을 작성해봅니다.
 ![](../image/Chapter2/demo_micropost_model%202.png)
+
+
+
 ```
 $ rails generate scaffold Micropost content:text user_id:integer
       invoke  active_record
@@ -491,8 +506,6 @@ Rails.application.routes.draw do
   root ‘users#index’
 end
 ```
-
-
 
 
 
@@ -559,8 +572,12 @@ end
 /microposts/new페이지를 브라우저에서 열고, 새로운 마이크로포스트의 정보를 입력하여 마이크로포스트를 몇 개정도 생성해보세요
 
 ![](../image/Chapter2/demo_new_micropost_3rd_edition.png)
+
 여기서는 일단 마이크로포스트를 1개나 2개정도 작성하고, 적어도 한쪽의  `user_id`가 `1` 이 되도록하여 2.2.1에서 만든 제일 첫 유저의 id와 일치하도록 합니다. 결과는 아래처럼 될 것 입니다.
 ![](../image/Chapter2/demo_micropost_index_3rd_edition.png)
+
+
+
 ##### 연습
 
 1. CSS을 알고 계신 분이라면: 새로운 마이크로포스트를 작성하고 브라우저의 HTML inspector 기능을 사용하여 *Micropost was successfully created* 의 부분을 확인해보세요. 브라우저를 새로고침하면 그 부분은 어떻게 되나요?
@@ -579,6 +596,8 @@ end
 위 코드로 정말 움직이는 것인지 의문하시는 분들도 있으실 수도 있겠지만, 정말 제대로 움직입니다. (검증기능에 대해서는 6.2에서 설명합니다.) 141문자 이상의 새로운 마이크로포스트를 작성해보면 알게 됩니다. 아래의 그림과 같이 마이크로포스트의 내용이 너무 길다는 내용의 에러메세지가 Rails에 의해 출력됩니다. (에러 메세지에 대해서는 7.3.3에서 소개합니다.
 
 ![](../image/Chapter2/micropost_length_error_3rd_edition.png)
+
+
 
 ##### 연습
 
@@ -603,6 +622,8 @@ end
 
 이 데이터모델 간의 관계를 그림으로 나타낸 것이 아래의 그림입니다. `microposts` 테이블에는 `user_id`  컬럼을 선언해놓았기 때문에, Rails와 Active Record가 마이크로포스트와 유저 간의 관계를 생성해주는 것입니다.
 ![](../image/Chapter2/micropost_user_association.png)
+
+
 
 제 13장과 제 14장에서는 관계가 맺어진 유저와 마이크로포스트를 동시에 표시하여 Twitter와 같은 마이크로포스트의 피드를 작성해볼 계획입니다. 여기선 Rails의 *console* 을 이용하여 유저와 마이크로포스트의 관계를 확인해봅니다..
 Rails의 console은 Rails 어플리케이션과 커뮤니케이션을 할 수 있는 일종의 프로그램입니다. 일단 터미널에서 `rails console` 커맨드를 입력합니다. 이어서 `User.first` 라고 입력하여 데이터베이스에서 제일 앞의 유저 정보를 조회하여 `first_user` 변수에 저장합니다.
@@ -644,6 +665,9 @@ end
 ```
 
 ![](../image/Chapter2/micropost_content_cant_be_blank.png)
+
+
+
 ```ruby
 class User < ApplicationRecord
   has_many :microposts
@@ -651,6 +675,8 @@ class User < ApplicationRecord
   validates FILL_IN, presence: true    # 「FILL_IN」をコードに置き換えてください
 end
 ```
+
+
 
 ![](../image/Chapter2/user_presence_validations.png)
 
@@ -700,6 +726,8 @@ end
 ```
 
 ![](../image/Chapter2/demo_controller_inheritance.png)
+
+
 
 모델의 상속관계와 마찬가지로, User컨트롤러와 Microposts컨트롤러는 결국에는 `ActionController::Base` 라고 하는 기본 클래스를 상속받고 있습니다. 그 때문에 어떤 컨트롤러라도 오브젝트의 조종이나 HTTP request의 필터링, 뷰를 HTML로 변환하여 출력하는 등의 다채로운 기능을 실행할 수 있습니다. Rails 컨트롤러는 반드시 `ApplicationController` 를 상속하고 있기 때문에, Application 컨트롤러에서 정의한 규칙은 어플리케이션의 모든 액션에 반영됩니다. 예를 들어 9.1에서는 로그인과 로그아웃용의 헬퍼 메소드를 Sample 어플리케이션의 모든 컨트롤러에서 사용할 수 있게 하고 있습니다.
 
