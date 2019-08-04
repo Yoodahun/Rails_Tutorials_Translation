@@ -1,11 +1,6 @@
 # Ruby on Rails Tutorial：실제 예를 통해 배워보자.
 
 <div style="text-align:right">원작자 Michael Hartl (마이클 허틀)</div>
-
-
-
-
-
 ※본 자료는 Ruby on Rails Tutorial의 원본과 일어판을 번역한 것으로, 개인적인 공부를 위해 번역을 한 것입니다.
 
  - 원 본 [Learn Web Development with Rails: Michael Hartl’s Ruby on Rails Tutorial |  Softcover.io](https://www.railstutorial.org/)
@@ -18,6 +13,7 @@
 또한 본 튜토리얼에서는 AWS C9을 이용한 개발을 추천하고 있으나, 본인은 로컬환경에서 [RubyMine](https://www.jetbrains.com/ruby/)을 설치하여 진행하였습니다.
 
 - 1장의 결과물 [Repository](https://github.com/Yoodahun/HelloWorldRubyMine)
+- 2장의 결과물 [Repository](https://github.com/Yoodahun/ToyApplication_RailsTutorial)
 
 
 
@@ -29,9 +25,9 @@
 
 Rails Tutorial은, 실제 Web Application의 개발에서 공개까지, 실제로 개발해가며 배워보는 대형 튜토리얼입니다.📕✨ 
 
-Rails Tutorial은, 원작자 Michael Hartl로 부터 정당한 허가를 받아 번역, 공개, 판매하고 있습니다. 원작과 마찬가지로 온라인판은 무료로 공개하고 있습니다. 본 튜토리얼이 여러분의 학습에 도움이 되었으면 좋겠습니다.
+~~Rails Tutorial은, 원작자 Michael Hartl로 부터 정당한 허가를 받아 번역, 공개, 판매하고 있습니다. 원작과 마찬가지로 온라인판은 무료로 공개하고 있습니다. 본 튜토리얼이 여러분의 학습에 도움이 되었으면 좋겠습니다.~~
 
-※본서는 개인적인 학습을 위해 번역한 것입니다.
+**※본서는 개인적인 학습을 위해 번역한 것입니다.**
 
 - - - -
 - [ ] 제 4판 목차
@@ -79,26 +75,26 @@ Rails Tutorial은, 원작자 Michael Hartl로 부터 정당한 허가를 받아 
 			- [ ] 2.3.5 [어플리케이션을 배포하자](Documentation/Chapter2.md#235-어플리케이션을-배포하자)
 		- [x] 2.4 [마지막으로](Documentation/Chapter2.md#24-마지막으로)
 			- [ ] 2.4.1 [2장의 정리](Documentation/Chapter2.md#241-2장의-정리)
-	- [ ] 제 3장 정적인(Static) 페이지의 작성
-		- [ ] 3.1 설치
-		- [ ] 3.2 Static Page
-			- [ ] 3.2.1 Static Page를 생성해보자
-			- [ ] 3.2.1 Static Page를 편집해보자
-		- [ ] 3.3 테스트를 해보자
-			- [ ] 3.3.1 첫 테스트
-			- [ ] 3.3.2 Red
-			- [ ] 3.3.3 Green
-			- [ ] 3.3.4 Refactor
-		- [ ] 3.4 조금은 Dynamic한 Page
-			- [ ] 3.4.1 타이틀을 테스트해보자 (Red)
-			- [ ] 3.4.2 타이틀을 추가해보자 (Green)
-			- [ ] 3.4.3 레이아웃과 html에 직접 쓰는 Ruby (Refactor)
-			- [ ] 3.4.4 Route의 설정
-		- [ ] 3.5 마지막으로
-			- [ ] 3.5.1 3장의 정리
-		- [ ] 3.6 고도의 설치
-			- [ ] 3.6.1 minitest reporters
-			- [ ] 3.6.2 Guard를 이용한 테스트 자동화
+	- [x] [제 3장 정적인(Static) 페이지의 작성](Documentation/Chapter3.md)
+		- [ ] [3.1 프로젝트 생성](Documentation/Chpater3.md#3.1-프로젝트-생성)
+		- [ ] [3.2 정적인 페이지](Documentation/Chapter3.md#3.2-정적인-페이지)
+			- [ ] [3.2.1 Static Page를 생성해보자](Documentation/Chapter3.md#3.2.1-Static-Page를-생성해보자)
+			- [ ] [3.2.2 Static Page를 편집해보자](Documentation/Chapter3.md#3.2.1-Static-Page를-편집해보자)
+		- [ ] [3.3 테스트를 해보자](Documentation/Chapter3.md#3.3-테스트를-해보자)
+			- [ ] [3.3.1 첫 번째 테스트](Documentation/Chapter3.md#3.3.1-첫-번째-테스트)
+			- [ ] [3.3.2 Red](Documentation/Chapter3.md#3.2.2-Red)
+			- [ ] [3.3.3 Green](Documentation/Chapter3.md#3.3.3-Green)
+			- [ ] [3.3.4 Refactor](Documentation/Chapter3.md#3.3.4-Refactor)
+		- [ ] [3.4 조금은 Dynamic한 페이지](Documentation/Chapter3.md#3.4-조금은-Dynamic한-페이지)
+			- [ ] [3.4.1 타이틀을 테스트해보자 (Red)](Documentation/Chapter3.md#3.4.1-타이틀을-테스트해보자-(Red))
+			- [ ] [3.4.2 타이틀을 추가해보자 (Green)](Documentation/Chapter3.md#3.4.2- 타이틀을-추가해보자-(Green))
+			- [ ] [3.4.3 레이아웃과 html에 직접 쓰는 Ruby (Refactor)](Documentation/Chapter3.md#3.4.3-레이아웃과-html에-직접-쓰는-Ruby-(Refactor))
+			- [ ] [3.4.4 Route의 설정](Documentation/Chapter3.md#3.4.4-Route의-설정)
+		- [ ] [3.5 마지막으로](Documentation/Chapter3.md#3.5-마지막으로)
+			- [ ] [3.5.1 3장의 정리](Documentation/Chapter3.md#3.5.1-3장의-정리)
+		- [ ] [3.6 조금 난이도가 있는 환경설정](Documentation/Chapter3.md#3.6-조금-난이도가-있는-환경설정)
+		   - [ ] [3.6.1 minitest reporters](Documentation/Chapter3.md#3.6.1-minitest-reporters)
+		  - [ ] [3.6.2 Guard를 이용한 테스트 자동화](Documentation/Chapter3.md#3.6.2-Guard를-이용한-테스트-자동화)
 	- [ ] 제 4장 Rails 풍의 Ruby
 		- [ ] 4.1 작성 동기
 			- [ ] 4.1.1 Helper
@@ -315,4 +311,3 @@ Rails Tutorial은, 원작자 Michael Hartl로 부터 정당한 허가를 받아 
 			- [ ] 14.4.4 역자의 후기
 
 
-#Ruby On Rails/Ruby on Rails Tutorial PJ#

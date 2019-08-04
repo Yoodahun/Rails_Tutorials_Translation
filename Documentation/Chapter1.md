@@ -4,6 +4,7 @@
 또한 본 서는  [Learn Enough to Be Dangerous](http://learnenough.com/story) 라고 하는 시리즈 중 하나 입니다. Learn Enough의 입문시리즈에서는 [Ruby on Rails Tutorial](http://railstutorial.org/) 의 기초지식을 배우는 데에 적절한 튜토리얼이 있습니다. 예를 들면, 시리즈의 첫 번째 책인 [Learn Enough Command Line to Be Dangerous](http://learnenough.com/command-line-tutorial) 에서는 Rails 튜토리얼과는 조금은 다른, 완전한 초보용의 튜토리얼이 서술되어 있습니다.
 
 ###### 컬럼 1.1 「숙련」이라고 하는 것은
+
 > [Ruby on Rails Tutorial](http://railstutorial.org/) 은 [Learn Enough to Be Dangerous](http://learnenough.com/story) 시리즈의 하나이기도 하며, 시리즈 전체에 「*숙련 (Techinical Sophistication)*」 이라는 테마가 관통하고 있습니다. 기술적으로 매우 어려운 과제를 마법처럼 해결하기 위해선,  하드 스킬(조작방법등의 정형화하기 쉬운 스킬)과 소프트 스킬 (디버그등 정형화하기 어려운 스킬) , 양쪽의 기술의 숙련이 필요합니다. Web개발이나 프로그래밍은 일반적인 고도의 기술이라는 인식이 있으나, 기술은 알고 있으면 좋은 것뿐만은 아닙니다. 물론 메뉴항목을 클릭하면, 어떠한 이벤트가 발생하는 것정도도 모른다면 얘기는 달라지지만, 한편으로는 에러메세지를 검색하여 알아본다거나, 조금 더 힘내서 해볼지, 아니면 포기하고 재부팅할지를 판단하는 능력도 필요합니다. ( [図1.1](https://railstutorial.jp/chapters/beginning?version=5.1#fig-tech_support_cheat_sheet) )。  
 > Web Application에서 동적인 부품은 매우 많기 때문에, 위에 서술한 양쪽의 기술을 습득하는 것이 필요합니다. 게다가 Rails의 Web Application 의 경우에는 적절한 Ruby gem의 선정방법, bundle install이나 bundle update의 실행방법, 로컬 웹서버가 멈췄을 때의 재부팅 방법 등의 기술들도 습득할 수 있습니다. (지금 제가 여기서 서술한 용어들을 전부 모른다고 해도 안심하세요. 본 튜토리얼에서 전부 설명합니다.)  
 > 본 튜토리얼을 진행하면, 무슨 짓을해도 순서대로 진행이 안되는 것도 있을 수 있습니다. 그러기 쉬운 내용에 대해서는 되도록 정보를 많이 포함하도록 하고 있습니다만 모든 상황을 커버하는 것은 불가능입니다. 그러한 트러블은 오히려 숙련되기 우한 수련이라고 생각하고, 과제해결에 임합니다.(그래도 해결이 안되는 것은…「*버그가 아닙니다. 사양입니다!*」( [別著](https://www.learnenough.com/command-line-tutorial#aside-speak_geek) 로부터)  
@@ -390,6 +391,7 @@ bundle install` 커맨드의 실행은 조금 시간이 걸릴 수도 있습니�
 추가로, `bundle install` 을 실행하면 *일단 bundle update를 먼저 실행시켜주세요* 와 비슷한 내용의 메세지가 출력될 수도 있습니다. 그 경우에는 메세지대로 `bundle update`를 먼저 실행해주세요. (메뉴얼대로 진행되지 않을 때에는 침착하게 대응하는 것도 능력입니다. 그러한 에러메세지에는 해결대응책도 같이 기술되어있을 때도 있기 때문에 잘 읽어보세요.)
 
 ### 1.3.2 rails server
+
 1.3의 `rails server` 커맨드와 1.3.1 의 `bundle install` 의 커맨드를 실행하는 것으로, 실제로 동작하는 어플리케이션이 만들어졌습니다. 감사하게도 Rails는 개발 머신에서만 동작되는 로컬 Web서버를 구동시키기 위한 커맨드라인 프로그램이 있기 때문에 `rails server` 라는 커맨드를 실행시키는 것만으로도 Rails 어플리케이션을 간단하게 동작시킬 수 있습니다.
 
 ```
@@ -440,6 +442,7 @@ Rails 어플리케이션과 통신할 때, 브라우저는 일반적으로 Web�
 지금 이 설명이 아직은 추상적으로 다가올지도 모르겠습니다만, 이 장은 나중에도 계속 참고하기 때문에 안심하셔도 될 것 같습니다. 특히 1.3.4에서는 MVC를 다루는 연습용 어플리케이션을 다룹니다. 2.2.2에서는 *toy* 어플리케이션을 이용하여 MVC를 좀 더 상세히 설명하겠습니다. *Sample* 어플리케이션에서는 MVC의 3가지 요소를 모두 다룹니다. 3.2에서 일단 컨트롤러와 뷰를 다루고, 모델은 6.1부터 다루어보겠습니다. 7.1.2에서는 세 개의 요소를 모두 다루게 됩니다.
 
 ### 1.3.4 Hello world !
+
 역사적인 첫 Rails의 MVC Framewrok Application으로써 방금 작성한 어플리케이션을 아주 약간 손보기로 합시다. *Hello world!*  라고 하는 문자열을 표시하는 정도의 컨트롤러의 액션을 추가하고, 기본 Rails페이지를 바꿔봅시다. (컨트롤러 액션에 대해서는 2.2.2에서 상세히 다룹니다.)
 
 이름에서부터 알 수 있듯이, 컨트롤러의 액션은 컨트롤러 안에 정의합니다. 여기서는 Application이라고 하는 이름의 컨트롤러 안에 hello라고 하는 이름의 액션을 작성하도록 해봅시다. 실제로 현 시점에서 컨트롤러는 Application 하나 밖에 없습니다. 다음 커맨드를 실행하면 현재 컨트롤러를 확인할 수 있습니다.
@@ -619,6 +622,7 @@ $ git push -u origin —all
 ![](../image/Chapter1/bitbucket_repository_page_4th_ed.png)
 
 ### 1.4.4 Branch, Edit, Commit, Merge
+
 위의 순서에 따라 진행한다면, `README` 파일의 내용이 자동적으로 표시되는 걸 알아차리셨을 겁니다. 이 `README.md` 파일은 `rails new` 를 실행한다면 자동생성됩니다. 파일의 확장자가 `.md` 로 되어있는 파일은 *Markdown* 이라고 하는 , 사람이 읽기 편한 표기법으로 작성되어 있는 파일입니다. Markdown은 간단하게 HTML로 변환할 수 있어서 Bitbucket 이나 Github도 `.md` 파일을 자동으로 HTML변환하여 표시합니다.
 
 Rails가 자동생성해주는 README파일을 그냥 그대로 써도 되고, 프로젝트에 맞추어 내용을 수정해도 상관없습니다. 본 튜토리얼에서는 README파일을 Rails 튜토리얼 고유의 내용으로 수정해봅시다. 동시에 Git에서 Branch, Edit, Commit, Merge를 실행 할 때 권해드리는 워크플로우의 실제 예를 봅시다.
@@ -720,6 +724,7 @@ $ git branch -D topic-branch
 ![](../image/Chapter1/new_readme_bitbucket_4th_ed.png)
 
 ## 1.5 배포해보자
+
 아직 1장의 튜토리얼이 한창입니다만, 이런 별거없는 어플리케이션도 실제 배포환경에 배포하려고 마음먹으면 가능한 상태이긴 합니다. 어플리케이션의 배포는 필수는 아니지만, 빈번하게 실제환경에 배포하는 것으로 개발 사이클의 문제를 빠른 단계에서 찾아 대응할 수도 있습니다. 개발환경의 테스트를 반복하기만하고 언제까지나 실제 환경에 배포하지 않으면 어플리케이션을 공개하는 단계에서 생각지도못한 사태에 직면할수도 있습니다.
 
 예전에는 Rails 어플리케이션의 실제환경으로의 배포작업은 무척이나 힘든 작업이었으나 요근래 들어서는 매우 간편해졌습니다. 다양한 실제환경을 선택할 수 있습니다.  [Phusion Passenger](https://www.phusionpassenger.com/) (Apache나 Nginx등의 웹서버용 모듈)을 실행할 수 있는 다양한 공유호스트나 가상 프라이빗 서버(VPS) 외에도 간편한 배포환경을 제공하는  [Engine Yard](http://engineyard.com/) 나 [Rails Machine](http://railsmachine.com/) , 클라우드 서비스를 제공하는 [Engine Yard Cloud](http://cloud.engineyard.com/) 나 [Heroku](http://heroku.com/) 등이 있습니다.
@@ -863,4 +868,3 @@ Heroku에서는 서브도메인 이외에도 고유 도메인도 사용할 수 �
 
 
 <div style="text-align:right"><a href="https://github.com/Yoodahun/Rails_Tutorials_Translation/blob/master/Documentation/Chapter2.md">다음장으로</a></div>
-
