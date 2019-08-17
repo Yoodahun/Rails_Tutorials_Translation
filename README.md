@@ -76,48 +76,48 @@ Rails Tutorial은, 실제 Web Application의 개발에서 공개까지, 실제�
 		- [x] 2.4 [마지막으로](Documentation/Chapter2.md#24-마지막으로)
 			- [ ] 2.4.1 [2장의 정리](Documentation/Chapter2.md#241-2장의-정리)
 	- [x] [제 3장 정적인(Static) 페이지의 작성](Documentation/Chapter3.md)
-		- [ ] [3.1 프로젝트 생성](Documentation/Chpater3.md#31-프로젝트-생성)
-		- [ ] [3.2 정적인 페이지](Documentation/Chapter3.md#32-정적인-페이지)
+		- [x] [3.1 프로젝트 생성](Documentation/Chapter3.md#31-프로젝트-생성)
+		- [x] [3.2 정적인 페이지](Documentation/Chapter3.md#32-정적인-페이지)
 			- [ ] [3.2.1 Static Page를 생성해보자](Documentation/Chapter3.md#321-Static-Page를-생성해보자)
 			- [ ] [3.2.2 Static Page를 편집해보자](Documentation/Chapter3.md#321-Static-Page를-편집해보자)
-		- [ ] [3.3 테스트를 해보자](Documentation/Chapter3.md#33-테스트를-해보자)
+		- [x] [3.3 테스트를 해보자](Documentation/Chapter3.md#33-테스트를-해보자)
 			- [ ] [3.3.1 첫 번째 테스트](Documentation/Chapter3.md#331-첫-번째-테스트)
 			- [ ] [3.3.2 Red](Documentation/Chapter3.md#322-Red)
 			- [ ] [3.3.3 Green](Documentation/Chapter3.md#333-Green)
 			- [ ] [3.3.4 Refactor](Documentation/Chapter3.md#334-Refactor)
-		- [ ] [3.4 조금은 Dynamic한 페이지](Documentation/Chapter3.md#34-조금은-Dynamic한-페이지)
+		- [x] [3.4 조금은 Dynamic한 페이지](Documentation/Chapter3.md#34-조금은-Dynamic한-페이지)
 			- [ ] [3.4.1 타이틀을 테스트해보자 (Red)](Documentation/Chapter3.md#341-타이틀을-테스트해보자-(Red))
 			- [ ] [3.4.2 타이틀을 추가해보자 (Green)](Documentation/Chapter3.md#342-타이틀을-추가해보자-(Green))
 			- [ ] [3.4.3 레이아웃과 html에 직접 쓰는 Ruby (Refactor)](Documentation/Chapter3.md#343-레이아웃과-html에-직접-쓰는-Ruby-(Refactor))
 			- [ ] [3.4.4 Route의 설정](Documentation/Chapter3.md#344-Route의-설정)
-		- [ ] [3.5 마지막으로](Documentation/Chapter3.md#35-마지막으로)
+		- [x] [3.5 마지막으로](Documentation/Chapter3.md#35-마지막으로)
 			- [ ] [3.5.1 3장의 정리](Documentation/Chapter3.md#351-3장의-정리)
-		- [ ] [3.6 조금 난이도가 있는 환경설정](Documentation/Chapter3.md#36-조금-난이도가-있는-환경설정)
+		- [x] [3.6 조금 난이도가 있는 환경설정](Documentation/Chapter3.md#36-조금-난이도가-있는-환경설정)
 		   - [ ] [3.6.1 minitest reporters](Documentation/Chapter3.md#361-minitest-reporters)
 		  - [ ] [3.6.2 Guard를 이용한 테스트 자동화](Documentation/Chapter3.md#362-Guard를-이용한-테스트-자동화)
-	- [ ] 제 4장 Rails 풍의 Ruby
-		- [ ] 4.1 작성 동기
-			- [ ] 4.1.1 Helper
-			- [ ] 4.1.2 Custom Helper
-		- [ ] 4.2 문자열과 Method
-			- [ ] 4.2.1 코멘트
-			- [ ] 4.2.2 문자열 
-			- [ ] 4.2.3 오브젝트와 메세지 송수신
-			- [ ] 4.2.4 Method의 정의
-			- [ ] 4.2.5 다시 Helper, Title
-		- [ ] 4.3 다른 데이터 구조
-			- [ ] 4.3.1 배열과 범위 연산자
-			- [ ] 4.3.2 블록 
-			- [ ] 4.3.3 Hash와 Symbol
-			- [ ] 4.3.4 다시 CSS
-		- [ ] 4.4 Ruby에서의 Class
-			- [ ] 4.4.1 Constructor
-			- [ ] 4.4.2 Class의 상속
-			- [ ] 4.4.3 기존 Class의 변경
-			- [ ] 4.4.4 Controller Class
-			- [ ] 4.4.5 User Class
-		- [ ] 4.5 마지막으로
-			- [ ] 4.5.1 4장의 정리
+	- [ ] [제 4장 Rails의 향기가 나는 Ruby](Chapter4.md)
+		- [ ] [4.1 작성 동기](Chapter4.md#41-작성동기)
+			- [ ] [4.1.1 Helper](Chapter4.md#411-Helper)
+			- [ ] [4.1.2 Custom Helper](Chapter4.md#412-Custom-Helper)
+		- [ ] [4.2 문자열과 메소드](Chapter4.md#42-문자열과-메소드)
+			- [ ] [4.2.1 코멘트](Chapter4.md#421-코멘트)
+			- [ ] [4.2.2 문자열 ](Chapter4.md#422-문자열)
+			- [ ] [4.2.3 오브젝트와 메세지 송수신](Chapter4.md#423-오브젝트와-메세지의-송수신)
+			- [ ] [4.2.4 Method의 정의](Chapter4.md#424-Method의-정의)
+			- [ ] [4.2.5 다시 Title Helper](Chapter4.md#425-다시-한-번-Title-Helper)
+		- [ ] [4.3 다른 데이터 구조](Chapter4.md#43-다른-데이터-구조)
+			- [ ] [4.3.1 배열과 범위 연산자](Chapter4.md#431-배열과-범위연산자)
+			- [ ] [4.3.2 블록](Chapter4.md#432-블록)
+			- [ ] [4.3.3 Hash와 Symbol](Chapter4.md#433-Hash와-Symbol)
+			- [ ] [4.3.4 다시 한 번 CSS](Chapter4.md#434-다시-한-번-CSS)
+		- [ ] [4.4 Ruby에서의 Class](Chapter4.md#44-Ruby에서의-Class)
+			- [ ] [4.4.1 Constructor](Chapter4.md#441-Constructor)
+			- [ ] [4.4.2 Class의 상속](Chapter4.md#442-Class의-상속)
+			- [ ] [4.4.3 기본 Class의 변경](Chapter4.md#433-기본-Class의-변경)
+			- [ ] [4.4.4 Controller Class](Chapter4.md#444-Controller-Class)
+			- [ ] [4.4.5 User Class](Chapter4.md#445-User-Class)
+		- [ ] [4.5 마지막으로](Chapter4.md#45-마지막으로)
+			- [ ] [4.5.1 4장의 정리](Chapter4.md#451-4장의-정리)
 	- [ ] 제 5장 레이아웃의 작성
 		- [ ] 5.1 구조를 추가하자
 			- [ ] 5.1.1 Navigation
