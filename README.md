@@ -95,31 +95,31 @@ Rails Tutorial은, 실제 Web Application의 개발에서 공개까지, 실제�
 		- [x] [3.6 조금 난이도가 있는 환경설정](Documentation/Chapter3.md#36-조금-난이도가-있는-환경설정)
 		   - [ ] [3.6.1 minitest reporters](Documentation/Chapter3.md#361-minitest-reporters)
 		  - [ ] [3.6.2 Guard를 이용한 테스트 자동화](Documentation/Chapter3.md#362-Guard를-이용한-테스트-자동화)
-	- [ ] [제 4장 Rails의 향기가 나는 Ruby](Documentation/Chapter4.md)
+	- [x] [제 4장 Rails의 향기가 나는 Ruby](Documentation/Chapter4.md)
 		- [ ] [4.1 작성 동기](Documentation/Chapter4.md#41-작성동기)
 			- [ ] [4.1.1 Helper](Documentation/Chapter4.md#411-Helper)
 			- [ ] [4.1.2 Custom Helper](Documentation/Chapter4.md#412-Custom-Helper)
-		- [ ] [4.2 문자열과 메소드](Documentation/Chapter4.md#42-문자열과-메소드)
+		- [x] [4.2 문자열과 메소드](Documentation/Chapter4.md#42-문자열과-메소드)
 			- [ ] [4.2.1 코멘트](Documentation/Chapter4.md#421-코멘트)
 			- [ ] [4.2.2 문자열 ](Documentation/Chapter4.md#422-문자열)
 			- [ ] [4.2.3 오브젝트와 메세지 송수신](Documentation/Chapter4.md#423-오브젝트와-메세지의-송수신)
 			- [ ] [4.2.4 Method의 정의](Documentation/Chapter4.md#424-Method의-정의)
 			- [ ] [4.2.5 다시 Title Helper](Documentation/Chapter4.md#425-다시-한-번-Title-Helper)
-		- [ ] [4.3 다른 데이터 구조](Documentation/Chapter4.md#43-다른-데이터-구조)
+		- [x] [4.3 다른 데이터 구조](Documentation/Chapter4.md#43-다른-데이터-구조)
 			- [ ] [4.3.1 배열과 범위 연산자](Documentation/Chapter4.md#431-배열과-범위연산자)
 			- [ ] [4.3.2 블록](Documentation/Chapter4.md#432-블록)
 			- [ ] [4.3.3 Hash와 Symbol](Documentation/Chapter4.md#433-Hash와-Symbol)
 			- [ ] [4.3.4 다시 한 번 CSS](Documentation/Chapter4.md#434-다시-한-번-CSS)
-		- [ ] [4.4 Ruby에서의 Class](Documentation/Chapter4.md#44-Ruby에서의-Class)
+		- [x] [4.4 Ruby에서의 Class](Documentation/Chapter4.md#44-Ruby에서의-Class)
 			- [ ] [4.4.1 Constructor](Documentation/Chapter4.md#441-Constructor)
 			- [ ] [4.4.2 Class의 상속](Documentation/Chapter4.md#442-Class의-상속)
 			- [ ] [4.4.3 기본 Class의 변경](Documentation/Chapter4.md#433-기본-Class의-변경)
 			- [ ] [4.4.4 Controller Class](Documentation/Chapter4.md#444-Controller-Class)
 			- [ ] [4.4.5 User Class](Documentation/Chapter4.md#445-User-Class)
-		- [ ] [4.5 마지막으로](Documentation/Chapter4.md#45-마지막으로)
+		- [x] [4.5 마지막으로](Documentation/Chapter4.md#45-마지막으로)
 			- [ ] [4.5.1 4장의 정리](Documentation/Chapter4.md#451-4장의-정리)
 	- [ ] 제 5장 레이아웃의 작성
-		- [ ] 5.1 구조를 추가하자
+		- [ ] 5.1 구조를 추가해보자
 			- [ ] 5.1.1 Navigation
 			- [ ] 5.1.2 Bootstrap과 커스텀CSS
 			- [ ] 5.1.3 Partial
