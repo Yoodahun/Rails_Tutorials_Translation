@@ -444,3 +444,287 @@ img {
 
 
 
+### 5.1.3 파셜 (Partial)
+
+레이아웃의 코드는 해당 목적을 달성하였습니다. 하지만 아직해야 할 일이 남아있습니다. 예를 들어, IE 고유의 설정을 위한 HTML shim 코드가 3줄이나 차지하고 있습니다. 이 코드를 어떻게든 잘 해서 숨길 수가 있다면 얼마나 좋을까요? 또한 HTML헤더는 논리적 단위로 나뉘어져있기 때문에, 한 곳으로 모아서 처리하는 것이 더욱 좋습니다. Rails에서는 *파셜 (partial)*이라고 하는 기능으로 이러한 문제를 해결할 수 있습니다. 일단 파셜을 정의하면 레이아웃이 어떻게 변하는지 확인해봅시다.
+
+```erb
+<!-- app/views/layouts/application.html.erb -->
+<!-- 레이아웃 파일에 shim과 header 파셜 파일을 추가한다 -->
+<!DOCTYPE html>
+<html>
+  <head>
+    <title><%= full_title(yield(:title)) %></title>
+    <%= csrf_meta_tags %>
+    <%= stylesheet_link_tag    'application', media: 'all',
+                               'data-turbolinks-track': 'reload' %>
+    <%= javascript_include_tag 'application',
+                               'data-turbolinks-track': 'reload' %>
+    <%= render 'layouts/shim' %>
+  </head>
+  <body>
+    <%= render 'layouts/header' %>
+    <div class="container">
+      <%= yield %>
+    </div>
+  </body>
+</html>
+```
+
+위 코드에서는 다음과 같이 `render` 라는 Rails 헬퍼를 사용하여 HTML shim 코드를 대체하고 있습니다.
+
+`<%= render 'layouts/shim' %>`
+
+위 코드는 `app/views/layouts/_shim.html.erb` 라고하는 파일을 찾아, 그 안의 내용을 확인하고, 뷰에 삽입합니다. ( <%= ... %> 는 템플릿 내부에서 Ruby의 문법을 확인하기 위한 erb문법인 것을 기억하고 계시나요? 읽어들인 erb코드를 변환하여 템플릿에 삽입합니다.) 파일이름 `_shim.html.erb` 의 앞에 오는 언더바는, 파셜에서 사용하는 보편적인 명명규칙이며, Rails에서 이 것이 파셜파일이라는 것을 알 수 있게해줍니다.
+
+
+
+물론 파셜이 동작하기 위해서는 그것에 대응하는 파일과 컨텐츠를 작성하지 않으면 안됩니다. shim 파셜의 경우, 3줄의 shim코드만 존재합니다. 작성한 코드는 아래와 같습니다.
+
+```html
+<!-- app/views/layouts/_shim.html.erb -->
+<!--[if lt IE 9]>
+  <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/r29/html5.min.js">
+  </script>
+<![endif]-->
+```
+
+마찬가지로 헤더의 정보도 아래와 같이 파셜파일로 분리하여 `render` 를 이용하여 레이아웃 파일에 삽입할 수 있습니다. (파셜은 자동생성하지말고 텍스트에디터를 사용하여 수동으로 작성하는 것이 일반적입니다.)
+
+```erb
+<!-- app/views/layouts/_header.html.erb -->
+<!-- header용의 파셜 -->
+<header class="navbar navbar-fixed-top navbar-inverse">
+  <div class="container">
+    <%= link_to "sample app", '#', id: "logo" %>
+    <nav>
+      <ul class="nav navbar-nav navbar-right">
+        <li><%= link_to "Home",   '#' %></li>
+        <li><%= link_to "Help",   '#' %></li>
+        <li><%= link_to "Log in", '#' %></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+```
+
+이것으로 파셜의 작성방법을 알게되었습니다. 다음으로는 헤더에 대응하는 푸터를 같은 방법으로 작성해봅시다. 여기까지 오셨다면, 파일이름은 `_footer.html.erb` 라는 것과, layouts디렉토리 안에 저장하면 되는 것 정도는 아실 겁니다.
+
+```erb
+<!-- app/views/layouts/_footer.html.erb -->
+<!-- footer용의 파셜 -->
+<footer class="footer">
+  <small>
+    The <a href="https://railstutorial.jp/">Ruby on Rails Tutorial</a>
+    by <a href="http://www.michaelhartl.com/">Michael Hartl</a>
+  </small>
+  <nav>
+    <ul>
+      <li><%= link_to "About",   '#' %></li>
+      <li><%= link_to "Contact", '#' %></li>
+      <li><a href="http://news.railstutorial.org/">News</a></li>
+    </ul>
+  </nav>
+</footer>
+```
+
+헤더의 경우와 마찬가지로, 푸터 안에도 `link_to` 메소드를 사용하여 About페이지와 Contact 페이지로의 내부 링크를 추가하고 있습니다. 일단 URL 은 `'#'`  로 해둡시다. (`header` 태그와 마찬가지로, `footer` 태그도 HTML5 에서 새롭게 추가된 요소입니다. )
+
+
+
+footer파셜은, 스타일시트나 header파셜과 마찬가지로 레이아웃 파일 내부에 추가합니다.
+
+```erb
+<!-- app/views/layouts/application.html.erb -->
+<!DOCTYPE html>
+<html>
+  <head>
+    <title><%= full_title(yield(:title)) %></title>
+    <%= csrf_meta_tags %>
+    <%= stylesheet_link_tag    'application', media: 'all',
+                               'data-turbolinks-track': 'reload' %>
+    <%= javascript_include_tag 'application',
+                               'data-turbolinks-track': 'reload' %>
+    <%= render 'layouts/shim' %>
+  </head>
+  <body>
+    <%= render 'layouts/header' %>
+    <div class="container">
+      <%= yield %>
+      <%= render 'layouts/footer' %> <!-- 추가한 footer partial -->
+    </div>
+  </body>
+</html>
+```
+
+이대로 footer를 표시하게 된다면 디자인이 썩 좋지 않기 때문에, 스타일을 약간 추가해보도록 하겠습니다. 스타일을 추가한 결과는 아래와 같습니다.
+
+```css
+/* app/assets/stylesheets/custom.css */
+.
+.
+.
+/* footer */
+
+footer {
+  margin-top: 45px;
+  padding-top: 5px;
+  border-top: 1px solid #eaeaea;
+  color: #777;
+}
+
+footer a {
+  color: #555;
+}
+
+footer a:hover {
+  color: #222;
+}
+
+footer small {
+  float: left;
+}
+
+footer ul {
+  float: right;
+  list-style: none;
+}
+
+footer ul li {
+  float: left;
+  margin-left: 15px;
+}
+```
+
+![](../image/Chapter5/site_with_footer_bootstrap_3rd_edition.png)
+
+
+
+##### 연습
+
+1. Rails가 기본적으로 생성하는 `head` 태그의 부분을 아래의 코드와 같이 `render`로 바꾸어봅시다. *Hint*: 단순히 삭제해버리면 파셜을 작성할 때 전부 새로 작성해야할 수도 있기 때문에, 삭제하기 전에 어딘가 옮겨적어놓습니다. (메모장 등)
+2. 아래 코드처럼 파셜을 아직 만들지 않았기 때문에, 테스트는 RED (테스트 실패) 인 상태일 것입니다. 실제로 테스트를 실행해서 확인해봅시다.
+3. `layouts` 디렉토리에 `head` 태그용 파셜을 작성하고, 아까전 메모장에 옮겼던 코드를 다시 붙여넣은 후, 테스트가 제대로 통과되는지 (GREEN) 확인해봅시다.
+
+```erb
+<!-- app/views/layouts/application.html.erb -->
+<!DOCTYPE html>
+<html>
+  <head>
+    <title><%= full_title(yield(:title)) %></title>
+    <%= render 'layouts/rails_default' %>
+    <%= render 'layouts/shim' %>
+  </head>
+  <body>
+    <%= render 'layouts/header' %>
+    <div class="container">
+      <%= yield %>
+      <%= render 'layouts/footer' %>
+    </div>
+  </body>
+</html>
+```
+
+
+
+## 5.2 Sass와 에셋 파이프라인
+
+최근에 Rails에 추가된 기능 중 하나로, 대서특필할만한 기능 중 하나는, CSS, Javascript, 이미지파일 등의 정적 컨텐츠의 생산성과 관리를 큰 폭으로 향상시킬 수 있는 *에셋 파이프라인 (Asset Pipeline)* 입니다. 이번 섹션에서는, 에셋파이프라인의 개요와 멋진 CSS생성 도구인 "Sass" 에 대해 설명하겠습니다.
+
+
+
+### 5.2.1 에셋 파이프라인
+
+Rails 개발자의 관점에서는, 에셋 디렉토리, 매니페스트 파일, 프리프로세서 엔진이라고 하는 세 가지의 주요한 기능을 이해할 필요가 있습니다. 하나씩 살펴 보겠습니다.
+
+#### 에셋 디렉토리
+
+Rails의 에셋파이프라인에는 정적파일을 사용하는 용도별로 분류하는 세 개의 표준적인 디렉토리가 있습니다.
+
+- `app/assests` : 현재의 어플리케이션의 고유한 에셋
+- `lib/assets` : 다른 개발팀에서 작성된 라이브러리용 에셋
+- `vender/assets`: 서드파티용의 에셋
+
+위 디렉토리에는 각각의 에셋클래스용의 서브디렉토리가 존재합니다. 예를 들어 app/assets의 경우, 다음과 같이 그림파일용, JavaScript용, CSS용의 서브 디렉토리가 있습니다.
+
+```
+$ ls app/assets/
+images/  javascripts/  stylesheets/
+```
+
+위 설명을 다시 본다면, [5.1.2](#512-Bootstrap-과-커스텀-CSS) 에서 언급한 커스텀 CSS가 저장되어있는 곳과 그 이유에 대해 이해할 수 있을 것입니다. 즉, `custom.css` 는 sample 어플리케이션 고유의 에셋이기 때문에, `app/assets/stylesheets` 에 저장한 것입니다.
+
+#### 매니페스트 파일
+
+정적 파일(에셋)을 위 디렉토리에 각각 배치해놓는다면, *매니페스트 파일* 을 사용하여 정적파일들을 하나의 파일로 어떻게 정리할지를 Rails에 알려주는 것이 가능합니다. 여기서, 실제로 에셋을 정리하는 처리를 하는 것이 [Sprockets](https://github.com/rails/sprockets) 라고 하는 gem입니다. 또한 매니페스트 파일은 CSS와 JavaScript에는 적용됩니다만, 이미지 파일에는 적용되지 않습니다. 하나의 구체적인 예로, 어플리케이션의 CSS용 매니페스트 파일을 확인해봅시다.
+
+```css
+/* app/assets/stylesheets/application.css */
+
+/*
+ * This is a manifest file that'll be compiled into application.css, which
+ * will include all the files listed below.
+ *
+ * Any CSS and SCSS file within this directory, lib/assets/stylesheets,
+ * vendor/assets/stylesheets, or vendor/assets/stylesheets of plugins, if any,
+ * can be referenced here using a relative path.
+ *
+ * You're free to add application-wide styles to this file and they'll appear
+ * at the bottom of the compiled file so the styles you add here take
+ * precedence over styles defined in any styles defined in the other CSS/SCSS
+ * files in this directory. It is generally better to create a new file per
+ * style scope.
+ *
+ *= require_tree .
+ *= require_self
+ */
+```
+
+위에서 중요한 부분은, 실제로 CSS 코멘트 안에 있습니다. 코멘트내부의 다음 부분은 Sprockets가 적절한 파일을 읽어들이기 위해 사용합니다.
+
+```
+/*
+ .
+ .
+ .
+ *= require_tree .
+ *= require_self
+*/
+```
+
+예를 들어 다음 코드는
+
+```
+ *= require_tree .
+```
+
+`app/assets/stylesheets` 디렉토리 (서브 디렉토리를 포함한) 안의 모든 CSS 파일이 어플리케이션 CSS에 포함되도록 처리하고 있습니다. 또한 다음 코드는
+
+```
+ *= require_self
+```
+
+CSS를 읽어들이는 대상에 `application.css` 자기 자신도 포함시키고 있습니다.
+
+
+
+Rails에는 실용적인 기본 매니페니스트 파일이 포함되어 있기 때문에, *Rails Tutorial* 에서는 수정할 필요가 없습니다만, 혹시나 수정할 경우에는 Rails 가이드 [에셋 파이프라인](http://railsguides.jp/asset_pipeline.html) 를 참고해주세요.
+
+#### 프리 프로세서 엔진
+
+필요한 에셋을 디렉토리에 저장하고 정리한 다음, Rails는 여러가지 프리 프로세서 엔진을 이용하여 에셋들을 실행하고, 브라우저에게 송신할 수 있도록 매니페스트 파일을 사용하여 하나로 묶은 다음, 사이트 템플릿용으로 준비합니다. Rails는 어떠한 프리 프로세서를 사용할지를 파일 이름의 확장자를 확인한 후 처리합니다. 제일 일반적인  확장자는 Sass용의 `.scss ` , CoffeeScript용의 `.coffee` , Erb용의 `.erb` 입니다. [3.4.3](Chapter3.md#343-레이아웃과-html에-직접-쓰는-Ruby-Refactor-연습) 에서는 제일 처음에 Erb를, [5.2.2] 에서는 Sass를 사용했습니다. (또한 본 튜토리얼에서는 상세히 설명하진 않습니다만, CoffeeScript는 고급지고 간결한 언어로써, JavaScript로 컴파일해주는 JavaScript의 확장 언어입니다.)
+
+프리 프로세서 엔진은, 연결하여 실행하는 것이 가능합니다.
+
+`footer.js.coffee`
+
+위의 확장자의 경우, CoffeeScript 프로세서를 경유하여 실행됩니다.
+
+`footer.js.erb.coffee`
+
+위 확장자의 경우는, CoffeeScript와 Erb 양쪽의 프로세서를 경유합니다. (코드의 오른쪽에서 왼쪽으로 실행되기 때문에, 이 코드에서는 CoffeeScript가 제일 처음 실행됩니다.)
+
+#### 실제 배포환경에서의 효율성
+
+Asset Pipeline 의 제일 큰 메리트 중 하나는, 실제 배포환경에서의 어플리케이션에서 효율적인 퍼포먼스를 위해 최적화된 에셋을 자동적으로 생성해주는 것입니다. 이전에는 CSS와 JavaScript를 하나로 합치기 위해, 기능을 각각의 파일로 분할한 후, 읽기 쉬운 포맷으로 정리하였습니다. 프로그래머에게 있어서는 편리한 방법이었습니다만, 실제 배포 환경에서는 비효율적입니다. 게다가 최소단위로 나뉘어져있지 않은 CSS나 JavaScript파일을 여러개로 쪼개면, 페이지를 읽어들이는 시간이 눈에띄게 늦어집니다. (읽어들이는 시간은, UX에 매우 안좋은 영향을 끼칩니다.) Asset Pipeline를 사용하면 이러한 "개발효율과 읽어들이는 시간 중 어느 쪽을 택해야할까" 라는 문제에서 벗어나게 해줍니다. 개발환경에서는 프로그래머에 있어서 읽기쉽게 정리해놓고, 실제 배포환경에서는 Asset Pipeline을 사용하여 파일을 최소화하면 되는 것입니다. 구체적으로는 Asset Pipeline이 모든 스타일시트를 하나의 CSS파일 (`application.css`) 으로 정리하고, 모든 JavaScript파일을 하나의 JS파일 (`javascripts.js`) 로 정리해줍니다. 게다가 해당 파일 전부에 대해 불필요한 공백이나 들여쓰기를 정리해주는 처리도 해주기 때문에, 파일사이즈를 최소화시켜줍니다. 결과적으로 개발환경과 실제 배포환경이라고 하는, 상반된 상황에 대해 최적의 환경을 제공해줍니다.
+
