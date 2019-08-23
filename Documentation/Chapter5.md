@@ -728,3 +728,115 @@ Rails에는 실용적인 기본 매니페니스트 파일이 포함되어 있기
 
 Asset Pipeline 의 제일 큰 메리트 중 하나는, 실제 배포환경에서의 어플리케이션에서 효율적인 퍼포먼스를 위해 최적화된 에셋을 자동적으로 생성해주는 것입니다. 이전에는 CSS와 JavaScript를 하나로 합치기 위해, 기능을 각각의 파일로 분할한 후, 읽기 쉬운 포맷으로 정리하였습니다. 프로그래머에게 있어서는 편리한 방법이었습니다만, 실제 배포 환경에서는 비효율적입니다. 게다가 최소단위로 나뉘어져있지 않은 CSS나 JavaScript파일을 여러개로 쪼개면, 페이지를 읽어들이는 시간이 눈에띄게 늦어집니다. (읽어들이는 시간은, UX에 매우 안좋은 영향을 끼칩니다.) Asset Pipeline를 사용하면 이러한 "개발효율과 읽어들이는 시간 중 어느 쪽을 택해야할까" 라는 문제에서 벗어나게 해줍니다. 개발환경에서는 프로그래머에 있어서 읽기쉽게 정리해놓고, 실제 배포환경에서는 Asset Pipeline을 사용하여 파일을 최소화하면 되는 것입니다. 구체적으로는 Asset Pipeline이 모든 스타일시트를 하나의 CSS파일 (`application.css`) 으로 정리하고, 모든 JavaScript파일을 하나의 JS파일 (`javascripts.js`) 로 정리해줍니다. 게다가 해당 파일 전부에 대해 불필요한 공백이나 들여쓰기를 정리해주는 처리도 해주기 때문에, 파일사이즈를 최소화시켜줍니다. 결과적으로 개발환경과 실제 배포환경이라고 하는, 상반된 상황에 대해 최적의 환경을 제공해줍니다.
 
+
+
+### 5.2.2 멋진 문법과 준비된 스타일시트
+
+*Sass* 는 스타일시트를 표현하기 위한 언어이며, CSS와 비교하여 많은 점에서 향상된 기능을 제공합니다. 이번 섹션에서는 Sass가 지원하는 2가지 중요한 기능, *네스트* 와 *변수* 에 대해 소개하고자 합니다. (세 번째의 중요한 기능인 *Mix-in* 에 대해서는 7.1.1 에서 소개합니다.)
+
+
+
+[5.1.2](#512-Bootstrap과-커스텀-CSS) 에서도 간단히 설명드렸습니다만, Sass는 SCSS라고하는 포맷에 대응하는 언어입니다. (`.scss` 라고 하는 확장자는 SCSS라고 하는 것을 나타냅니다.) SCSS는 엄밀히 말하면 CSS본체를 추상화한 포맷입니다. 즉 SCSS는 CSS에 *새로운 기능을 추가* 한 것으로, 완전히 새로운 언어를 정의한 것은 아닙니다. 때문에 사용할 수 있는 CSS파일은 전부 SCSS파일로도 사용할 수 있습니다. Rails의 에셋파이프라인은, `.scss` 라고하는 확장자를 가진 파일을 Sass를 사용하여 자동적으로 처리해줍니다. 때문에 `custom.scss` 파일은 Sass 프리 프로세서에 의해 처리 후, 브라우저로 보내질때 패키지화되어 보내집니다.
+
+#### 네스트(*Nest*)
+
+스타일시트 안에서의 공통의 패턴을 가진 경우, 요소를 네스트시킬 수 있습니다. 아래의 코드를 확인해주세요. `.center` 와 `.center h1` 양쪽에 대해 어떠한 스타일이 정의되어져 있습니다.
+
+```scss
+.center {
+  text-align: center;
+}
+
+.center h1 {
+  margin-bottom: 10px;
+}
+```
+
+위 코드를 Sass를 사용하여 다음과 같이 바꿀 수 있습니다.
+
+``` scss
+.center {
+  text-align: center;
+  h1 {
+    margin-bottom: 10px;
+  }
+}
+```
+
+위 코드에서는 네스트의 안쪽에 있는 `h1` 요소는, `.center` 의 스타일을 상속받고 있습니다.
+
+
+
+이번에는 조금 다른 스타일에 대해 네스트기능을 사용하는 예를 봅시다. 아래의 코드를 확인해주세요.
+
+```css
+#logo {
+  float: left;
+  margin-right: 10px;
+  font-size: 1.7em;
+  color: #fff;
+  text-transform: uppercase;
+  letter-spacing: -1px;
+  padding-top: 9px;
+  font-weight: bold;
+}
+
+#logo:hover {
+  color: #fff;
+  text-decoration: none;
+}
+```
+
+ 위 코드에서는 `#logo` 라고 하는 id가 2번 사용되고 있습니다. 첫 번째는 로고 자신을 정의하기 위한 것이고, 두 번째는 `hover` 속성에 대해 정의하기 위해 사용되고 있습니다. (`hover` 속성은 해당하는 어떠한 요소 위에 마우스를 올려놓고 있을 때의 표시되는 속성입니다.) 2개의 스타일을 네스트하기 위해선, 부모 속성인 `#logo` 를 참조할 필요가 있습니다. 이 경우, SCSS에서는 다음과 같이 `&` 기호를 이용하여 표현할 수 있습니다.
+
+```scss
+#logo {
+  float: left;
+  margin-right: 10px;
+  font-size: 1.7em;
+  color: #fff;
+  text-transform: uppercase;
+  letter-spacing: -1px;
+  padding-top: 9px;
+  font-weight: bold;
+  &:hover {
+    color: #fff;
+    text-decoration: none;
+  }
+}
+```
+
+Sass는, SCSS를 CSS로 변환할 때, `&:hover` 를 `#logo:hover` 로 변환합니다.
+
+
+
+이러한 네스트 기능을, 푸터 CSS에도 적용할 수 있습니다. 푸터에서 사용된 CSS코드는, SCSS를 사용하여 다음과 같이 수정해볼 수도 있습니다.
+
+```scss
+footer {
+  margin-top: 45px;
+  padding-top: 5px;
+  border-top: 1px solid #eaeaea;
+  color: #777;
+  a {
+    color: #555;
+    &:hover {
+      color: #222;
+    }
+  }
+  small {
+    float: left;
+  }
+  ul {
+    float: right;
+    list-style: none;
+    li {
+      float: left;
+      margin-left: 15px;
+    }
+  }
+}
+```
+
+푸터의 CSS코드를 직접 변환하는 작업은 좋은 SCSS의 좋은 공부방법이 될 것입니다. (실제로 이번 챕터의 조금 뒤에가서 적용하게 됩니다.) 변환 후에도 CSS가 적절히 동작하고 있는 것을 확인할 수 있을 것입니다.
+
