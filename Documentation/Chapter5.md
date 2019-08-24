@@ -840,3 +840,825 @@ footer {
 
 푸터의 CSS코드를 직접 변환하는 작업은 좋은 SCSS의 좋은 공부방법이 될 것입니다. (실제로 이번 챕터의 조금 뒤에가서 적용하게 됩니다.) 변환 후에도 CSS가 적절히 동작하고 있는 것을 확인할 수 있을 것입니다.
 
+#### 변수
+
+Sass에서는 길고 전형적인 코드는 버리고, 보다 더 자유로운 표현을 위해 *변수* 를 정의할 수 있습니다. 위에서 보았던 CSS코드들을 본다면, 같은 색을 몇번이고 반복하는 경우가 있습니다. 
+
+```css
+h2 {
+  .
+  .
+  .
+  color: #777;
+}
+.
+.
+.
+footer {
+  .
+  .
+  .
+  color: #777;
+}
+```
+
+위 코드에서 `#777` 은 옅은 잿빛을 띄는 색입니다. Sass에서는 이러한 값을 변수로서 정의하고, 다음과 같이 변수명을 부여할 수도 있습니다. 
+
+```SCss
+$light-gray: #777;
+```
+
+이러한 기능을 사용하여, SCSS는 다음과 같이 수정할 수도 있습니다.
+
+```scss
+$light-gray: #777;
+.
+.
+.
+h2 {
+  .
+  .
+  .
+  color: $light-gray;
+}
+.
+.
+.
+footer {
+  .
+  .
+  .
+  color: $light-gray;
+}
+```
+
+`$light-gray` 와 같은 변수이름은, `#777` 와 같은 값을 보다 더 알기 쉽게 해주기 때문에, 변수가 반복되어 사용된다 하더라도 변수이름을 정의한 것은 매우 유용할 것입니다. 실제로 Bootstrap 프레임워크에서는 많은 색에 대해 변수이름을 정의하고 있습니다. 정의되어진 변수는 Bootstrap 홈페이지 [LESS 변수 리스트](http://getbootstrap.com/customize/#less-variables) 에서 확인할 수 있습니다. 해당 사이트에서는 Sass가 아닌 LESS를 사용하여 변수를 정의하고 있습니다만, `bootstrap-sass` 라고 하는 gem을 사용하면, Sass에도 마찬가지로 변수를 사용할 수 있게됩니다. 예를 들어 LESS에서는 앳 마크 `@` 를 사용하는 것에 반해, Sass는 달러마크 `$` 사용하는 것을 알 수 있을 겁니다. 아무튼 Bootstrap의 변수 리스트를 확인하면, 옅은 잿빛에 대해 다음 변수이름을 정의하고 있는 것을 알 수 있을 것입니다.
+
+`@gray-light:#777`
+
+이 것은 즉, `bootstrap-sass` 이라고 하는 gem을 사용하면, SCSS라도 마찬가지로 `$gray-light` 라고 하는 변수를 사용할 수 있게 되는 것입니다. 앞서 정의한 `$light-gray` 라고 하는 커스텀 변수 대신에 준비되어있는 변수를 사용해봅시다.
+
+```scss
+h2 {
+  .
+  .
+  .
+  color: $gray-light;
+}
+.
+.
+.
+footer {
+  .
+  .
+  .
+  color: $gray-light;
+}
+```
+
+Sass의 네스트기능이나 변수기능을 사용하여 SCSS파일을 새롭게 작성해본다면, 아래와 같은 코드가 됩니다. 이 코드에는 Sass의 변수 (엄밀히 말하면 Bootstrap LESS의 변수 리스트를 참조한 것)이나 색 변수(`#fff` 경우에는 `white` 라는 변수) 를 사용하고 있습니다. `footer` 태그의 디자인이 극적으로 변하는 것을 알 수 있을 것입니다.
+
+```scss
+/* app/assets/stylesheets/custom.scss */
+
+@import "bootstrap-sprockets";
+@import "bootstrap";
+
+/* mixins, variables, etc. */
+
+$gray-medium-light: #eaeaea;
+
+/* universal */
+
+body {
+  padding-top: 60px;
+}
+
+section {
+  overflow: auto;
+}
+
+textarea {
+  resize: vertical;
+}
+
+.center {
+  text-align: center;
+  h1 {
+    margin-bottom: 10px;
+  }
+}
+
+/* typography */
+
+h1, h2, h3, h4, h5, h6 {
+  line-height: 1;
+}
+
+h1 {
+  font-size: 3em;
+  letter-spacing: -2px;
+  margin-bottom: 30px;
+  text-align: center;
+}
+
+h2 {
+  font-size: 1.2em;
+  letter-spacing: -1px;
+  margin-bottom: 30px;
+  text-align: center;
+  font-weight: normal;
+  color: $gray-light;
+}
+
+p {
+  font-size: 1.1em;
+  line-height: 1.7em;
+}
+
+
+/* header */
+
+#logo {
+  float: left;
+  margin-right: 10px;
+  font-size: 1.7em;
+  color: white;
+  text-transform: uppercase;
+  letter-spacing: -1px;
+  padding-top: 9px;
+  font-weight: bold;
+  &:hover {
+    color: white;
+    text-decoration: none;
+  }
+}
+
+/* footer */
+
+footer {
+  margin-top: 45px;
+  padding-top: 5px;
+  border-top: 1px solid $gray-medium-light;
+  color: $gray-light;
+  a {
+    color: $gray;
+    &:hover {
+      color: $gray-darker;
+    }
+  }
+  small {
+    float: left;
+  }
+  ul {
+    float: right;
+    list-style: none;
+    li {
+      float: left;
+      margin-left: 15px;
+    }
+  }
+}
+```
+
+Sass를 사용하여 스타일시트를 보다 더 간단하고 심플하게 작성하는 방법은 여러가지가 있습니다만, 이번에는 그 중에서도 가장 중요한 기능을 사용하여 `custom.scss` 를 새롭게 작성해보았습니다. Sass를 사용함으로써 멋진 시작을 할 수 있게 되었습니다. Sass에 대해서는 [Sass 공식사이트](http://sass-lang.com/)를 확인해주세요.
+
+##### 연습
+
+1. [5.2.2](#522-멋진-문법과-준비된-스타일시트) 에서 제안한 것 처럼, `footer` 의 CSS도 수작업으로 변환시켜봅시다. 구체적으로는 한 줄 한 줄 코드를 변환시켜봅시다.
+
+
+
+## 5.3 레이아웃의 링크
+
+사이트의 레이아웃이 근사하게 바뀌었습니다. 이번에는 `#` 로 대체하고 있던 링크를 수정해봅시다. 물론 다음과 같이 링크를 직접 기술하는 것도 가능합니다.
+
+```html
+<a href="/static_pages/about">About</a>
+```
+
+그러나 위 표현은 Rails 방식이 아닙니다. 일단 about 페이지로의 URL은, `/static_pages/about` 보다도 `/about` 인 것이 더 좋을 것 같습니다. 게다가 Rails에서는 다음과 같은 코드에는 이름이 붙어있는 루트를 사용할 수가 있습니다.
+
+```erb
+<%= link_to "About", about_path %>
+```
+
+위처럼 하는것으로, 코드가 무슨 뜻을 가지고 있는지 알기 쉽게됩니다. `about_path` 의 정의를 바꾸면, `about_path` 가 사용되어지는 모든 URL이 변경되기 때문에, 코드의 수정 및 관리가 유연하게 됩니다.
+
+
+
+이 후부터 사용할 URL과 라우팅의 매핑은 아래와 같습니다. [3.4.4](Chapter3.md#344-Route의-설정) 에서 설정을 완료했습니다만, 그 외의 라우팅에 대해서도 설정합니다. 또한 login에 대해서는 이번 챕터의 마지막에서 살짝 구현해보겠습니다. (제 8장에서 본격적으로 구현해보겠습니다.)
+
+| 페이지 이름 | **URL**  | **패스 이름**  |
+| :---------- | -------- | -------------- |
+| Home        | /        | `root_path`    |
+| About       | /about   | `about_path`   |
+| Help        | /help    | `help_path`    |
+| Contact     | /contact | `contact_path` |
+| Sign up     | /signup  | `signup_path`  |
+| Log in      | /login   | `login_path`   |
+
+
+
+### 5.3.1 Contact 페이지
+
+일단 [제 3장](Chapter3.md) 에서의 연습에서 다루어 보았던 Contact 페이지를 추가해봅시다. Contact페이의 테스트 코드는 아래와 같습니다. 이것은 예전 3장에서 다루었던 테스트 케이스를 똑같이 작성한 것입니다.
+
+```ruby
+# test/controllers/static_pages_controller_test.rb
+require 'test_helper'
+
+class StaticPagesControllerTest < ActionDispatch::IntegrationTest
+
+  test "should get home" do
+    get static_pages_home_url
+    assert_response :success
+    assert_select "title", "Ruby on Rails Tutorial Sample App"
+  end
+
+  test "should get help" do
+    get static_pages_help_url
+    assert_response :success
+    assert_select "title", "Help | Ruby on Rails Tutorial Sample App"
+  end
+
+  test "should get about" do
+    get static_pages_about_url
+    assert_response :success
+    assert_select "title", "About | Ruby on Rails Tutorial Sample App"
+  end
+# New test code for Contact page
+  test "should get contact" do
+    get static_pages_contact_url
+    assert_response :success
+    assert_select "title", "Contact | Ruby on Rails Tutorial Sample App"
+  end
+end
+```
+
+지금 테스트를 진행하면, 결과는 실패(RED) 가 될 것입니다.
+
+`$ rails test`
+
+어플리케이션 코드는, [3.3](Chapter3.md/#33-테스트를-해보자) 에서의 About페이지의 추가와 비슷합니다. 제일 처음으로는 라우트를 변경해줍니다. 그 다음으로 `contact` 액션을 StaticPages컨트롤러에 추가합니다. 마지막으로 Contact 뷰를 작성합니다.
+
+```ruby
+#config/routes.rb
+Rails.application.routes.draw do
+  root 'static_pages#home'
+  get  'static_pages/home'
+  get  'static_pages/help'
+  get  'static_pages/about'
+  get  'static_pages/contact' #추가한 코드
+end
+```
+
+```ruby
+# app/controllers/static_pages_controller.rb
+class StaticPagesController < ApplicationController
+  .
+  .
+  .
+  def contact
+  end
+end
+```
+
+```erb
+<!-- app/views/static_pages/contact.html.erb -->
+<% provide(:title, 'Contact') %>
+<h1>Contact</h1>
+<p>
+  Contact the Ruby on Rails Tutorial about the sample app at the
+  <a href="https://railstutorial.jp/contact">contact page</a>.
+</p>
+```
+
+이렇게 설정한다면, 모든 테스트케이스가 통과(GREEN)이 될 것입니다.
+
+```
+$ rails test
+```
+
+
+
+### 5.3.2 Rails의 루트 URL
+
+본 섹션에서는, 이름이 달린 패스를 sample 어플리케이션의 정적페이지에 사용하기 위해, 라우팅용 파일 (`config/routes.rb`) 를 수정해봅시다. 일단 [3.4.4](Chapter3.md#344-Route의-설정) 에서 정의한 Home페이지의 라우팅에 대해 수정해보도록 합시다. 전에는 특별하게 Home페이지만 설정했습니다만, 남은 정적 페이지에 대해서도 마찬가지로 라우팅 설정을 해봅시다.
+
+
+
+우리들은 지금까지, 루트 URL을 정의하는 코드를 세 번 보았습니다. 첫 번째는
+
+```ruby
+root 'application#hello'
+```
+
+라고 하는 Hello 어플리케이션의 코드였습니다. 2번째는
+
+```ruby
+root 'users#index'
+```
+
+라고 하는 Toy 어플리케이션의 코드였습니다. 마지막으로는
+
+```ruby
+root 'static_pages#home'
+```
+
+라 하는 Sample 어플리케이션의 코드입니다. 위 세 코드 모두 `root` 메소드를 사용하여 루트 URL "/" 을 컨트롤러의 액션과 연결지었습니다. 루트 URL과 같은 라우팅을 정의하는 것의 효과로는 브라우저에서 접근하기 쉽게 하는 것 뿐만 아니라, 파일 그대로의 URL이 아닌, 이름이 달린 루트를 사용하여 URL을 참조하는 것이 가능합니다. 예를들어, 루트 URL을 정의하면, `root_path` 나 `root_url` 이라고 하는 메소드를 통하여 URL을 참조하는 것이 가능합니다. 덧붙여서, 전자는 루트URL 아래의 문자열을, 후자는 완전한 URL의 문자열을 사용합니다.
+
+```
+root_path -> '/'
+root_url  -> 'http://www.example.com/'
+```
+
+또한 *Rails Tutorial* 에서 일반적인 규칙에 따라, 기본적으로는 `_path` 을 사용하고, 리다이렉트할 경우에 `_url` 을 사용하겠습니다. 리다이렉트할 때는  HTTP 표준에서 완전한 URL이 필요하기 때문입니다. 그러나 대부분의 브라우저에서는 어느쪽의 방법이던 정상적으로 움직입니다.
+
+
+
+여ㅓㄴ 다른 코드에서 보았던 기본 라우팅은 그다지 좋지 않기 때문에, Help페이지나 About페이지, Contact 페이지 등의 이름 달린 패스로 바꾸어봅시다. 구체적으로는 `get` 을 사용하여 정의해봅시다. 예를 들어 아래와 같은 라우팅은
+
+```ruby
+get 'static_pages/help'
+```
+
+아래와 같이 변환합니다.
+
+```ruby
+get  '/help', to: 'static_pages#help'
+```
+
+이렇게 get 을 사용하여 변경하면 get리퀘스트가 /help 로 보내졌을 때, StaticPages 컨트롤러의 `help` 액션을 호출하게 됩니다. 또한 루트URL 과 마찬가지로, `help_path` 나 `help_url` 등과 같은 이름이 달린 패스도 사용할 수 있게 됩니다.
+
+```
+help_path -> '/help'
+help_url  -> 'http://www.example.com/help'
+```
+
+다른 정적 페이지에 대해서도 마찬가지로 라우팅을 변경하면, `routes.rb` 는 아래와 같이 됩니다.
+
+```ruby
+# config/routes.rb
+Rails.application.routes.draw do
+  root 'static_pages#home'
+  get  '/help',    to: 'static_pages#help'
+  get  '/about',   to: 'static_pages#about'
+  get  '/contact', to: 'static_pages#contact'
+end
+```
+
+또한, 위 코드에서는 `static_pages/home` 이라고 하는 이전의 코드를 삭제하고 있는 것을 확인해주세요. 이후에는 항상 `root_path` 혹은 `root_url` 을 사용하겠습니다.
+
+
+
+테스트 코드도 살짝 오래되었습니다. 수정할 필요가 있을 것 같습니다. 실제로 현 시점에서 테스트는 RED로 될 것입니다. 다시 GREEN의 상태로 돌리기 위해서는 아래의 코드처럼 수정해줄 필요가 있습니다. 이 대, 아까전 라우팅에서 변경한 이름이 달린 패스(`*_path`) 를 사용하기로 했으니, 테스트 코드에서도 사용하도록 합시다.
+
+```ruby
+# test/controllers/static_pages_controllers_test.rb
+require 'test_helper'
+
+class StaticPagesControllerTest < ActionDispatch::IntegrationTest
+
+  test "should get home" do
+    get root_path #NEW
+    assert_response :success
+    assert_select "title", "Ruby on Rails Tutorial Sample App"
+  end
+
+  test "should get help" do
+    get help_path #NEW
+    assert_response :success
+    assert_select "title", "Help | Ruby on Rails Tutorial Sample App"
+  end
+
+  test "should get about" do
+    get about_path #NEW
+    assert_response :success
+    assert_select "title", "About | Ruby on Rails Tutorial Sample App"
+  end
+
+  test "should get contact" do
+    get contact_path #NEW
+    assert_response :success
+    assert_select "title", "Contact | Ruby on Rails Tutorial Sample App"
+  end
+end
+```
+
+##### 연습
+
+1. 이름달린 패스는, `as:` 옵션을 사용하여 변경할 수 있습니다. Help 페이지의 패스를  `helf` 로 변경해봅시다.
+2. 방금 전 변경으로 인하여 테스트가 RED로 되어있는 것을 확인해주세요. 위의 코드를 참고하여 GREEN 으로 수정해보세요.
+3. 에디터의 Undo 기능을 사용하여 이번의 연습에서 수정한 변경사항을 원래대로 되돌려주세요.
+
+```ruby
+# help 를 helf로 변경해봅시다.
+Rails.application.routes.draw do
+  root 'static_pages#home'
+  get  '/help',    to: 'static_pages#help', as: 'helf'
+  get  '/about',   to: 'static_pages#about'
+  get  '/contact', to: 'static_pages#contact'
+end
+```
+
+
+
+### 5.3.3 이름이 붙은 Path
+
+루트를 정의함으로 인해 레이아웃 안에서 이름이 붙은 패스를 사용할 수 있게 되었습니다. `link_to` 메소드의 두 번째 파라미터에 적절한 이름을 가진 패스를 사용해봅시다. 예를 들어 다음 코드의 경우
+
+```erb
+<%= link_to "About", '#' %>
+```
+
+아래와 같이 수정해봅니다.
+
+```erb
+<%= link_to "About", about_path %>
+```
+
+다른 링크도 마찬가지로 수정해줍니다.
+
+
+
+일단 맨 처음으로, Home페이지와 Help페이지로의 링크를 가진 header 파셜 `_header.html.erb` 부터 수정해봅시다. header파셜에서는 Web 페이지의 관습대로 로고에도 Home페이지로의 링크를 추가합니다.
+
+```erb
+<!-- app/views/layouts/_header.html.erb -->
+<header class="navbar navbar-fixed-top navbar-inverse">
+  <div class="container">
+    <%= link_to "sample app", root_path, id: "logo" %>
+    <nav>
+      <ul class="nav navbar-nav navbar-right">
+        <li><%= link_to "Home",    root_path %></li>
+        <li><%= link_to "Help",    help_path %></li>
+        <li><%= link_to "Log in", '#' %></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+```
+
+[Log in] 링크의 패스는, 제 8장에서 작성하기 때문에 지금은 `'#'` 상태로 해놓습니다.
+
+
+
+footer 파셜 `_footer.html.erb` 에도 링크가 있습니다. 여기는 About페이지와 Contact 페이지로의 링크입니다.
+
+```erb
+<!-- app/views/layouts/_footer.html.erb -->
+<footer class="footer">
+  <small>
+    The <a href="https://railstutorial.jp/">Ruby on Rails Tutorial</a>
+    by <a href="http://www.michaelhartl.com/">Michael Hartl</a>
+  </small>
+  <nav>
+    <ul>
+      <li><%= link_to "About",   about_path %></li>
+      <li><%= link_to "Contact", contact_path %></li>
+      <li><a href="http://news.railstutorial.org/">News</a></li>
+    </ul>
+  </nav>
+</footer>
+```
+
+이 것으로 레이아웃에 [제 3장](Chapter3.md) 에 작성한 모든 정적 페이지로의 링크를 수정하였습니다. 예를들어 /about의 경우 About페이지로 이동합니다.
+
+![](../image/Chapter5/about_page_styled_3rd_edition.png)
+
+##### 연습
+
+1. `helf` 라우팅을 작성하고, 레이아웃의 링크를 수정해봅시다.
+2. [5.3.2의 연습](#532-Rails의-루트URL) 에서와 마찬가지로, 에디터의 Undo기ㅇ을 사용하여 이번 연습에서 수정한 변경사항을 되돌려봅시다.
+
+
+
+### 5.3.4 링크의 테스트
+
+레이아웃 내부에 몇 군데정도의 링크를 수정했습니다. 수정한 링크가 제대로 움직이는지를 체크하는 테스트 코드를 작성해봅시다. 브라우저를 실행하여 루트 URL에 접속하고, 각각의 링크를 클릭하여 확인하는 것도 가능합니다만, 변경했을 때 마다의 이 작업을 매번 반복하는 것은 꽤나 큰 부담입니다. 여기서 통합(결합)테스트 *(Intergration Test)* 를 사용하여 일련의 작업을 자동화해봅시다. 통합테스트를 사용하면, 어플리케이션의 동작을 처음부터 끝까지 (*end-to-end*) 시뮬레이션하는 것이 가능합니다. 일단 `site_layout` 이라고 하는 테스트의 템플렛을 생성해봅시다.
+
+```
+$ rails generate integration_test site_layout
+      invoke  test_unit
+      create    test/integration/site_layout_test.rb
+```
+
+이 때 Rails는 파일이름 마지막에 `_test` 라고 하는 문자열 추가하고 있습니다.
+
+
+
+이번 테스트의 목적은, 어플리케이션의 HTML 구조를 알아보고, 레이아웃의 각 링크가 제대로 동작하는지를 체크하는 것입니다. 즉,
+
+1. 루트URL (Home페이지) 에 GET리퀘스트를 송신한다.
+2. 올바른 페이지 템플릿이 출력되는지 확인한다.
+3. Home, Help, About, Contact의 각 페이지로의 링크가 제대로 동작하는지 확인한다.
+
+Rails의 통합테스트에서는 위 스텝을 코드로 작성할 수 있습니다. 구체적으로는 일단 `assert_template` 메소드를 사용하여 Home페이지가 제대로 뷰를 출력하는지 확인합니다.
+
+```ruby
+# test/integration/site_layout_test.rb
+require 'test_helper'
+
+class SiteLayoutTest < ActionDispatch::IntegrationTest
+
+  test "layout links" do
+    get root_path
+    assert_template 'static_pages/home'
+    assert_select "a[href=?]", root_path, count: 2
+    assert_select "a[href=?]", help_path
+    assert_select "a[href=?]", about_path
+    assert_select "a[href=?]", contact_path
+  end
+end
+```
+
+위 코드에서 `assert_select` 메소드의 옵션을 사용하고 있습니다. ( 이 메소드 자체는 이전에도 등장한 적이 있습니다.) 이번 테스트 케이스에서는 특정 링크가 존재하는지를 `a` 태그와 `herf` 속성이 있는지 옵션으로 지정하여 알아보고 있습니다. 예를 들어
+
+```
+assert_select "a[href=?]", about_path
+```
+
+위 코드에서는 Rails가 자동적으로 물음표 마크를 `about_path` 로 변환하여 줍니다. (이 때 "about_path" 내부의 특수 기호가 있다면 에스케이프 처리를 해줍니다.) 이 것으로 다음과 같은 HTML이 있는지 없는지 체크할 수 있습니다.
+
+```html
+<a href="/about">...</a>
+```
+
+ 한 편, 루트URL로의 링크는 2개가 있다는 것을 떠올려보세요. (하나는 로고, 다른 하나는 네비게이션바에 있습니다.) 이럴 때는
+
+```ruby
+assert_select "a[href=?]", root_path, count: 2
+```
+
+위와 같은 형태로, Home페이지에서의 링크의 개수도 확인할 수 있습니다.
+
+
+
+`assert_select` 에는 많은 옵션을 지정할 수 있습니다. 대표적인 지정방법을 소개해드리겠습니다. `assert_select` 유연하고 강력한 기능으로, 여기서는 전부 소개할 수 없을 정도로 많은 온셥을 가지고 있습니다. 그러나 경험상 이 메소드를 이용하여 복잡한 테스트를 하는 것은 추천하지 않습니다. 이번 경우처럼 레이아웃 내부에서 빈번하게 변경되는 HTML 요소(링크 등) 테스트하는 정도가 좋습니다.
+
+| **Code**                                      | **マッチするHTML**               |
+| --------------------------------------------- | -------------------------------- |
+| `assert_select "div"`                         | `<div>foobar</div>`              |
+| `assert_select "div", "foobar"`               | `<div>foobar</div>`              |
+| `assert_select "div.nav"`                     | `<div class="nav">foobar</div>`  |
+| `assert_select "div#profile"`                 | `<div id="profile">foobar</div>` |
+| `assert_select "div[name=yo]"`                | `<div name="yo">hey</div>`       |
+| `assert_select "a[href=?]", ’/’, count: 1`    | `<a href="/">foo</a>`            |
+| `assert_select "a[href=?]", ’/’, text: "foo"` | `<a href="/">foo</a>`            |
+
+
+
+통합테스트의 진행방법은 아래와 같이 Rake를 실행하는 것으로 확인해볼 수 있습니다.
+
+`rails test:integration`
+
+통합테스트가 성공한다면, 이번에는 모든 테스트를 진행하여 GREEN 으로 되는지를 확인해봅니다.
+
+`$ rails test`
+
+레이아웃의 링크를 테스트하는 통합테스트를 추가한 것으로, 링크의 수정이 잘못되었을 때는 바로 알아채릴 수 있게 되었습니다.
+
+##### 연습
+
+1. footer파셜의  `about_path` 를 `contact_path` 로 변경하고 테스트가 제대로 에러를 캐치하는 지 확인해주세요.
+2. 아래의 코드와 같이,  Application 헬퍼를 사용하고 있는 `full_title` 헬퍼를 test환경에서도 사용할 수 있게 된다면 편리할 것입니다. 이렇게 해놓으면 아래 두 번째 코드처럼 올바른 타이틀을 테스트해볼 수 있습ㄴ디ㅏ. 단 이것은 완전한 테스트 케이스가 아닙니다. 예를 들어, 기본 타이틀인 "Ruby on Rails Tutoial" 라는 오탈자가 있다고 해도, 이 테스트 케이스트에서는 캐치할 수가 없습니다. 이 문제를 해결하기 위해서는 `full_title ` 헬퍼에 대한 테스트를 작성해야할 필요가 있습니다. 여기서  Application헬퍼를 테스트하는 파일을 작성하고, 아래 세 번째 코드의  `FILL_IN` 부분을 적절하게 수정해보세요. *Hint*: 세 번째 코드에서는 `assert_equal <기대되는 값>, <실제 값>` 과 비슷한 형태를 사용하고 있습니다만, 내부에서는 `==` 연산자에서 예상되는 값과 실제 값을 비교하여 테스트가 올바른지를 테스트하고 있습니다.
+
+```ruby
+# test/test_helper.rb
+
+ENV['RAILS_ENV'] ||= 'test'
+.
+.
+.
+class ActiveSupport::TestCase
+  fixtures :all
+  include ApplicationHelper
+  .
+  .
+  .
+end
+```
+
+```ruby
+# test/integration/site_layout_test.rb
+# 테스트 환경에서 full_title헬퍼를 사용한다.
+
+require 'test_helper'
+
+class SiteLayoutTest < ActionDispatch::IntegrationTest
+
+  test "layout links" do
+    get root_path
+    assert_template 'static_pages/home'
+    assert_select "a[href=?]", root_path, count: 2
+    assert_select "a[href=?]", help_path
+    assert_select "a[href=?]", about_path
+    assert_select "a[href=?]", contact_path
+    get contact_path #new
+    assert_select "title", full_title("Contact") #new
+  end
+end
+```
+
+```ruby
+# test/helpers/application_helper_test.rb
+# full_time 헬퍼의 유닛테스트
+
+require 'test_helper'
+
+class ApplicationHelperTest < ActionView::TestCase
+  test "full title helper" do
+    assert_equal full_title,         FILL_IN
+    assert_equal full_title("Help"), FILL_IN
+  end
+end
+```
+
+
+
+## 5.4 User의 등록: 첫 테스트
+
+이번 섹션에서는, 레이아웃과 라우팅의 조합을 중점으로 하여, 유저의 등록페이지로의 라우팅을 작성해봅니다. 2번째 컨트롤러를 작성할 필요가 있습니다. 이것은 Web사이트에서 유저등록을 할 수 있게 하기 위한 중요한 첫 작업입니다. 유저의 모델링은 제 6장에서 다루며, 제 7장에서 유저 등록 기능을 완성해보겠습니다.
+
+
+
+### 5.4.1 User Controller
+
+[3.2](Chapter3.md#32-정적인-페이지) 에서, 첫 컨트롤러였던 StaticPages컨트롤러를 작성했습니다. 이번에는 2번째 컨트롤러인 User 컨트롤러를 작성해보도록 하겠습니다. 전에 했을 때와 마찬가지로 `generate` 커맨드를 실행하여 신규 유저 등록 페이지를 가지는 제일 간단한 컨트롤러를 작성합니다. Rails 에서 권장되는 [REST아키텍쳐](http://ja.wikipedia.org/wiki/Representational_State_Transfer) 에 따라서 신규 유저 등록용의 액션 `new` 를 작성해봅니다. 따라서 `generate controller` 의 파라미터로 `new` 를 입력하여 자동적으로 액션을 생성할 수 있게 해봅니다. 실행 결과는 아래와 같습니다.
+
+```
+$ rails generate controller Users new
+      create  app/controllers/users_controller.rb
+       route  get 'users/new'
+      invoke  erb
+      create    app/views/users
+      create    app/views/users/new.html.erb
+      invoke  test_unit
+      create    test/controllers/users_controller_test.rb
+      invoke  helper
+      create    app/helpers/users_helper.rb
+      invoke    test_unit
+      invoke  assets
+      invoke    coffee
+      create      app/assets/javascripts/users.coffee
+      invoke    scss
+      create      app/assets/stylesheets/users.scss
+```
+
+위 실행결과를 보면 아시다시피, `new` 액션을 가지는 User 컨트롤러와 더미용 유저 뷰를 작성해줍니다. 이 때 새로운 User 페이지용의 간단한 테스트도 생성됩니다. 지금 이 시기에 테스트를 실행해본다면 통과할 것입니다.
+
+```ruby
+# app/controllers/user_controller.rb
+class UsersController < ApplicationController
+
+  def new
+  end
+end
+```
+
+```erb
+<!-- app/views/users/new.html.erb -->
+<h1>Users#new</h1>
+<p>Find me in app/views/users/new.html.erb</p>
+```
+
+```ruby
+# test/controllers/users_controller_test.rb 
+require 'test_helper'
+
+class UsersControllerTest < ActionDispatch::IntegrationTest
+
+  test "should get new" do
+    get users_new_url
+    assert_response :success
+  end
+end
+```
+
+지금 테스트를 실행해본다면, 테스트는 GREEN 이 될 것입니다.
+
+`$ rails test`
+
+##### 연습
+
+1. 이전, 위에서 보여드렸던 이름있는 패스들을 참고하여 위 테스트 코드를 수정해봅시다. `users_new_url` 이 아닌, `signup_path` 로 수정해봅시다.
+2. 방금 전 변경을 하기 전에, 테스트가 통과하지 않던 것을 확인해보세요. 또한 이번 연습은 테스트 주도 개발 ([컬럼 3.3](Chapter3.md#컬럼-33-결국-테스트는-언제-하는-것이-좋은가)) 에서 설명한 실패(RED)/통과(GREEN) 의 리듬으로 만드는 것을 목적으로 하고 있씁니다. 이번 테스트는 다음 5.4.2에서 통과할 수 있도록 수정해 볼 것입니다.
+
+
+
+### 5.4.2 User 등록용 URL
+
+[5.4.1](#541-User-Controller) 의 코드에서, 신규 유저 등록용의 페이지인 /user/new가 생성되었습니다. 여기서 이전 URL리스트를 떠올려주셨으면 좋겠습니다만, URL은 /user/new가 아닌 URL리스트처럼 /signup 으로 수정하면 좋을 것 같습니다. 유저 등록URL인 `get '/signup' ` 의 라우트를 추가해보겠습니다.
+
+```ruby
+# config/routes.rb
+Rails.application.routes.draw do
+  root 'static_pages#home'
+  get  '/help',    to: 'static_pages#help'
+  get  '/about',   to: 'static_pages#about'
+  get  '/contact', to: 'static_pages#contact'
+  get  '/signup',  to: 'users#new' #new
+end
+```
+
+ 위 변경에 맞추어, 테스트코드도 수정해봅니다. 수정한 결과는 아래와 같습니다.
+
+```ruby
+# test/controllers/users_controller_test.rb
+require 'test_helper'
+
+class UsersControllerTest < ActionDispatch::IntegrationTest
+
+  test "should get new" do
+    get signup_path #update
+    assert_response :success
+  end
+end
+```
+
+다음으로는, 새롭게 정의한 이름달린 패스를 사용하여 Home페이지의 버튼에 적절한 링크를 추가해보겠습니다. 다른 루트와 마찬가지로 `get '/signup'` 으로 선언하여 `signup_path` 라는 패스를 사용할 수 있습니다. 이것을 아래와 같이 사용합니다. 또한 signup페이지의 테스트는 연습단계에서 실행해보겠습니다.
+
+```erb
+<!-- app/views/static_pages/home.html.erb -->
+<div class="center jumbotron">
+  <h1>Welcome to the Sample App</h1>
+
+  <h2>
+    This is the home page for the
+    <a href="https://railstutorial.jp/">Ruby on Rails Tutorial</a>
+    sample application.
+  </h2>
+
+  <%= link_to "Sign up now!", signup_path, class: "btn btn-lg btn-primary" %> <!-- new -->
+</div>
+
+<%= link_to image_tag("rails.png", alt: "Rails logo"),
+            'http://rubyonrails.org/' %>
+```
+
+마지막으로, signup 페이지용의 커스텀 더미 뷰를 수정합니다.
+
+```erb
+<!-- app/views/users/new.html.erb -->
+<% provide(:title, 'Sign up') %>
+<h1>Sign up</h1>
+<p>This will be a signup page for new users.</p>
+```
+
+이 것으로, 적어도 유저등록용의 루트를 추가할때까지의 링크와 이름이 있는 패스가 완성되었습니다. (제 8장) 결과는 아래와 같이 표시됩니다.
+
+![](../image/Chapter5/new_signup_page_4th_edition.png)
+
+##### 연습
+
+1. 아직 [5.4.1](#541-User-Controller) 의 연습을 끝내지 않았다면, 일단 `routes.rb` 를 수정하여 이름이 달린 루트 `signup_path` 를 사용할 수 있도록 해주세요. 이 후 테스트를 실행하여 통과하는지 확인해주세요.
+2. 테스트가 제대로 통과하는지 확인하기 위해 `signup` 루트의 부분을 코멘트처리하고 테스트가 실패하는 것을 확인해주세요. 확인했다면 코멘트한 것을 다시 정상적으로 돌려놓고, 테스트가 통과하는지 확인해주세요.
+3. 통합테스트 케이스에 signup 페이지에 액세스하는 코드를 추가해보세요. (`get` 메소드를 사용합니다.) 코드를 추가했으면 실제로 테스트를 실행하여 결과가 올바르게 출력되는지 확인해보세요. *Hint*: `full_title` 헬퍼를 사용해보세요.
+
+
+
+## 5.5 마지막으로
+
+이번 챕터에서는, 어플리케이션의 레이아웃을 만들고, 라우팅작업을 해보았습니다. 본 튜토리얼에서 이후 Sample 어플리케이션을 구현하는데에 집중하도록 하겠습니다. 일단은 유저의 등록, 로그인, 로그아웃할 수 있는 유저를 추가해볼 것입니다. 그 다음으로 마이크로포스트를 추가합니다. 마지막으로는 다른 유저를 팔로우할 수 있게 해볼 것입니다.
+
+
+
+Git을 사용하고 있는 분은, 이 시점에서 master 브랜치에 merge작업을 진행해주세요.
+
+```
+$ git add -A
+$ git commit -m "Finish layout and routes"
+$ git checkout master
+$ git merge filling-in-layout
+```
+
+이어서 테스트 코드를 실행하여 올바르게 테스트를 통과하는지 확인 후, 문제가 없다면 Bitbucket(혹은 Github) 에 푸시해보도록 합시다.
+
+```
+$ rails test
+$ git push
+```
+
+마지막으로 Heroku에 푸시를 해봅시다.
+
+`git push heroku`
+
+배포가 끝났으면, 실제 배포환경에서 Sample 어플리케이션이 제대로 움직이는지 확인해봅시다.
+
+![](../image/Chapter5/layout_production.png)
+
+
+
+### 5.5.1 5장의 마무리
+
+- HTML5를 사용하여 header나 footer, logo나 body 등의 컨텐츠의 레이아웃을 정의해보았습니다.
+- Rails의 파셜은 효율적인 작업을 위해 다른 파일에 어떠한 코드의 부분을 분리할 수 있습니다.
+- CSS는, CSS 클래스와 id를 사용하여 레이아웃이나 디자인을 조정할 수 있습니다.
+- Bootstrap 프레임워크를 사용하면, 좋은 디자인을 빠르게 만들 수 있습니다.
+- Sass와 Asset Pipeline은 (개발 효율을 위해 분리한) CSS를 압축하여 실제 배포환경에 최적화한 결과를 출력해줍니다.
+- Rails의 라우팅은 자유롭게 정의할 수 있으며, 그 때 이름이 달린 패스를 설정할 수도 있습니다.
+- 통합 테스트는, 브라우저에 의한 페이지 간의 이동을 효율적으로 시뮬레이션 해볼 수 있습니다.
+
+
+

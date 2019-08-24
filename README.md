@@ -129,7 +129,7 @@ Rails Tutorial은, 실제 Web Application의 개발에서 공개까지, 실제�
 		- [ ] 5.3 레이아웃의 링크
 			- [ ] 5.3.1 Contact 페이지
 			- [ ] 5.3.2 Rails의 Route URL
-			- [ ] 5.3.3 이름이 붙은 Route
+			- [ ] 5.3.3 이름이 붙은 Path
 			- [ ] 5.3.4 링크의 테스트
 		- [ ] 5.4 User의 등록 : 첫 테스트
 			- [ ] Users Controller
