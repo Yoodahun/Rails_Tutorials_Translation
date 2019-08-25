@@ -249,6 +249,8 @@ curl -OL cdn.learnenough.com/kitten.jpg`
 
 제일 처음으로는, 아래의 코드에서 나타낸 것과 같이 Bootstrap을 추가해봅시다. `bootstrap-sass` gem을 이용하여 Rails 어플리케이션에 적용해봅시다. Bootstrap 프레임 워크는, 동적인 스타일 시트를 생성하기 위해 [LESS CSS](http://lesscss.org/) 라는 언어를 사용하고 있습니다만, Rails의 Asset Pipeline 에서는 기본적으로 (LESS와 매우 닮아있는) Sass를 지원합니다.([5.2](#52-Sass와-Asset-Pipeline)) 그렇기 때문에, `bootstrap-sass` 는 LESS를 Sass로 변환하여, 필요한 Bootstrap 파일을 현재 어플리케이션에서 제대로 사용할 수 있게 해줍니다.
 
+(※ 번역자: Rails 5 기준의 본 튜토리얼에서의 Bootstrap 적용방법은 약간 오래전 것입니다. (Bootstrap Version 3) 적용방법은 https://github.com/twbs/bootstrap-rubygem 에서 확인해주시길 바랍니다. 또한 `application.css` 를 `application.scss` 로 바꾸어주시고, `require` 문을 삭제해주세요. `custom.scss`를 `@import` 를 통해 import해주시길 바랍니다. )
+
 ```ruby
 # Gemfile #
 source 'https://rubygems.org'
