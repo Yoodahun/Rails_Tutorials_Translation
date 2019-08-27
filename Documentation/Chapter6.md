@@ -39,3 +39,218 @@ class User
 end
 ```
 
+그 때와는 대조적으로, Rails에서 유저를 모델링할 떄는, 속성을 명시적으로 식별할 필요가 없습니다. 위에서 간결하게 말씀드렸다시피, Rails는 데이터를 저장할 때 기본적으로 관계형 데이터베이스를 사용합니다. 관계형 데이터베이스는, 데이터행 으로 구성되는 테이블로 이루어져 있으며, 각 행은 데이터 속성의 컬럼(열) 을 가지고 있습니다. 예를 들어, name과 email을 가진 유저를 저장하는 것이라면, `name`과 `email` 의 컬럼을 가진 `users` 라는 테이블을 작성합니다. (각 행은 1명의 유저를 나타냅니다.) 테이블에 저장되는 데이터의 예시와 그것에 대응하는 데이터 모델을 아래의 그림으로 나타내고 있습니다.(초안) `name`과 `email` 등의 컬럼이름은, 지금 생각해놓는 것이 나중에 User 오브젝트의 각 속성읠 Active Record에 전달할 때에 편해집니다.
+
+![user_table](../image/Chapter6/users_table.png)
+
+![user_mode_sketch](../image/Chapter6/user_model_sketch.png)
+
+
+
+또한, 5장에서 생성한 유저 컨트롤러(와 `new`액션)에 사용한 다음 커맨드를 떠올려주세요.
+
+`$ rails generate controller Users new`
+
+모델을 생성할 때는, 위 커맨드와 닮은 패턴으로 `generate model` 이라고 하는 커맨드를 사용합니다. 게다가 이번에는 `name` 이나 `email`이라고 하는 속성을 더한 User모델을 사용할 것이기 때문에, 실제로 사용할 커맨드는 아래와 같습니다.
+
+```
+$ rails generate model User name:string email:string
+      invoke  active_record
+      create    db/migrate/20160523010738_create_users.rb
+      create    app/models/user.rb
+      invoke    test_unit
+      create      test/models/user_test.rb
+      create      test/fixtures/users.yml
+```
+
+(컨트롤러이름에는 복수형을 사용하고, 모델형에는 단수형을 사용하는 관습을 꼭 익혀두도록 하세요. 컨트롤러는 Users, 모델은 User 입니다.) `name:string`나 `email:string` 옵션의 파라미터를 넘김으로써 데이터베이스에서 사용하려고 하는 2개의 속성을 Rails에 입력합니다. 이 때, 이러한 속성의 타입정보도 같이 전달됩니다. (이 경우에는 `string` ) 예전에 컨트롤러를 작성할때, 액션이름을 사용하여 생성했던 것을 떠올려주세요.
+
+
+
+위 커맨드에 있는 `generate` 커맨드의 결과를 보면 알 수 있듯, *마이그레이션* 이라고 불리는 새로운 파일이 생성됩니다. 마이그레이션은, 데이터베이스의 구조를 변경하는 수단을 제공합니다. 데이터베이스의 구조가 변경되었을 때에, 데이터 모델을 손쉽게 변경할 수 있습니다. 이 User모델의 경우, 마이그레이션은 모델 생성 스크립트에 의해 자동적으로 작성됩니다. 아래의 코드에서 나타내는 것 처럼, `name`과 `email` 2개의 컬럼을 가지는 `users` 테이블을 작성합니다. (6.2.5 에서, 마이그레이션을 수동으로 작성하는 방법에 대해 설명해봅니다.)
+
+```ruby
+# db/migrate/[timestamp]_create_users.rb
+class CreateUsers < ActiveRecord::Migration[5.0]
+  def change
+    create_table :users do |t|
+      t.string :name
+      t.string :email
+
+      t.timestamps
+    end
+  end
+end
+```
+
+마이그레이션 파일이름의 앞에는, 해당 파일이 생성된 시간의 타임스탬프가 추가되어 있습니다. 이전에는 어떠한 파일이 변경될때는, 숫자를 추가해서 버전관리처럼 하는 것이 있었습니다만, 여러명의 개발자로 구성된 팀에서는, 같은 숫자를 가진 마이그레이션 파일을 생성해버리는 경우가 있어서, 충돌을 일으키곤 했습니다. 현재의 타임스탬프를 가지는 방법을 이용한다면, 정말 동시에 마이그레이션 파일을 생성하는 경우가 아닌 이상, 그러한 충돌을 막을 수 있습니다.
+
+
+
+마이그레이션 파일 자체는, 데이터베이스에 변경사항을 정의하는 `change` 메소드의 모임입니다. 위 코드의 경우, `change` 메소드는 `create_table` 라고하는 Rails의 메소드를 호출해서 유저를 저장하기 위한 테이블을 데이터베이스에 작성합니다. `create_table` 메소드는 블록변수를 1개 가지는 블록 ([4.3.2](Chapter4.md#432-블록)) 을 사용합니다. 여기서 ("table"의 앞문자를 따서) 블록변수는 `t`를 사용합니다. 해당 블록 안에서 `create_table` 메소드는 `t` 오브젝트를 사용하여 `name`과 `email` 컬럼을 데이터베이스에 작성합니다. 타입은 양쪽 다 `string` 입니다. 모델이름은 단수형(User) 입니다만, 테이블 이름은 복수형(`users`) 입니다. 이것은 Rails에서의 "이름" 의 관습을 그대로 적용하고 있습니다. 모델은 하나의 유저를 나타내는 것에 반해, 데이터베이스의 테이블은 여러 유저들로인해 구성됩니다. 블록의 마지막 행의 `t.timestamp` 는 특별한 커맨드로, `created_at` 과 `update_at` 이라고 하는 2개의 "*매직 컬럼(Magic Columns)*" 을 생성합니다. 어떠한 유저가 생성 혹은 갱신되었을 때 해당 시각을 자동적으로 기록하는 타임스탬프입니다. (이 매직컬럼의 사용 예시는 6.1.3 에서 구체적으로 설명합니다.) 위 코드의 마이그레이션에 의해 생성된 완전한 데이터모델은 아래와 같습니다.
+
+![](../image/Chapter6/user_model_initial_3rd_edition.png)
+
+마이그레이션은 다음 `db:migrate` 커맨드를 사용하여 실행할 수 있습니다. 이것을 *마이그레이션의 적용(migrating up)* 이라고 합니다.
+
+`$ rails db:migrate`
+
+([2.2](Chapter2.md#22-User-리소스) 에서 해당 커맨드를 비슷한 상황에서 실행한 적이 있을 꺼라 생각합니다.) 처음 `db:migrate` 를 실행하면, `db/development.sqlite3` 이라고 하는 이름의 파일이 생성됩니다. 이것은 [SQLite](http://sqlite.org/) 데이터베이스의 실체입니다. `development.sqlite3` 파일을 열어보기 위해, [DB Browser for SQLite](http://sqlitebrowser.org/) 라고 하는 멋진 프로그램을 사용하면, 데이터베이스의 구조를 확인할 수 있습니다. (클라우드IDE를 사용하는 경우에는, 아래 첫 번째 그림처럼 일단 파일을 로컬환경으로 다운로드할 필요가 있습니다.) 결과는 아래 두 번째처럼 됩니다. 위 마이그레이션에 의해 생성된 데이터모델과 비교해보세요. 아래 두 번째 그림 안에, `id` 이라고 하는 마이그레이션을 설명할 때, 설명하지 않은 컬럼이 있습니다. [2.2](Chapter2.md#22-User-리소스) 에서 간단하게 설명드린 것 처럼, 해당 컬럼은 자동적으로 생성되며 Rails가 각 데이터를 유니크하게 인식하기 위하 사용합니다.
+
+![](../image/Chapter6/sqlite_download.png)
+
+![](../image/Chapter6/sqlite_database_browser_3rd_edition.png)
+
+##### 연습
+
+1. Rails는 `db/` 디렉토리 안에 있는 `schema.rb` 라고 하는 파일을 사용합니다. 이 파일은 데이터베이스의 구조 (*스키마 (Schema)* 라고 부릅니다.) 를 확인하기 위해 사용됩니다. 여러분의 환경에 있는 `db/schema.rb` 의 내용을 확인하고, 해당 내용과 마이그레이션 파일의 내용을 비교해보세요.
+
+2. 거의 모든 마이그레이션은, *원래의 상태로 되돌리는 것이 가능* 합니다. (적어도 본 튜토리얼에서는 모든 마이그레이션 파일을 원래대로 되돌릴 수 있습니다.) 원래대로   되돌리는 것을 "*롤백(Rollback)*" 이라고 하며, Rails에서는 `db:rollback` 이라고 하는 커맨드로 실행해볼 수 있습니다.
+
+   `$ rails db:rollback`
+
+   위 커맨드를 실행 후, `db/schema.rb` 의 내용을 확인하고, 롤백에 성공했는지 아닌지 확인해보세요. ([컬럼 3.1](Chapter3.md#컬럼-33-결국-테스트는-언제-하는-것이-좋은가) 에서는 마이그레이션에 관한 다른 테크닉도 설명하고 있으니 참고해주세요.) 위 커맨드에서는 데이터베이스로부터 users테이블을 삭제하기 위해 `drop_table` 커맨드를 내부에서 호출하고 있습니다. 해당 커맨드가 제대로 실행되는 것은, `drop_table` 과 `create_table` 가 각각 대응하고 있는 것을 `change` 메소드가 이미 알고 있기 때문입니다. 이 대응관계를 알고 있기 때문에, 롤백를 하기 위한 역 마이그레이션을 간단히 실현할 수 있습니다. 또한 어떠한 컬럼을 삭제하려고 하는 마이그레이션의 경우, `change` 메소드 대신에 `up` 과 `down` 메소드를 각각 정의할 필요가 있습니다. 자세한 것은 Rails 가이드 [Active Record 마이그레이션](http://railsguides.jp/active_record_migrations.html) 을 참고해주세요.
+
+3. 다시 한 번 더 `rails db:migrate` 커맨드를 실행하여 `db/schema.rb` 의 내용이 제대로 돌아와있는지 확인해보세요.
+
+### 6.1.2 Model 파일
+
+지금까지 User 모델을 생성하는 것으로 인해, 어떠한 과정으로  마이그레이션 파일이 생성되는지 확인해보았습니다. 또한 마이그레이션을 실행하여 데이터 베이스의 테이블이 어떠한 구조로 생성되는 지도 확인해보았습니다. `users` 테이블을 생성하였기 때문에, `development.sqlite3` 라고 하는 파일이 수정되어 `id`, `name`, `email`, `created_at`, `updated_at` 이 작성되었을 것입니다. 또한 `generate model` 를 실행한 것으로, 모델용의 `user.rb` 도 생성되었습니다. 이번 섹션에서는 이 후의 모델용 파일에 대해 설명해보겠습니다.
+
+
+
+우선, `app/models/` 디렉토리에 있는, `user.rb` 에 작성되어있는 User모델의 코드를 확인해봅시다. 이것은 매우 간결하게 정리되어 있는 코드입니다.
+
+```ruby
+# app/models/user.rb
+class User < ApplicationRecord
+end	
+```
+
+  [4.4.2](Chapter4.md#442-Class의-상속) 에서 배운 것을 떠올려봅시다. `class User < ApplicationRecord` 라고 하는 코드에서, `User` 클래스는 `ApplicationRecord` 를 상속하고 있기 때문에, User 모델은 자동적으로 `ActiveRecord::Base` 클래스의 모든 기능을 가지게 됩니다. 그렇다고는 해도, 상속받는 것을 알고 있다고 해도 `ActiveRecord::Base` 에 포함되어 있는 메소드에 대해 알고 있지 않으면 아무런 쓸모도 없습니다. 앞으로 해당 클래스로 무엇을 할 수 있는지 같이 알아가봅시다.
+
+##### 연습
+
+1. Rails 콘솔을 실행하고, `User.new` 로 `User`  클래스의 오브젝트를 생성할 수 있는 것을 확인해봅시다. 그리고 해당 오브젝트가 `ApplicationRecord` 을 상속하고 있는 것을 확인해봅시다. (*Hint*: [4.4.4](Chapter4.md#444-Controller-Class) 에 말씀드린 기술을 사용해보세요.)
+2. 마찬가지로, `ApplicationRecord` 가 `ActiveRecord::Base` 를 상속받고 있는 것을 확인해보세요.
+
+### 6.1.3 User Object를 생성해보자
+
+[제 4장](Chapter4.md) 과 마찬가지로, Rails 콘솔을 사용하여 데이터 모델에 대해 알아봅시다. (이 시점에서는) 데이터베이스를 변경하고 싶진 않으니, 콘솔의 샌드박스 모드를 사용해봅시다.
+
+```
+$ rails console --sandbox
+Loading development environment in sandbox
+Any modifications you make will be rolled back on exit
+>>
+```
+
+"Any modifications you make will be rolled back on exit" 라고 하는 메세지가 알기 쉽게 출력되고 있습니다. 즉, 콘솔을 샌드박스 모드로 실행하게 되면, 콘솔을 종료할 때는 데이터베이스 등에 적용된 변경사항은 모두 적용취소 (롤백)됩니다.
+
+
+
+[4.4.5](Chapter4.md#445-User-Class) 의 콘솔세션에서는 `User.new` 로 새로운 유저 오브젝트를 생성했습니다만, 그 이후 example_user 파일을 명시적으로 require하기 전까지는, 해당 오브젝트에는 접근할 수 없었습니다. 그러나 모델을 사용하면 상황이 달라집니다. [4.4.4](Chapter4.md#444-Controller-Class) 에서 본 것 처럼, Rails 콘솔은 기동할 때 Rails의 환경을 자동적으로 읽어들이며, 모델도 포함됩니다. 즉, 새로운 유저 오브젝트를 생성할 때는 추가 작업을 하지 않아도 된다는 것입니다.
+
+```
+>> User.new
+=> #<User id: nil, name: nil, email: nil, created_at: nil, updated_at: nil>
+```
+
+위 출력은, 유저오브젝트를 콘솔용으로 출력한 것입니다.
+
+
+
+`User.new` 를 파라미터 없이 호출한 경우에는, 모든 속성이 `nil` 의 오브젝트를 리턴합니다. [4.4.5](Chapter4.md#445-User-Class) 에서는 오브젝트의 속성을 설정하기 위해 초기화 해시(hash) 를 파라미터로 사용하는 User 클래스(user_example.rb) 를 설계해보았습니다. 마찬가지 방법으로 오브젝트를 초기화하는 Active Record를 기초로 하고 있습니다. 
+
+```ruby
+>> user = User.new(name: "Michael Hartl", email: "mhartl@example.com")
+=> #<User id: nil, name: "Michael Hartl", email: "mhartl@example.com",created_at: nil, updated_at: nil>
+```
+
+위와 마찬가지로 name과 email 속성이 예상한대로 설정된 것을 알 수 있습니다.
+
+
+
+Active Record를 이해하고 있으면서, "*유효성 (Validity)*" 이라고 하는 개념도 또한 중요합니다. 6.2 에서 자세하게 설명하겠습니다만, 지금은 일단 `user`오브젝트가 유효한지 확인해봅시다. 확인하기 위해서는 `valid?` 메소드를 사용해봅시다.
+
+```ruby
+>> user.valid?
+true
+```
+
+현 시점에서는 아직 데이터베이스에 데이터를 저장하지 않았습니다. 즉, `User.new` 는 메모리 상에서의 오브젝트를 생성한 것 뿐이며, `user.valid?` 라고 하는 코드는 오브젝트 자체가 유효한지 확인한 결과인 것입니다. (데이터베이스에 데이터가 존재하는지는 유효성과는 관계없습니다.) 데이터베이스에 User오브젝트를 저장하기 위해선, `user` 오브젝트에서 `save` 메소드를 호출할 필요가 있습니다.
+
+```ruby
+>> user.save
+   (0.1ms)  SAVEPOINT active_record_1
+  SQL (0.8ms)  INSERT INTO "users" ("name", "email", "created_at",
+  "updated_at") VALUES (?, ?, ?, ?)  [["name", "Michael Hartl"],
+  ["email", "mhartl@example.com"], ["created_at", 2016-05-23 19:05:58 UTC],
+  ["updated_at", 2016-05-23 19:05:58 UTC]]
+   (0.1ms)  RELEASE SAVEPOINT active_record_1
+=> true
+```
+
+`save` 메소드는, 성공하면 `true` , 실패하면 `false` 를 리턴합니다. (지금은 저장하면 무조건 성공할 것입니다. 실패하는 경우는 6.2에서 설명합니다.) 또한 Rails 콘솔에서는 `user.save` 에 대응하는 SQL 커맨드나 그 결과 (`INSER INTO "users"....`) 를 표시하도록 되어 있습니다. 또한 본 튜토리얼에서는 SQL구문 그 자체가 필요한 경우는 거의 없기 때문에, SQL커맨드에 대한 해설은 하지 않겠습니다. 그렇다고는 해도 Active Record에 대응하는 SQL커맨드를 그냥 훑어보기만 해도 큰 공부가 되긴 할 것입니다.
+
+
+
+생성한 시점에서의 유저 오브젝트는, id속성, 매직컬럼인 `created_at` 속성과 `updated_at` 속성의 값이 모두 `nil` 이 되어 있었을 것입니다. `save` 메소드를 실행 한 후에는 어떠한 것이 변경되었는지 확인해봅시다.
+
+```ruby
+>> user
+=> #<User id: 1, name: "Michael Hartl", email: "mhartl@example.com",created_at: "2016-05-23 19:05:58", updated_at: "2016-05-23 19:05:58">
+```
+
+위 결과로부터 `id` 에는 `1` 이라는 값이 들어가 있습니다. 한 편, 매직컬럼에는 현재 시간이 입력되어있는 것을 확인할 수 있을 것입니다. 생성과 갱신의 타임스탬프는 똑같은 값입니다만, 데이터를 갱신하면 (6.1.5) 해당 값도 변할 것입니다.
+
+
+
+[4.4.5](Chapter4.md#445-User-Class) 의 User클래스와 마찬가지로, User 모델의 인스턴스에는 닷기법을 사용하여 해당 속성에 접근할 수 있습니다.
+
+```ruby
+>> user.name
+=> "Michael Hartl"
+>> user.email
+=> "mhartl@example.com"
+>> user.updated_at
+=> Mon, 23 May 2016 19:05:58 UTC +00:00
+```
+
+자세한 것은 제 7장에서 설명하겠습니다만, 위의 결과처럼 모델의 생성과 저장을 2가지 단계로 나눈다면 조금은 편해집니다. 그러나 Active Record에는 `User.create` 로 모델의 생성과 저장을 동시에 하는 방법도 제공합니다.
+
+```ruby
+>> User.create(name: "A Nother", email: "another@example.org")
+#<User id: 2, name: "A Nother", email: "another@example.org", created_at:"2016-05-23 19:18:46", updated_at: "2016-05-23 19:18:46">
+>> foo = User.create(name: "Foo", email: "foo@bar.com")
+#<User id: 3, name: "Foo", email: "foo@bar.com", created_at: "2016-05-2319:19:06", updated_at: "2016-05-23 19:19:06">
+```
+
+`User.create`는 `true`, `false`를 리턴하는 대신에, 유저 오브젝트 자신을 리턴합니다. 리턴된 유저 오브젝트는 (위 2번쨰의 커맨드에 있는 `foo` 처럼) 변수에 대입할 수도 있습니다.
+
+
+
+`destroy`는 `create` 의 반대입니다.
+
+```ruby
+>> foo.destroy
+   (0.1ms)  SAVEPOINT active_record_1
+  SQL (0.2ms)  DELETE FROM "users" WHERE "users"."id" = ?  [["id", 3]]
+   (0.1ms)  RELEASE SAVEPOINT active_record_1
+=> #<User id: 3, name: "Foo", email: "foo@bar.com", created_at: "2016-05-23 19:19:06", updated_at: "2016-05-23 19:19:06">
+```
+
+  `create` 와 마찬가지로, `destroy` 는 해당 오브젝트 자신을 리턴합니다만, 해당 리턴값을 사용하여 다시 한 번 더 `destroy` 를 실행할 수는 없습ㄴ디ㅏ. 게다가 삭제된 오브젝트는 다음과 같이 아직 메모리에 남아있습니다.
+
+```ruby
+>> foo
+=> #<User id: 3, name: "Foo", email: "foo@bar.com", created_at: "2016-05-23 19:19:06", updated_at: "2016-05-23 19:19:06">
+```
+
+그렇다면, 오브젝트가 정말로 삭제되었는지 어떻게 확인하면 좋을까요? 그리고 저장하고 삭제하지 않은 오브젝트의 경우, 어떻게 데이터베이스로부터 유저를 조회해볼 수 있을까요. 위 질문들에 대한 답으로는, Active Record를 사용하여 User 오브젝트를 검색하는 방법에 대해 배울 필요가 있습니다.
+
+##### 연습
+
+1. `user.name` 과 `user.email` 가 어느쪽이든 `String` 클래스의 인스턴스라는 것을 확인해보세요.
+2. `created_at`, `updated_at` 는 어떠한 클래스의 인스턴스입니까?
+
