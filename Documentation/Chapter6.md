@@ -254,3 +254,137 @@ true
 1. `user.name` 과 `user.email` 가 어느쪽이든 `String` 클래스의 인스턴스라는 것을 확인해보세요.
 2. `created_at`, `updated_at` 는 어떠한 클래스의 인스턴스입니까?
 
+### 6.1.4 User Object를 검색해보자
+
+Active Record는 오브젝트를 검색하기 위한 방법을 몇가지 제공하고 있습니다. 이 기능들을 사용하여 과거에 작성한 제일 첫 번째 유저를 검색해봅시다. 또, 세 번째의 유저 (`foo`) 가 삭제되는 것을 확인해봅시다. 일단 존재하는 유저부터 검색해봅시다.
+
+```ruby
+>> User.find(1)
+=> #<User id: 1, name: "Michael Hartl", email: "mhartl@example.com",created_at: "2016-05-23 19:05:58", updated_at: "2016-05-23 19:05:58">
+```
+
+여기는 `User.find` 의 유저의  id를 넘기고 있습니다. 그 결과 Active Record는 해당 id의 유저를 리턴하고 있습니다.
+
+
+
+다ㅁ으로, `id=3` 의 유저가 데이터베이스에 존재하는지 확인해봅시다.
+
+```ruby
+>> User.find(3)
+ActiveRecord::RecordNotFound: Couldn't find User with ID=3
+```
+
+[6.1.3](#613-User-Object를-생성해보자) 에서 3번째 유저를 삭제했기 떄문에, Active Record는 해당 유저를 데이터베이스 안에서 찾아낼 수 없습니다. 대신에 `find` 메소드의 예외(*Exception*) 을 확인할 수 있습니다. 예외는, 프로그램이 실행될 때 어떠한 예외적인 이벤트가 발생한 것을 나타냅니다. 위 경우, 존재하지 않는 Active Record의 id에 의하여 `find` 에서 `Active Record::RecordNotFound` 라 하는 예외가 발생하고 있습니다.
+
+
+
+일반적인 `find` 메소드 이외에, Active Record에는 특정한 속성으로 유저를 검색할 수 있는 방법도 있습니다.
+
+```ruby
+>> User.find_by(email: "mhartl@example.com")
+=> #<User id: 1, name: "Michael Hartl", email: "mhartl@example.com",created_at: "2016-05-23 19:05:58", updated_at: "2016-05-23 19:05:58">
+```
+
+지금까지 메일주소를 유저이름으로 사용했기 때문에, 이러한 `find` 관련 메소드는 유저를 사이트에 로그인시키는 방법을 배울 때에 도움될 것입니다. (제 7장) 유저 수가 엄청나게 증가한다면, `find_by` 으로는 검색효율이 떨어질 수도 있다고 걱정하시는 분이 있을 수 있으나, 걱정하지 않으셔도 됩니다. 해당 문제 및 데이터베이스의 인덱스를 사용한 해결책에 대해, 6.2.5에서 학습합니다.
+
+
+
+유저를 검색하는 일반적인 방법을 조금 더 소개해보겠습다. 일단은 `first` 메소드입니다.
+
+```ruby
+>> User.first
+=> #<User id: 1, name: "Michael Hartl", email: "mhartl@example.com",created_at: "2016-05-23 19:05:58", updated_at: "2016-05-23 19:05:58">
+```
+
+단어 그대로, `first` 는 단순하게 데이터베이스의 제일 첫 번째 데이터를 찾아냅니다. 다음으로는 `all` 입니다. 
+
+```ruby
+>> User.all
+=> #<ActiveRecord::Relation [#<User id: 1, name: "Michael Hartl",email: "mhartl@example.com", created_at: "2016-05-23 19:05:58",updated_at: "2016-05-23 19:05:58">, #<User id: 2, name: "A Nother",email: "another@example.org", created_at: "2016-05-23 19:18:46",updated_at: "2016-05-23 19:18:46">]>
+```
+
+콘솔의 출력결과를 본다면, `User.all` 에서 데이터베이스의 모든 User오브젝트를 습득하고 있는 것을 알 수 있습니다. 또한 습득한 오브젝트의 클래스가 `ActiveRecord::Relation` ㅇㅡ로 되어있습니다. 이것은 해당 오브젝트를 배열로써 효율적으로 다루기 위한 클래스입니다. ([4.3.1](Chapter4.md#431-배열과-범위연산자))
+
+##### 연습
+
+1. `name` 을 사용하여 유저 오브젝트를 검색해보세요. 또한 `find_by_name` 메소드를 사용할 수 있는 것도 확인해보세요. (예전 버전의 Rails 어플리케이션에서는, 예전버전의 `find_by` 메소드를 자주 접할 수 있을 것입니다.)
+2. 실용적 목적을 위해, `User.all` 은 마치 배열을 다루듯 다루는 것이 가능합니다만 실제로는 배열은 아닙니다. `User.all` 이 생성되는 오브젝트를 알아보고, `Array` 클래스가 아닌, `User::ActiveRecord_Relation` 클래스인 것을 확인해보세요.
+3. `User.all` 에서 `length` 를 호출하면, 해당 길이를 구할 수 있는 것을 확인해보세요.([4.2.3](Chapter4.md#423-오브젝트-메세지의-송수신)) Ruby의 기능으로, 해당 클래스를 자세히 몰라도 오브젝트를 어떻게 다루면 될지 알 수 있는 기능이 있습니다. 이것을 덕 타이핑(*duck typing*) 이고 부르며, 다음과 같은 격언으로 표현되기도 합니다. "오리와 같은 모습으로, 오리처럼 운다면 그것은 오리일 것이다."
+
+### 6.1.5 User Object를 수정해보자
+
+일단 오브젝트를 생성했다면, 그 다음은 몇번이고 수정해보고 싶어질 것입니다. 기본적인 수정방법은 2가지입니다. 하나는 [4.4.5](Chapter4.md#445-User-Class) 에 한 것 처럼, 속성을 개별적으로 대입하는 것입니다.
+
+```ruby
+>> user           # userオブジェクトが持つ情報のおさらい
+=> #<User id: 1, name: "Michael Hartl", email: "mhartl@example.com",created_at: "2016-05-23 19:05:58", updated_at: "2016-05-23 19:05:58">
+>> user.email = "mhartl@example.net"
+=> "mhartl@example.net"
+>> user.save
+=> true
+```
+
+변경사항을 데이터베이스에 저장하기 위해 마지막에 save를 실행할 필요가 있다는 것을 잊어선 안됩니다. 저장을 하지 않고 `reload` 를 실행해버리면, 데이터베이스의 정보는 수정 전의 오브젝트를 다시 읽어들이기 때문에, 다음과 같은 결과가 됩니다.
+
+```ruby
+>> user.email
+=> "mhartl@example.net"
+>> user.email = "foo@bar.com"
+=> "foo@bar.com"
+>> user.reload.email
+=> "mhartl@example.net"
+```
+
+`user.save` 를 실행하여 유저 데이터를 수정해보았습니다. 이 때, [6.1.3](#613-User-Object를-생성해보자) 에서 처럼, 매직컬럼의 수정날짜도 갱신되는 것을 확인해주세요.
+
+```ruby
+>> user.created_at
+=> "2016-05-23 19:05:58"
+>> user.updated_at
+=> "2016-05-23 19:08:23"
+```
+
+속성을 수정하는 방법으로 다른 방법으로는, `update_attributes` 를 사용하는 것입니다.
+
+```ruby
+>> user.update_attributes(name: "The Dude", email: "dude@abides.org")
+=> true
+>> user.name
+=> "The Dude"
+>> user.email
+=> "dude@abides.org"
+```
+
+`update_attributes` 메소드는 속성의 해시값을 받아, 수정을 성공한다면, 수정과 동시에 데이터베이스로의 저장을 진행합니다. (저장을 성공하면 `true` 를 리턴합니다.) 단, 수정을 실패하면 `update_attributes` 메소드의 실행은 실패하게 됩니다. 예를 들어 6.3에서의 소스코드라면, 패스워드가 필요하게되어 데이터 수정할 떄의 검증을 실패하게 됩니다. 특정 속성만 수정하고 싶을 때에는 다음과 같이 `update_attributes` 를 사용합니다. 이 `update_attributes` 는 데이터의 검증을 회피하는 효과도 있습니다.
+
+```ruby
+>> user.update_attribute(:name, "El Duderino")
+=> true
+>> user.name
+=> "El Duderino"
+```
+
+##### 연습
+
+1. user 오브젝트의 name속성을 수정하고, `save` 로 데이터베이스로의 저장을 해봅시다.
+2. 이번에는 `update_attributes` 를 사용하여, email 속성을 수정 및 저장해봅시다.
+3. 마찬가지로, 매직컬럼인 `created_at` 도 직접 수정할 수 있는지 확인해봅시다. *Hint*: 수정할 떄에는 "`1.year.ago`"라고 작성하면 편리합니다. 이 것은 Rails의 시간 지정방식 중 하나로써, 현재의 시간으로부터 1년 전의 시간을 계산해줍니다.
+
+
+
+## 6.2 User를 검증해보자
+
+드디어 [6.1](#61-User-모델) 에서 만든 User모델에, 접근할 수 있는 `name` 과 `email` 속성을 추가해보았습니다. 그러나 해당 속성들은 어떠한 형태의 값도 저장할 수 있습니다. 지금은 (공백문자도 포함) 모든 문자열을 유효하게 저장할 수 있습니다. 이름과 메일주소에 대해서는 조금 더 어떠한 제한을 걸어두는 것도 좋을 것 같습니다. 예를 들어, `name` 은 빈 문자열이면 안되며, `email` 은 메일 주소의 포맷에 따라 입력할 필요가 있습니다. 게다가 메일 주소를 유저가 로그인할 때 유일무이한 유저이름으로써 사용하게 하기위해, 메일 주소가 데이터베이스 내부에서 중복되지 않도록 하는 것이 필요합니다.
+
+
+
+즉, `name` 과 `email` 에 모든 문자열을 저장할 수 있는 것은 바람직하지 않은 것입니다. 해당 속성 값에는 어떠한 제약을 걸어둘 필요가 있는 것입니다. Active Record에는 *검증 (Validation)* 이라고 하는 기능을 통해, 이러한 제약들을 걸 수 있습니다. (실은 [2.3.2](Chapter2.md#232-Micropost를-micro하게-해보자) 에서 살짝 사용해보았습니다.) 이번 섹션에서는 자주 사용되는 케이스들 중 몇가지에 대해 설명하고자 합니다. *존재성(presence)* 의 검증, *길이(length)* 의 검증, *포맷(format)* 의 검증, *유니크성(uniqueness)* 의 검증 입니다. 6.3.2에서는 자주 사용되는 최종적인 검증방법으로써 *확인(confirmation)* 을 추가해볼 것입니다. 7.3에서는 유저가 제약을 위반했을 때, 검증 기능에 의해 자동적으로 표시되는 유용한 에러메세지를 출력해볼 것입니다.
+
+
+
+
+
+
+
+
+
