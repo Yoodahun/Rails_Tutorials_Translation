@@ -380,11 +380,122 @@ ActiveRecord::RecordNotFound: Couldn't find User with ID=3
 
 즉, `name` 과 `email` 에 모든 문자열을 저장할 수 있는 것은 바람직하지 않은 것입니다. 해당 속성 값에는 어떠한 제약을 걸어둘 필요가 있는 것입니다. Active Record에는 *검증 (Validation)* 이라고 하는 기능을 통해, 이러한 제약들을 걸 수 있습니다. (실은 [2.3.2](Chapter2.md#232-Micropost를-micro하게-해보자) 에서 살짝 사용해보았습니다.) 이번 섹션에서는 자주 사용되는 케이스들 중 몇가지에 대해 설명하고자 합니다. *존재성(presence)* 의 검증, *길이(length)* 의 검증, *포맷(format)* 의 검증, *유니크성(uniqueness)* 의 검증 입니다. 6.3.2에서는 자주 사용되는 최종적인 검증방법으로써 *확인(confirmation)* 을 추가해볼 것입니다. 7.3에서는 유저가 제약을 위반했을 때, 검증 기능에 의해 자동적으로 표시되는 유용한 에러메세지를 출력해볼 것입니다.
 
+### 6.2.1 유효성을 검증해보자
+
+[컬럼 3.3](Chapter3.md#컬럼-33-결국-테스트는-언제-하는-것이-좋은가) 에서 언급한 것 처럼, 테스트 주도 개발은, 업무에서 항상 정답이라고는 할 수 없지만, 모델의 검증 기능은, 테스트 주도 개발론과 찰떡궁합이라고 말할 수 있습니다. 검증 기능은 매우 훌륭합니다만, 제대로 동작하고 있는지 확신하는 것은 매우 어렵습니다. 그러나 (테스트 주도 개발과 마찬가지로) 일단 실패하는 테스트를 작성하고, 그 다음으로 테스트를 성공시키는 방법으로 코드를 구현하면, 기대한 대로 움직인다는 확신을 가질 수 있습니다.
 
 
 
+구체적인 테스트 방법에 대해서는, 일단 *유효* 한 모델의 오브젝트를 작성하고, 해당 속성 중 하나를 유효하지 않은 속성으로 의도적으로 변경해봅니다. 그리고 검증 단계에서 실패하는지 어떤지를 테스트해보는 식으로 진행해봅니다. 만약을 위해 맨 처음 작성한 상태에 대해서도 테스트 케이스를 작성하고, 모델이 유효한지를 확인해봅시다. 이렇게 테스트함으로써 검증 기능의 테스트가 실패했을 때, 검증 기능에 문제가 있었는지, 오브젝트 그 자체가 문제가 있는지 확인할 수 있습니다.
 
 
 
+[6.1](#61-User-모델) 에서 커맨드를 실행하여, User용의 테스트 코드의 기반이 작성되어있을 것입니다. 일단 해당 내부를 확인해봅시다.
+
+```ruby
+# test/models/user_test.rb	
+require 'test_helper'
+
+class UserTest < ActiveSupport::TestCase
+  # test "the truth" do
+  #   assert true
+  # end
+end
+```
+
+유효한 오브젝트를 테스트 하는 테스트 코드를 작성하기 위해, `setup` 이라는 특수한 메소드를 사용하여 유효한 User오브젝트 (`@User`) 를 작성합니다. (해당 메소드는 [제 3장](Chapter3.md) 에서의 연습에서도 잠깐 다루었습니다. ) setup 메소드의 처리는, 각 테스트 코드가 실행되는 직전에 실행됩니다. `@user` 는 인스턴스 변수입니다만, setup메소드 내부에 선언해놓으면, 모든 테스트 케이스 내부에서 이 인스턴스 변수를 사용할 수 있게 됩니다. 따라서 `valid?` 메소드를 사용하여 User오브젝트의 유효성을 테스트해볼 수 있습니다. ([6.1.3](#613-User-Object를-생성해보자)) 작성한 코드는 아래와 같습니다.
+
+```ruby
+# test/models/user_test.rb
+require 'test_helper'
+
+class UserTest < ActiveSupport::TestCase
+
+  def setup
+    @user = User.new(name: "Example User", email: "user@example.com")
+  end
+
+  test "should be valid" do
+    assert @user.valid?
+  end
+end
+```
+
+위 코드는, 심플한 `assert ` 메소드를 사용하여 테스트를 진행합니다.  `@user.valid?` 가 `true` 를 리턴하면 성공, `false` 를 리턴하면 실패하는 것입니다.
 
 
+
+그렇다고는 해도, User 모델은 아직 검증할 수가 없기 때문에, 해당 테스트는 성공할 것 입니다.
+
+```
+$ rails test:models
+```
+
+위에서 `rails test:models` 라고 하는 커맨드를 실행하고 있습니다만, 이것은 모델에 관한 테스트만 실행하는 커맨드 입니다. ([5.3.4](Chapter5.md#534-링크의-테스트) 에서 사용한 `rails test:integration` 과 비슷합니다.)
+
+##### 연습
+
+1. 콘솔에서, 새롭게 만든 user 오브젝트가 유효 (valid) 한 것을 확인해봅시다.
+2. [6.1.3](Chapter6.md#613-User-Object를-생성해보자) 에서 생성한 user 오브젝트도 유효한지 확인해봅시다.
+
+### 6.2.2 존재성을 검증해보자
+
+아마도 제일 기본적인 검증은 *존재성 (Presence)* 일 것 입니다. 단순히 파라미터로 넘겨진 속성이 존재하는지를 검증합니다. 예를 들어, 이번 챕터에서 유저가 데이터베이스에 저장되기 전에 name과 email 필드 둘 다 값이 존재하는 지를 보증합니다. 7.3.3 에서는 해당 인증을, 새롭게 유저를 작성 할 때의 유저 등록 폼에 적용해보는 방법을 배워보겠습니다.
+
+
+
+일단 `name` 속성의 존재성에 관한 테스트를 추가해봅니다. 구체적으로는 아래의 코드와 같이, `@user` 변수의 `name` 속성에 대해 공백의 문자열을 세트합니다. 그 후 `assert_not` 메소드를 사용하여  User 오브젝트가 유효하지 않은 것을 확인해봅시다.
+
+```ruby
+# test/models/user_test.rb
+require 'test_helper'
+
+class UserTest < ActiveSupport::TestCase
+
+  def setup
+    @user = User.new(name: "Example User", email: "user@example.com")
+  end
+
+  test "should be valid" do
+    assert @user.valid?
+  end
+
+  # name 속성을 검증해보는 테스트
+  test "name should be present" do
+    @user.name = "     "
+    assert_not @user.valid?
+  end
+end
+```
+
+이 시점에서 모델 테스트는 RED 로 될 것 입니다.
+
+`$ rails test:models`
+
+[제 2장](Chapter2.md) 의 연습에서 살짝 다루어보았습니다만, name  속성의 존재를 검증하는 방법은, 아래의 코드처럼 `validates` 메소드에  `presence: true` 라는 파라미터를 적용하여 사용할 수 있습니다. `presence: true` 라고 하는 파라미터는, 요소가 하나의 옵션해시입니다. [4.3.4](Chapter4.md#434-다시-한-번-CSS) 와 같이, 메소드의 마지막 파라미터로 해시를 넘기는 경우, 중괄호를 하지 않아도 문제없이 사용할 수 있습니다. ([5.1.1](Chapter5.md#511-Navigation) 에서도 설명한 것 처럼, Rails의 옵션해시는 계속해서 등장하는 주제입니다.)
+
+```ruby
+# app/models/user.rb
+class User < ApplicationRecord
+  validates :name, presence: true
+end
+```
+
+위 코드는 마법처럼 보일지도 모르겠습니다만 ,`validates`는 단순한 메소드입니다. 괄호를 사용하여 위 코드를 아래와 같이 바꿀 수도 있습니다.
+
+```ruby
+class User < ApplicationRecord
+  validates(:name, presence: true)
+end
+```
+
+콘솔을 이용하여  User모델에 검증기능을 추가하여 작동되는 것을 확인해봅시다.
+
+```ruby
+$ rails console --sandbox
+>> user = User.new(name: "", email: "mhartl@example.com")
+>> user.valid?
+=> false
+```
+
+이렇게 `user` 변수가 유효한지를 `valid?` 메소드로 체크할 수 있습니다. 만약 오브젝트가 1개 이상 검증에 실패했을 때, `false` 를 리턴합니다. 또한 모든 검증을 통과했을 때는 `true` 를 리턴합니다. 이번 같은 경우에는 검증 케이스가 1개밖에 없기 때문에, 어떠한 경우에 실패했는 지를 알 수 있습니다. 그러나 실패했을 때 발생하는 `error` 오브젝트를 사용해서 확인해보는 게 더욱 편리합니다.
