@@ -499,3 +499,154 @@ $ rails console --sandbox
 ```
 
 이렇게 `user` 변수가 유효한지를 `valid?` 메소드로 체크할 수 있습니다. 만약 오브젝트가 1개 이상 검증에 실패했을 때, `false` 를 리턴합니다. 또한 모든 검증을 통과했을 때는 `true` 를 리턴합니다. 이번 같은 경우에는 검증 케이스가 1개밖에 없기 때문에, 어떠한 경우에 실패했는 지를 알 수 있습니다. 그러나 실패했을 때 발생하는 `error` 오브젝트를 사용해서 확인해보는 게 더욱 편리합니다.
+
+```ruby
+>> user.errors.full_messages
+=> ["Name can't be blank"]
+```
+
+(Rails 가 속성의 존재성을 검사할 때에는, 에러메세지가 힌트가 될 수 있습니다. 이것은 `blank?` 를 사용하고 있습니다. [4.4.3](Chapter4.md#443-기본-Class의-변경) 의 마지막 즈음에서 확인했습니다. )
+
+
+
+User 오브젝트가 유효하지 않기 때문에, 데이터베이스에 저장할 때에는 자동적으로 실패하게 됩니다.
+
+```ruby
+>> user.save
+=> false
+```
+
+위 변경에 의해 원래의 `assert_not` 을 사용하여  `false` 를 검사하던 test는 통과할 것입니다.
+
+`$ rails test:models`
+
+위에서 수정한 모델을 따라, `email` 속성의 존재성에 대해서도 테스트를 작성해봅시다. 처음은 실패할 것이지만, 아래 두 번째 코드를 추가하면 성공할 것입니다.
+
+```ruby
+# test/models/user_test.rb
+require 'test_helper'
+
+class UserTest < ActiveSupport::TestCase
+
+  def setup
+    @user = User.new(name: "Example User", email: "user@example.com")
+  end
+
+  test "should be valid" do
+    assert @user.valid?
+  end
+
+  test "name should be present" do
+    @user.name = ""
+    assert_not @user.valid?
+  end
+
+  # Add email test case
+  test "email should be present" do
+    @user.email = "     "
+    assert_not @user.valid?
+  end
+end
+```
+
+```ruby
+# app/models/user.rb
+class User < ApplicationRecord
+  validates :name,  presence: true
+  validates :email, presence: true
+end
+```
+
+이 것으로 모든 존재성을 체크할 수 있게 되었습니다. 테스트 결과는 GREEN이 될 것 입니다.
+
+`$ rails test`
+
+##### 연습
+
+1. 새로운 유저 `u` 를 작성하고, 작성한 시점에서는 유효하지 않은 (invalid) 인 것을 확인해보세요. 왜 유효하지 않은 걸까요? 에러메세지를 확인해보세요.
+2. `u.errors.message` 를 실행하면, 해시형식의 에러를 확인할 수 있을 것입니다.  email에 관한 에러 정보만 얻고자 할 때, 어떻게하면 될까요?
+
+### 6.2.3 길이를 검증해보자
+
+각각의 유저는 반드시 User모델에서의 이름을 가지고 있어야만합니다. 그러나 이것만으로는 충분하지 않습니다. 유저의 이름은 Sample Web사이트에 표시되기 때문에, 이름의 길이에도 제한을 걸을 필요가 있습니다.[6.2.2](#622-존재성을-검증해보자) 에서 이미 같은 작업을 해보았기 때문에, 이번은 꽤나 간단할 것입니다.
+
+
+
+제일 긴 유저 이름의 길이에는 과학적으로 근거가는 없기 때문에, 단순하게 `50` 글자 정도를 상한으로 두어도 될 것 같습니다. 즉, 여기서는 `51` 문자의 이름은 최대 길이를 초과한 것을 검증하는 것입니다. 또한, 실제로 문제될 것은 거의 없습니다만, 문제가 될만한 가능성이 있기 때문에, 너무 긴 메일 주소에 대해서도 검증해봅시다. 대부분의 데이터베이스는 문자열 제한을 `255` 문자로 하고 있기 때문에, 거기에 맞추어 `255`문자로 맞추어 봅시다. 6.2.4 에서 설명드릴 메일 주소의 포맷에 관한 검증 기능은, 이러한 길이의 검증이 되지 않기 때문에, 이번 챕터에서 길이에 관한 검증만 추가해놓습니다. 코드는 아래와 같습니다.
+
+```ruby
+# test/models/user_test.rb
+require 'test_helper'
+
+class UserTest < ActiveSupport::TestCase
+
+  def setup
+    @user = User.new(name: "Example User", email: "user@example.com")
+  end
+  .
+  .
+  .
+  test "name should not be too long" do
+    @user.name = "a" * 51
+    assert_not @user.valid?
+  end
+
+  test "email should not be too long" do
+    @user.email = "a" * 244 + "@example.com"
+    assert_not @user.valid?
+  end
+end
+```
+
+위 코드에서는 51문자의 문자열을 간단하게 작성하기 위해 문자열에 곱셈하는 방법을 사용했습니다. 결과는 아래와 같습니다.
+
+```ruby
+>> "a" * 51
+=> "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+>> ("a" * 51).length
+=> 51
+```
+
+메일주소의 길이에 대한 검증도 다음과 같이 긴 문자열을 작성해서 검증해봅시다.
+
+```ruby
+>> "a" * 244 + "@example.com"
+=> "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+a@example.com"
+>> ("a" * 244 + "@example.com").length
+=> 256
+```
+
+지금 시점에서, 위에서 작성한 테스트 케이스는, 통과하지 못할 것 입니다.
+
+```
+$ rails test
+```
+
+위 테스트를 통과시키기 위해서는 길이를 강제하기 위한 검증을 파라미터로 넘길 필요가 있습니다. `:maximum` 파라미터와 같이 사용할 수 있는 `:length` 는 길이의 상한을 제한할 수 있습니다.
+
+```ruby
+# app/models/user.rb
+class User < ApplicationRecord
+  validates :name,  presence: true, length: { maximum: 50 }
+  validates :email, presence: true, length: { maximum: 255 }
+end
+```
+
+이렇게 한다면 테스트는 통과할 것 입니다.
+
+`$ rails test `
+
+성공한 테스트 케이스를 재이용하여 이번에는 조금은 어려운, 메일 주소의 포맷 검증 작업을 해봅시다.
+
+##### 연습
+
+1. 매우 긴 name 과 email 속성을 가진  user 오브젝트를 생성하여, 유효하지 않은 것을 확인해 봅시다.
+2. 길이에 관한 검증이 실패했을 때, 어떠한 에러 메세지가 생성되나요? 확인해봅시다.
+
+
+
