@@ -648,5 +648,57 @@ end
 1. 매우 긴 name 과 email 속성을 가진  user 오브젝트를 생성하여, 유효하지 않은 것을 확인해 봅시다.
 2. 길이에 관한 검증이 실패했을 때, 어떠한 에러 메세지가 생성되나요? 확인해봅시다.
 
+### 6.2.4 포맷을 검증해보자
 
+`name` 속성의 검증에는 공백문자가 아닌, 이름이 51문자 미만이라는 최소한의 제약만 걸어놓았습니다.  `email`속성은 유효한 메일 주소인지 아닌지 판정하기 위해 조금더 까다로운 요구사항을 충족시켜야만 합니다. 지금까지는 빈 공백의 메일주소만 금지했습니다만, 여기서는 메일주소에서 어떠한 정해진 포맷 `user@example.com` 을 충족하고 있는지를 확인해보도록 합니다. (게다가 이번에 사용하는 테스트 케이스나 검증 코드같은 경우에는 포맷이 맞지 않는 정도만 거부하는 정도고, 유효한 경우의 메일주소를 모두 허가하는 것은 아니라는 점을 주의해주세요.)
+
+
+
+제일 처음으로는 유효한 메일주소와 무효한 메일주소의 컬렉션에 대한 테스트를 진행해봅시다. 이 컬렉션을 만드는 방법으로는 다음과 같이, 문자열의 배열을 간단하게 만들 수 있는 `%w[]` 라고 하는 편리한 테크닉을 알아놓을 필요가 있습니다.
+
+```ruby
+>> %w[foo bar baz]
+=> ["foo", "bar", "baz"]
+>> addresses = %w[USER@foo.COM THE_US-ER@foo.bar.org first.last@foo.jp]
+=> ["USER@foo.COM", "THE_US-ER@foo.bar.org", "first.last@foo.jp"]
+>> addresses.each do |address|
+?>   puts address
+>> end
+USER@foo.COM
+THE_US-ER@foo.bar.org
+first.last@foo.jp
+```
+
+`each` 메소드를 사용하여 `addresses` 배열의 각 요소를 반복하여 출력할 수 있습니다.( [4.3.2](Chapter4.md#432-블록) ) 이 기술을 알고 있으면, 메일주소 포맷의 검증 테스트 코드를 작성할 준비가 된 것입니다.
+
+
+
+메일주소 는 검증테스트를 하기가 어려우며, 에러가 발생하기 쉬운 부분입니다. 유효한 메일주소와 유효하지 않은 메일 주소를 몇가지 준비를 하고, 검증범위 내에서의 에러를 찾아내도록 합니다.  구체적으로는 user@example,com과 같은 유효하지 않은 메일 주소가 테스트에서 통과하지 않는 것과 user@example.com과 같은 유효한 메일 주소가 테스트에서 통과하는 것을 화긴해가며, 검증 작업을 진행해갑니다. (덧붙여, 지금 상태에서는 빈 공백문자가 아닌 메일주소라면 전부 테스트 통과해버립니다.) 일단 유효한 메일주소 테스트는 아래와 같습니다.
+
+```ruby
+# test/models/user_test.rb
+require 'test_helper'
+
+class UserTest < ActiveSupport::TestCase
+
+  def setup
+    @user = User.new(name: "Example User", email: "user@example.com")
+  end
+  .
+  .
+  .
+  test "email validation should accept valid addresses" do
+    valid_addresses = %w[user@example.com USER@foo.COM A_US-ER@foo.bar.org
+                         first.last@foo.jp alice+bob@baz.cn]
+    valid_addresses.each do |valid_address|
+      @user.email = valid_address
+      assert @user.valid?, "#{valid_address.inspect} should be valid"
+    end
+  end
+end
+```
+
+여기서 assert메소드의 두 번째 파라미터에 에러 메세지를 추가하고 있는 것을 주목해주세요. 이 파라미터로 인하여 어떤 메일주소가 테스트에서 실패하는지를 확인해볼 수 있습니다.
+
+`assert @user.valid?, "#{valid_address.inspect} should be valid"`
 
