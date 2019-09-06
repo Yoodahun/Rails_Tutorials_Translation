@@ -702,3 +702,155 @@ end
 
 `assert @user.valid?, "#{valid_address.inspect} should be valid"`
 
+(자세한 문자열을 알아보기 위해서 [4.3.3](Chapter4.md#433-Hash와-Symbol) 에 소개해드린 `inspect`메소드를 사용하고 있습니다.) 어떤 메일 주소에서 실패하는지 알아볼때 매우 유용합니다. 위 코드에서 `each` 메소드를 사용하여 각 메일주소를 순차적으로 테스트해갑니다. 루프를 돌리지않고 테스트하면, 실패한 데이터 번호와 메일주소의 번호를 대조해가며 실패한 메일주소를 특정해나가야하는 작업을 해야만할 것 입니다.
+
+
+
+그 다음으로 *user@example,com* (점이 아닌 컴마로 되어 있습니다.)이나 *user_at_foo.org*(앳마크 `@`가 없습니다.)등과 같은 유효하지 않은 메일주소를 사용하여 *무효성(Invalidity)* 에 대해 테스트해봅니다. 위 코드와 마찬가지로 아래의 코드에서도 에러메세지를 커스터마이즈하여 어떠한 메일 주소에서 테스트에 실패하는지 바로 알 수 있도록 해놓습니다.
+
+```ruby
+# test/models/user_test.rb
+require 'test_helper'
+
+class UserTest < ActiveSupport::TestCase
+
+  def setup
+    @user = User.new(name: "Example User", email: "user@example.com")
+  end
+  .
+  .
+  .
+  test "email validation should reject invalid addresses" do
+    invalid_addresses = %w[user@example,com user_at_foo.org user.name@example.
+                           foo@bar_baz.com foo@bar+baz.com]
+    invalid_addresses.each do |invalid_address|
+      @user.email = invalid_address
+      assert_not @user.valid?, "#{invalid_address.inspect} should be invalid"
+    end
+  end
+end
+```
+
+지금 이 시점에서는 테스트는 실패할 것입니다.
+
+`$ rails test`
+
+메일주소의 포맷을 검증하기 위해선, 다음과 같이 `format` 옵션을 사용해야 합니다.
+
+`validates :email, format: { with: /<regular expression>/ }`
+
+이 옵션은 파라미터에 *정규표현(Regular Expression*(regex라고도 합니다.)) 을 입력합니다. 정규표현은 언뜻 봐선 굉장히 복잡하고 어려워보입니다만, 문자열의 패턴매칭에 있어서는 매우 강력한 언어입니다. 즉, 유효한 메일주소만 찾아내고, 무효한 메일주소는 무시하는 정규표현을 작성할 필요가 있습니다.
+
+
+
+메일주소의 표준을 정하는 공식사이트에는 완전한 정규표현이 있습니다만, 매우 크고 알 수 없는 정규표현이어서, 경우에 다라서는 역효과를 낼 수 있습니다. 본 튜토리얼에서는 조금더 실용적이고 간결하며, 실전에서 보증된 정규표현을 사용해보겠습니다.
+
+`VALID_EMAIL_REGEX = /\A[\w+\-.]+@[a-z\d\-.]+\.[a-z]+\z/i`
+
+이 정규표현을 이해하기 위해서는, 좀 더 세분화한 표를 보고 이해할 필요가 있습니다.
+
+| **정규표현**                         | **뜻**                                                       |
+| ------------------------------------ | ------------------------------------------------------------ |
+| /\A[\w+\-.]+@[a-z\d\-.]+\.[a-z]+\z/i | (完全な正規表現)                                             |
+| /                                    | 正規表現の開始を示す                                         |
+| \A                                   | 文字列の先頭                                                 |
+| [\w+\-.]+                            | 영숫자, 언더바 (_), 플러스 (+), 마이너스 (-), 점 (.) 중 적어도 한가지를 1문자 이상 반복합니다. |
+| @                                    | アットマーク                                                 |
+| [a-z\d\-.]+                          | 영소문자, 숫자, 마이너스, 점 중 최소한 적어도 한 문자 이상 반복합니다. |
+| \.                                   | ドット                                                       |
+| [a-z]+                               | 英小文字を少なくとも1文字以上繰り返す                        |
+| \z                                   | 文字列の末尾                                                 |
+| /                                    | 正規表現の終わりを示す                                       |
+| i                                    | 大文字小文字を無視するオプション                             |
+
+위 표에서 많은 것을 배울 수 있을 것이라 생각합니다만, 정규표현을 제대로 이해하기 위해선 실제로 사용해보는 것이 제일 빠릅니다. 예를들어 [Rubular](http://www.rubular.com/) 와 같은 대화형태의 정규표현을 시험해볼 수 있는 사이트가 있습니다. 이 웹사이트는 인터랙티브한 인터페이스를 가지고 있으며, 정규표현의 퀵 레퍼런스 기능을 가지고 있습니다. Rubular를 브라우저로 열고, 위 표의 완전한 정규식을 실제로 시험해보는 것을 추천합니다. 정규표현은 읽어보기만 하는 것 보다 직접 사용해보는 것이 더 좋습니다.(*주의*: 위 정규표현을 Rubular 를 사용할 경우, 정규표현의 앞뒤의 \A와 \z 를 작성하지 말고 시험해보세요. 이렇게 함으로써 여러개의 메일주소를 한 번에 검사할 수 있어서 편리합니다. 또한 Rubular에 슬래시 `/../` 의 내부 부분을 작성하는 것만으로도 동작하기 때문에, 양 끝에 있는 슬래시는 제외해주세요.)
+
+![](../image/Chapter6/rubular.png)
+
+정규표현을 적용하여 `email` 의 포맷을 검증한 결과는, 아래와 같습니다.
+
+```ruby
+# app/models/user.rb
+class User < ApplicationRecord  
+validates :name,  presence: true, length: { maximum: 50 }
+  VALID_EMAIL_REGEX = /\A[\w+\-.]+@[a-z\d\-.]+\.[a-z]+\z/i
+  validates :email, presence: true, length: { maximum: 255 },
+                    format: { with: VALID_EMAIL_REGEX }
+end
+```
+
+정규표현 `VALID_EMAIL_REGEX` 는 *상수* 입니다. 대문자로 시작하는 이름은 Ruby에서는 상수를 의미합니다. 다음 코드는
+
+```ruby
+  VALID_EMAIL_REGEX = /\A[\w+\-.]+@[a-z\d\-.]+\.[a-z]+\z/i
+  validates :email, presence: true, length: { maximum: 255 },
+                    format: { with: VALID_EMAIL_REGEX }
+```
+
+위 패턴에 일치하는 메일주소만 유효하다는 판정을 할 수 있게 되었습니다. 그러나 위 정규표현은 조금 주의해야할 점이 있습니다. `foo@bar..com` 과 같은 점이 연속으로 있는 메일주소는 검출해낼 수 없습니다. 물론 정규표현을 조금 수정하면 됩니다만, 이 문제는 연습문제로 넘기기로 해봅시다. 아무튼 위와 같이 수정해놓으면 테스트 코드는 통과할 것입니다.
+
+`$ rails test:models`
+
+수정이 필요한 제약은, 메일주소가 유니크한 것을 확인하는 것 뿐만 남았습니다.
+
+##### 연습
+
+1. 유효한 메일주소를 체크하는 테스트코드와 유효하지 않은 메일주소를 체크하는 테스트코드를 작성해보았습니다. 위 테스트 코드에서의 유효하거나 무효한 메일 주소들을 Rubular의 *Your test String:* 에 옮겨적어봅시다. 그 후에, 정규표현을 *Your regular expression:* 에 입력하여 유효한 메일주소만 전부 캐치하고, 유효하지 않은 메일 주소는 무시하는 것을 확인해봅시다.
+2. 앞서 말씀드렸듯, 메일주소를 체크하는 정규표현은 *foo@bar..com* 과 같은 점이 연속된 유효하지 않은 메일주소를 캐치해버리고 맙니다. 이 메일주소를 유효하지 않은 메일주소를 체크하는 테스트코드의 메일주소리스트에 추가하고, 테스트가 실패하는지 어떤지를 확인해봅시다. 그리고 조금은 복잡해보이는 아래의 정규표현을 사용하여 해당 테스트를 통과하는지 확인해봅시다.
+3. *foo@bar..com* 을 Rebular의 메일주소의 리스트에 추가하고, 위 정규표현을 Rubular 를 통해 사용해봅시다. 유효한 메일주소만 전부 캐치하고, 유효하지 않은 메일주소는 무시하는 것을 확인해봅시다.
+
+```ruby
+# app/models/user.rb
+class User < ApplicationRecord
+  validates :name, presence: true, length: { maximum: 50 }
+  VALID_EMAIL_REGEX = /\A[\w+\-.]+@[a-z\d\-]+(\.[a-z\d\-]+)*\.[a-z]+\z/i
+  validates :email, presence:   true, length: { maximum: 255 },
+                    format:     { with: VALID_EMAIL_REGEX }
+end
+```
+
+### 6.2.5 유니크성을 검증해보자
+
+메일 주소의 유니크성을 강제하기 위해(유저 이름으로써 사용하기 위해) `validates` 메소드의 `:unique` 옵션을 사용해봅니다. 단, 여기서 중요한 사항을 말씀드리겠습니다. 다음 내용을 흘려듣지 마시고 주의깊게 확인해주세요.
+
+
+
+일단 규모가 작은 테스트 케이스부터 작성해봅니다. 모델의 테스트는 지금까지 주로 `User.new` 를 사용해왔습니다. 이 메소드는 단순히 메모리상에서 Ruby의 오브젝트를 작성할 뿐입니다. 그러나 유니크성의 테스트를 위해서는 메모리가 아닌, 실제로 레코드를 데이터베이스에 등록해야할 필요가 있습니다. 일단 메일주소부터 테스트해봅시다.
+
+```ruby
+# test/models/user_test.rb
+require 'test_helper'
+
+class UserTest < ActiveSupport::TestCase
+
+  def setup
+    @user = User.new(name: "Example User", email: "user@example.com")
+  end
+  .
+  .
+  .
+  test "email addresses should be unique" do
+    duplicate_user = @user.dup
+    @user.save
+    assert_not duplicate_user.valid?
+  end
+end
+```
+
+위 코드에서는 `@user` 와 같은 메일주소의 유저를 작성하지 않는 것을 `@user.dup` 을 사용하여 테스트하고 있습니다. `dup` 은 같은 속성을 가진 데이터를 복제할 때 사용합니다. `@user` 를 저장한 다음에는 복제한 유저의 메일주소가 이미 데이터베이스에 존재하기 때문에, 유저의 작성 테스트는 실패할 것입니다.
+
+
+
+위 테스트 케이스를 통과시키기 위해서는, `email` 의 검증을 위해  `uniqueness: true` 라고 하는 옵션을 추가합니다.
+
+```ruby
+# app/models/user.rb
+class User < ApplicationRecord
+  validates :name,  presence: true, length: { maximum: 50 }
+  VALID_EMAIL_REGEX = /\A[\w+\-.]+@[a-z\d\-.]+\.[a-z]+\z/i
+  validates :email, presence: true, length: { maximum: 255 },
+                    format: { with: VALID_EMAIL_REGEX },
+                    uniqueness: true
+end
+```
+
