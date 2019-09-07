@@ -144,7 +144,7 @@ Rails Tutorial은, 실제 Web Application의 개발에서 공개까지, 실제�
 			- [ ] [6.1.4 User Object를 검색해보자](Documentation/Chapter6.md#614-User-Object를-검색해보자)
 			- [ ] [6.1.5 User Object를 수정해보자](Documentation/Chapter6.md#615-User-Object를-수정해보자)
 		- [x] [6.2 User를 검증해보자](Documentation/Chapter6.md#62-User를-검증해보자)
-			- [ ] [6.2.1 유효성을 검증해보자](Documentation/Chapter6.md#621-유효성을 검증해보자)
+			- [ ] [6.2.1 유효성을 검증해보자](Documentation/Chapter6.md#621-유효성을-검증해보자)
 			- [ ] [6.2.2 존재성을 검증해보자](Documentation/Chapter6.md#622-존재성을-검증해보자)
 			- [ ] [6.2.3 길이를 검증해보자](Documentation/Chapter6.md#623-길이를-검증해보자)
 			- [ ] [6.2.4 포맷을 검증해보자](Documentation/Chapter6.md#624-포맷을-검증해보자)
