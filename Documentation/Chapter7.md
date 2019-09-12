@@ -235,3 +235,153 @@ REST의 원칙을 따르는 경우, 리소스로의 참조는 리소스의 이�
 
 ![](../image/Chapter7/profile_routing_error_4th_edition.png)
 
+/users/1의 URL을 유효하게 하기 위해, routes파일 (`config/routes.rb`) 에 다음 한 줄을 추가합니다.
+
+`resources :users`
+
+작성한 코드는 아래와 같습니다.
+
+```ruby
+# config/routes.rb
+
+Rails.application.routes.draw do
+  root 'static_pages#home'
+  get  '/help',    to: 'static_pages#help'
+  get  '/about',   to: 'static_pages#about'
+  get  '/contact', to: 'static_pages#contact'
+  get  '/signup',  to: 'users#new'
+  resources :users
+end
+```
+
+지금 작성하는 간단하고 학습용도로의 Web페이지 상에서의 유저를 표시하는 것이긴 하지만, `resources :users` 라고 하는 줄은, 유저정보를 표시하는 URL(/users/1) 를 추가하기 위한 것만은 아닙니다. Sample 어플리케이션에 이 한 줄을 추가하는 것으로, 유저의 URL 을 생성할 때에 여러개의 이름이 붙어있는 루트 ([5.3.3](Chapter5.md#533-이름이-붙은-Path)) 와 더불어 RESTful적인 Users리소스에서 필요한 모든 액션을 이용할 수 있게 됩니다. 이 코드 한 줄에 대응하는 URL 이나 액션, 이름이 붙은 루트는 아래의 표와 같습니다. 다음 3개의 챕터에 걸쳐 아래 표의 다른 항목도 이용하여 User리소스를 완전한 RESTful한 리소스로 만들기 위해 필요한 액션을 모두 작성해볼 것입니다.
+
+| HTTP 리퀘스트 | **URL**       | **액션**  | **Named Root**         | **용도**                                    |
+| ------------- | ------------- | --------- | ---------------------- | ------------------------------------------- |
+| `GET`         | /users        | `index`   | `users_path`           | すべてのユーザーを一覧するページ            |
+| `GET`         | /users/1      | `show`    | `user_path(user)`      | 特定のユーザーを表示するページ              |
+| `GET`         | /users/new    | `new`     | `new_user_path`        | ユーザーを新規作成するページ (ユーザー登録) |
+| `POST`        | /users        | `create`  | `users_path`           | ユーザーを作成するアクション                |
+| `GET`         | /users/1/edit | `edit`    | `edit_user_path(user)` | `id= 1`의 유저를 수정하는 페이지            |
+| `PATCH`       | /users/1      | `update`  | `user_path(user)`      | 특정 유저를 수정하는 액션                   |
+| `DELETE`      | /users/1      | `destroy` | `user_path(user)`      | ユーザーを削除するアクション                |
+
+위 코드를 사용하면, 라우팅이 유효하게 됩니다. 그러나 라우팅을 하여 접속하려는 페이지가 아직 존재하지 않습니다. 이 문제를 해결하기 위해선 7.1.4에서 최소한의 프로필을 표시하는 페이지를 작성해볼 예정입니다.
+
+![](../image/Chapter7/user_show_unknown_action_3rd_edition.png)
+
+유저를 표시하기 위해 표준적인 Rails의 기능을 사용해보도록 합시다. Rails에서의 표준 출력 기능이란 `app/views/users/show.html.erb` 를 의미합니다. 그러나 `rails generate controller Users new` 로 생성했을 때와는 다르게, (`new.html.erb` 뷰를 생성했을 때와는 달리)이번에는 제네레이터를 사용하지 않고 `show.html.erb` 를 생성할 필요가 있습니다. 때문에 `app/views/users/show.html.erb` 파일을 수동으로 생성하고, 아래의 코드를 붙여 넣어주세요.
+
+```erb
+<!-- app/views/users/show.html.erb -->
+
+<%= @user.name %>, <%= @user.email %>
+```
+
+이 뷰에서 루비코드를 작성하여 유저이름과 메일 주소를 표시해봅니다. 인스턴스 변수 `@user` 가 존재한다는 것을 전제로 합니다. 물론 유저표시페이지의 최종적인 상태는 이것과는 매우다르며, 해당 메일주소가 그대로 일반에 공개되도록 하진 않을 것이빈다.
+
+
+
+유저표시용 뷰가 정상적으로 동작하기 위해서는, Users컨트롤러내의 `show` 액션에 대응하는 `@user` 변수를 정의할 필요가 있습니다. 상상하시는 대로, 여기서는 User모델의 `find` 메소드를 사용하여 데이터베이스로부터 유저를 조회합니다. 아래와 같이 수정해보세요.
+
+```ruby
+# app/controllers/users_controller.rb
+
+class UsersController < ApplicationController
+
+  def show
+    @user = User.find(params[:id])
+  end
+
+  def new
+  end
+end
+```
+
+유저의 id를 읽어들일 때에는 `params`를 사용합니다. Users 컨트롤러에 리퀘스트가 정상적으로 송신되면, `params[:id]` 부분은 유저 아이디의 1이 입력될 것입니다. 즉 이 부분은 [6.1.4](Chapter6.md#614-User-Object를-검색해보자) 에 배운 `find` 메소드의 `User.find(1)` 과 같은 결과가 될 것입니다. (*기술적인 보충설명*: `params[:id]` 는 문자열형태의 `"1"` 입니다만, `find` 메드에서는 자동적으로 정수형으로 변환됩니다.)
+
+
+
+유저의 뷰와 액션을 정의했습니다. /users/1 은 완전하게 동작할 것입니다. 이 때, 만일 bcrypt gem을 추가하고 나서 한 번도 Rails 서버를 동작하지 않은 경우라면, 여기서 재부팅을 해보세요. ([컬럼 1.1](Chapter1.md#컬럼-11-숙련-이라고-하는-것은)) 재부팅을 하면 /users/1에 접속하여 디버그정보로부터 `params[:id]` 의 값을 확인할 수 있을 겁니다.
+
+```
+---
+action: show
+controller: users
+id: '1'
+```
+
+이 `id: '1'` 는 /users/`:id` 로부터 얻은 값입니다. 이 값을 사용하여
+
+```ruby
+User.find(params[:id])
+```
+
+위 코드에 id=1 의 유저를 검색할 수 있는 구조가 된 것입니다.
+
+![](../image/Chapter7/user_show_3rd_edition.png)
+
+##### 연습
+
+1. `.erb` 의 루비코드를 사용하여, 매직컬럼 (`created_at`과 `updated_at`) 의 값을 show페이지에 출력해봅시다.
+2. `.erb` 의 루비코드를 사용하여 `Time.now` 의 결과를 show 페이지에 출력해봅시다. 페이지를 새로고침하면 그 결과가 어떻게 되는지도 확인해봅시다.
+
+### 7.1.3 Debugger 메소드
+
+[7.1.2](Chapter7.md#712-User-Resource), 어플리케이션의 동작을 이해하기 위해 `debug` 메소드가 도움이된다는 것을 배워보았습니다. 그러나 좀 더 직접적인 디버그를 하는 방법이 있습니다. `byebug` gem 을 설치하면 사용할 수 있는 `debugger` 메소드입니다. 어떻게 디버그할 수 있냐하면, `debugger` 메소드를 실제로 어플리케이션에 작성하여 확인해볼 수 있습니다.
+
+```ruby
+# app/controllers/users_controller.rb
+
+class UsersController < ApplicationController
+
+  def show
+    @user = User.find(params[:id])
+    debugger #추가한 코드
+  end
+
+  def new
+  end
+end
+```
+
+`debugger` 메소드를 작성하면 브라우저에서 /users/1 에 접속하여 Rails 서버를 기동할 시에 터미널을 확인해봅시다. `byebug` 프롬프트가 표시될 것입니다.
+
+`(byebug)`
+
+이 프롬프트에서는 Rails 콘솔에서처럼 커맨드를 출력하는 것이 가능하며, 어플리케이션의 `debugger` 가 호출되었을 순간의 상태를 확인할 수 있습니다.
+
+```
+(byebug) @user.name
+"Example User"
+(byebug) @user.email
+"example@railstutorial.org"
+(byebug) params[:id]
+"1"
+```
+
+또한 Ctrl+D 를 누르면, 프롬프트로부터 텍스트를 얻을 수 있습니다. 디버그가 끝나면 `show` 액션 내부의 `debugger` 메소드는 삭제해줍시다.
+
+```ruby
+# app/controllers/users_controller.rb
+
+class UsersController < ApplicationController
+
+  def show
+    @user = User.find(params[:id])
+  end
+
+  def new
+  end
+end
+```
+
+앞으로 Rails 어플리케이션에서 내부를 알고 싶거나 궁금한 부분이 있다면, 위와 같이 `debugger`메소드를 사용해봅시다. 트러블이 발생할 것 같은 코드 가까이에 작성해놓는다면 매우 좋을 것입니다. byebug gem 을 사용하여 시스템의 상태를 조사할 때는 어플리케이션 내부의 에러를 추적하거나 디버그를 할 때에 매우 도움될 것입니다.
+
+##### 연습
+
+1. `show` 액션 내부에 `debugger` 를 작성하고, 브라우저에서 /users/1 에 접속해봅시다. 그 다음 콘솔에서 `puts` 메소드를 사용하여 `params` 해시의 내부를 *YAML 형식* 으로 표현해봅시다. *Hint* : [7.1.1](Chapter7.md#711-Debug와-Rails환경) 의 연습문제를 참고해봅시다. 해당 연습문제에서는 `debug` 메소드를 표시한 디버그 정보를 어떻게 YAML형식으로 표시했었나요?
+2. `new` 액션의 내부에 `debugger` 를 작성하고, /users/new에 접속해봅시다. `@user` 의 내용은 어떻게 되어 있습니까? 확인해봅시다.
+
+### 7.1.4 Gravatar 이미지와 사이드 바
+
