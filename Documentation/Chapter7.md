@@ -385,3 +385,165 @@ end
 
 ### 7.1.4 Gravatar 이미지와 사이드 바
 
+이전 섹션에서 기본적인 유저 페이지의 정의를 해보았습니다. 이번에는 각 유저의 프로필 사진을 간단하게라도 표시할 수 있도록 해보고, 사이드바도 만들어 보겠습니다. 여기서는 [Gravatar (Globally Recognized AVATAR)](http://gravatar.com/) 를 프로필에 도입해보겠습니다. Gravatar는 무료서비스이며 프로필 사진을 업로드하여 지정한 메일주소와 관련지을 수 있습니다. 그 결과, Gravatar는 프로필사진을 업로드할 때 귀찮은 작업이나 사진을 빼먹는 등의 오류, 이미지의 저장소 등의 고민을 해결할 수 있습니다. 애당초 유저의 메일주소를 사용한 Gravatar전용의 이미지 주소를 구성하는 것만으로도 Gravatar의 이미지가 자동적으로 표시됩니다. (커스텀 이미지를 사용하는 방법에 대해서는 13.4에서 다룹니다.)
+
+
+
+여기는 아래의 코드와 같이, `gravatar_for` 헬퍼 메소드를 사용하여 Gravatar의 이미지를 이용해볼 수 있습니다.
+
+```ruby
+# app/views/users/show.html.erb
+
+<% provide(:title, @user.name) %>
+<h1>
+  <%= gravatar_for @user %>
+  <%= @user.name %>
+</h1>
+```
+
+기ㄴ으로는 헬퍼파일에서 정의하는 메소드는 자동적으로 모든 뷰 파일 내부에서 이용할 수 있습니다. 여기서는 편의성을 생각하여 `gravatar_for` 를 User 컨트롤러에 대응되어있는 헬퍼파일에 작성해봅시다. [Gravatar의 홈페이지](http://ja.gravatar.com/site/implement/hash/) 에도 기술되어 있듯, Gravatar의 URL은 유저의 메일주소를 [MD5](https://ja.wikipedia.org/wiki/MD5) 라고하는 구조로 해시화합니다. Ruby에는 `Digest` 라이브러리의 `hexdigest` 메소드를 사용하면, MD5의 해시화를 구현할 수 있습니다.
+
+```ruby
+>> email = "MHARTL@example.COM"
+>> Digest::MD5::hexdigest(email.downcase)
+=> "1fda4469bcbec3badf5418269ffc5968"
+```
+
+메일 주소는 대문자와 소문자를 구별하지 않습니다만, ([6.2.4](Chapter6.md#624-포맷을-검증해보자)) MD5 해시에서는 대문자와 소문자를 구별합니다. Ruby의 `downcase` 메소드를 사용하여 `hexdigest` 의 파라미터를 소문자로 변환합니다. (본 튜토리얼에서는 [6.2.5](Chapter6.md#625-유니크성을-검증해보자) 에서의 콜백처리에서 소문자변환을 한 메일주소를 사용하기 때문에, 여기서 소문자변환을 하지 않아도 결과는 똑같습니다. 단, 추후 `gravatar_for` 메소드가 다른 장소에서부터 호출될 가능성을 고려한다면, 여기서 소문자변환을 해주는 것도 좋다고 생각합니다.) 
+
+`gravatar_for` 헬퍼를 작성한 결과는 아래와 같습니다.
+
+```ruby
+# app/helpers/users_helper.rb
+
+module UsersHelper
+
+  # 파라미터로 주어진 유저의 Gravatar 이미지를 리턴합니다.
+  def gravatar_for(user)
+    gravatar_id = Digest::MD5::hexdigest(user.email.downcase)
+    gravatar_url = "https://secure.gravatar.com/avatar/#{gravatar_id}"
+    image_tag(gravatar_url, alt: user.name, class: "gravatar")
+  end
+end
+```
+
+위 코드는, Gravatar 이미지태그에 `gravatar` 클래스와 유저이름의 alt 텍스트를 추가한 것을 리턴합니다. (alt 텍스트를 추가하면, 시각장애가 있는 유저들에게 스크린리더를 사용할 수 있게해줍니다.)
+
+
+
+프로필 페이지는 아래와 같이 됩니다. 여기서 기본 Gravatar이미지를 출력하고 있으나, 이것은 기본 메일주소 `user@example.com` 이 진짜 메일주소가 아니기 때문입니다. (example.com 이라는 도메인이름은, 예제로써 사용하기 때문에 특별한 도메인입니다.)
+
+![](../image/Chapter7/profile_with_gravatar_3rd_edition.png)
+
+어플리케이션에서 Gravatar를 이용할 수 있게 하기 위해서는 일단 `update_attributes`([6.1.5](Chapter6.md#615-User-Object를-수정해보자)) 사용하여 데이터베이스 상의 유저 정보(메일주소) 를 갱신해봅시다.
+
+```ruby
+$ rails console
+>> user = User.first
+>> user.update_attributes(name: "Example User",
+?>                        email: "example@railstutorial.org",
+?>                        password: "foobar",
+?>                        password_confirmation: "foobar")
+=> true
+```
+
+여기서 유저의 메일주소에 `example@railstutorial.org` 를 사용하였습니다. Gravatar상의 이 메일주소와 Rails Tutorial의 로고를 이미 연결시켜놓았기 때문에, 위와 같은 정보 수정을 하면 아래와 같이 출력됩니다.
+
+![](../image/Chapter7/profile_custom_gravatar_3rd_edition.png)
+
+목업 이미지 파일과 비슷하게 만들기 위해, 유저의 사이드바의 첫 버전을 만들어봅시다. 여기서는 `aside` 태그를 사용하여 구현하고 있습니다. 이 태그는 사이드바 등의 보완 컨텐츠를 표시하기 위해 사용합니다만, 단독으로 출력하는 것도 가능합니다. `row` 클래스와 `col-md-4` 클래스를 추가해놓습니다. 이 클래스들은 Bootstrap의 일부입니다. 유저 표시페이지를 변경한 결과는 아래와 같습니다.
+
+```erb
+<!-- app/views/users/show.html.erb -->
+
+<% provide(:title, @user.name) %>
+<div class="row">
+  <aside class="col-md-4">
+    <section class="user_info">
+      <h1>
+        <%= gravatar_for @user %>
+        <%= @user.name %>
+      </h1>
+    </section>
+  </aside>
+</div>
+```
+
+HTML 요소와 CSS 클래스를 추가한 덕분에 프로필 페이지(와 사이드바와 Gravatar) 에 SCSS로 아래의 스타일을 적용할 수 있게 되었습니다. (테이블 CSS의 계층구조로 되어있습니다만, 이게 가능한 경우는 Asset Pipline에서 SASS 엔진이 사용되는 경우에만 한합니다.) 페이지의 변경의 결과는 아래의 그림과 같습니다.
+
+```scss
+/* app/assets/stylesheets/custom.scss */
+
+/* sidebar */
+
+aside {
+  section.user_info {
+    margin-top: 20px;
+  }
+  section {
+    padding: 10px 0;
+    margin-top: 20px;
+    &:first-child {
+      border: 0;
+      padding-top: 0;
+    }
+    span {
+      display: block;
+      margin-bottom: 3px;
+      line-height: 1;
+    }
+    h1 {
+      font-size: 1.4em;
+      text-align: left;
+      letter-spacing: -1px;
+      margin-bottom: 3px;
+      margin-top: 0px;
+    }
+  }
+}
+
+.gravatar {
+  float: left;
+  margin-right: 10px;
+}
+
+.gravatar_edit {
+  margin-top: 15px;
+}
+```
+
+![](../image/Chapter7/user_show_sidebar_css_3rd_edition.png)
+
+
+
+##### 연습
+
+1. (임의) Gravatar에서 아이디를 작성하고, 여러분의 메일주소와 적당한 이미지를 연결시켜보세요. 메일주소를 MD5 해시화하여 연결지은 이미지가 제대로 표시되는지 확인해보세요.
+2. [7.1.4](Chapter7.md#714-Gravatar-이미지와-사이드-바) 에서 정의한 `gravatar_for` 헬퍼를 아래의 코드와 같이 변경하여 `size` 를 옵션 파라미터로 받을 수 있도록 해봅시다. 제대로 변경이 된다면,  `gravatar-for user, size: 50` 과 같은 호출이 가능합니다. *중요* : 여기서 수정한 헬퍼를 10.3.1에서 실제로 사용합니다. 잊지말고 꼭 구현해봅시다.
+3. 옵션 파라미터는 지금도 Ruby 커뮤니티에서 일반적으로 사용되고 있습니다만,   Ruby 2.0에서부터 도입된 신기능 "*키워드 파라미터(Keyword Arguments)*" 에서도 구현할 수 있습니다. 앞서 변경한 아래 첫 번째 코드를, 아래 두 번째 코드와 같이 수정하여 제대로 동작하는지를 확인해봅시다. 이 두 가지 구현방법은 어떠한 차이점이 있는 것일까요?
+
+```ruby
+# app/helpers/users_helper.rb
+module UsersHelper
+
+  def gravatar_for(user, options = { size: 80 })
+    gravatar_id = Digest::MD5::hexdigest(user.email.downcase)
+    size = options[:size]
+    gravatar_url = "https://secure.gravatar.com/avatar/#{gravatar_id}?s=#{size}"
+    image_tag(gravatar_url, alt: user.name, class: "gravatar")
+  end
+end
+```
+
+```ruby
+# app/helpers/users_helper.rb
+module UsersHelper
+
+  def gravatar_for(user, size: 80)
+    gravatar_id = Digest::MD5::hexdigest(user.email.downcase)
+    gravatar_url = "https://secure.gravatar.com/avatar/#{gravatar_id}?s=#{size}"
+    image_tag(gravatar_url, alt: user.name, class: "gravatar")
+  end
+end
+```
+
