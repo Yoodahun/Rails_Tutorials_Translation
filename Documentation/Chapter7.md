@@ -547,3 +547,176 @@ module UsersHelper
 end
 ```
 
+
+
+## 7.2 유저 등록 폼
+
+지금까지 유저 프로필 페이지를 동작되도록 작업을 해보았습니다. 이번에는 유저 등록용 폼을 작성해보겠습니다. 아래 그림과 같이, 유저 등록 페이지는 아직 공백인 상태이기 때문에, 이대로는 유저를 신규생성할 수는 없습니다. 이번 섹션에서는 아무것도 없는 휑한 페이지를 목업과 비슷한 디자인으로 수정해보겠습니다.
+
+![](../image/Chapter7/new_signup_page_3rd_edition.png)
+
+![](../image/Chapter7/signup_mockup_bootstrap.png)
+
+### 7.2.1 Form_for를 사용해보자
+
+유 등록용 페이지에서 중요한 점은, 유저 등록에서 빠질 수 없는, 정보를 입력하기 위한 *form* 입니다. Rails에서는  `form_for` 헬퍼메소드를 사용합니다. 이 메소드는 Active Record의 오브젝트를 사용하여 해당 오브젝트의 속성을 사용하여 폼을 구축합니다.
+
+
+
+유저 등록용 페이지 /signup 의 라우팅은, User 컨트롤러의 `new` 액션에 이미 연결되어있다는 것을 떠올려주세요. ([5.4.2](Chapter5.md#542-User-등록용-URL)) 따라서 다음 스텝으로는 `form_for` 의 파라미터로 필요한 User 오브젝트를 생성해야합니다. 필요한 `@user` 변수의 정의는 아래의 코드와 같습니다.
+
+```ruby
+# app/controller/users_controller.rb
+class UsersController < ApplicationController
+
+  def show
+    @user = User.find(params[:id])
+  end
+
+  def new
+    @user = User.new #추가된 코드
+  end
+end
+```
+
+폼 그 자체는 아래의 코드에 표시되어있습니다. 7.2.2에서 좀 더 자세히 다루겠습니다만, 일단 아래 두 번째 코드의  SCSS에서 디자인을 다듬어놓습니다. `box_sizing` 믹스인을 이전 코드로부터 재사용하고 있습니다. 해당 CSS가 적용되면 유저 등록 페이지는 아래의 캡쳐처럼 됩니다.
+
+```erb
+<!-- app/views/users/new.html.erb -->
+
+<% provide(:title, 'Sign up') %>
+<h1>Sign up</h1>
+
+<div class="row">
+  <div class="col-md-6 col-md-offset-3">
+    <%= form_for(@user) do |f| %>
+      <%= f.label :name %>
+      <%= f.text_field :name %>
+
+      <%= f.label :email %>
+      <%= f.email_field :email %>
+
+      <%= f.label :password %>
+      <%= f.password_field :password %>
+
+      <%= f.label :password_confirmation, "Confirmation" %>
+      <%= f.password_field :password_confirmation %>
+
+      <%= f.submit "Create my account", class: "btn btn-primary" %>
+    <% end %>
+  </div>
+</div>
+```
+
+```scss
+/* app/assets/stylesheets/custom.scss */
+.
+.
+.
+/* forms */
+
+input, textarea, select, .uneditable-input {
+  border: 1px solid #bbb;
+  width: 100%;
+  margin-bottom: 15px;
+  @include box_sizing; // 재사용 코드
+}
+
+input {
+  height: auto !important;
+}
+```
+
+![](../image/Chapter7/signup_form_3rd_edition.png)
+
+##### 연습
+
+1. 시험삼아 위 첫 번째 코드에서 `:name`을 `:none` 으로 바꾸어봅시다. 어떠한 에러메세지가 출력됩니까?
+2. 시험삼아, 블록의 변수 `f` 를 모두 `foobar` 로 바꾸어보고 결과가 바뀌지 않는 것을 확인해보세요. 분명히 결과는 바뀌지 않습니다만, 변수명을 `foobar` 로 바꾸는 것은 확실히 좋은 수정은 아닌 것 같습니다. 그 이유에 대해 생각해보세요.
+
+### 7.2.2 Form HTML
+
+위 첫 번째 코드에서 정의한 폼을 이해하기 위해, 작은 부분으로 나누어서 봅시다. 일단 erb에서의 Ruby 코드가 사용되고 있는 `form_for` 에서 `end` 까지 바깥 구조를 확인해봅시다.
+
+```erb
+<%= form_for(@user) do |f| %>
+  .
+  .
+  .
+<% end %>
+```
+
+`do` 키워드는,  `form_for` 가 1개의 변수를 가진 블록을 다루는 것을 의미합니다. 변수 `f` 는 "form" 의 `f` 입니다.
+
+
+
+보통 Rails 헬퍼를 사용하는 경우, 실제 구현된 코드에 대해서는 자세히 알 필요는 없습니다. 그러나 *f* 라는 오브젝트가 **무엇을 하는 오브젝트인지는 알 필요가 있습니다.** *f* 오브젝트는 [HTML form 요소](http://www.w3schools.com/html/html_forms.asp) (텍스트필드, 라디오버튼, 패스워드 필드 등)에 대응하는 메소드가 호출 될 때, *@user* 속ㅇ을 설정하기 위해, 특별하게 설계된  HTML을 리턴합니다. 즉 다음 코드를 실행하면 
+
+```erb
+<%= f.label :name %>
+<%= f.text_field :name %>
+```
+
+User모델의 `name` 속성을 설정하는, 라벨이 달린 텍스트필드 요소를 작성하는 데에 있어 필요한 HTML을 작성합니다.
+
+
+
+생성된 폼의 HTML을 보고싶은 경우에는, 브라우저상에서 표시화면을 오른쪽 클릭하여, 표시된 팝업항목의 안쪽에서 [소스를 표시] 라고하는 항목을 클릭해주세요. Web페이지의 HTML 소스는 아래와 같습니다. HTML소스의 내부에서 폼을 형성하는 HTML 구조에 주목해주세요.
+
+```html
+<form accept-charset="UTF-8" action="/users" class="new_user"
+      id="new_user" method="post">
+  <input name="utf8" type="hidden" value="&#x2713;" />
+  <input name="authenticity_token" type="hidden"
+         value="NNb6+J/j46LcrgYUC60wQ2titMuJQ5lLqyAbnbAUkdo=" />
+  <label for="user_name">Name</label>
+  <input id="user_name" name="user[name]" type="text" />
+
+  <label for="user_email">Email</label>
+  <input id="user_email" name="user[email]" type="email" />
+
+  <label for="user_password">Password</label>
+  <input id="user_password" name="user[password]"
+         type="password" />
+
+  <label for="user_password_confirmation">Confirmation</label>
+  <input id="user_password_confirmation"
+         name="user[password_confirmation]" type="password" />
+
+  <input class="btn btn-primary" name="commit" type="submit"
+         value="Create my account" />
+</form>
+```
+
+일단 위 HTML 소스의 내부구조에 대해 설명하겠습니다. 다음 erb Ruby코드는
+
+```erb
+<%= f.label :name %>
+<%= f.text_field :name %>
+```
+
+다음과 같은 HTML을 생성하는 것을 알 수 있습니다.
+
+```html
+<label for="user_email">Email</label>
+<input id="user_email" name="user[email]" type="email" />
+```
+
+마찬가지로 다음 코드는
+
+```erb
+<%= f.label :password %>
+<%= f.password_field :password %>
+```
+
+다음의 HTML을 생성합니다.
+
+```html
+<label for="user_password">Password</label>
+<input id="user_password" name="user[password]" type="password" />
+```
+
+아래의 화면캡쳐처럼, 텍스트 필드 (`type="text"` 와 `type="email"`) 는 내용을 그대로 표시하고 있습니다만, 패스워드 필드(`type="password"`)에서는 보안을 위해 문자를 안보이게 처리하고 있습니다. (email 필드와  text필드는 같은 것 처럼 보이지만, 세부적인 점이 다릅니다. 예를 들어  `type="email"` 로 되어있는 경우, 모바일 단말기에서 입력폼을 탭하면, 메일주소에 최적화된 특별한 키워드가 표시됩니다.)
+
+![](../image/Chapter7/filled_in_form_bootstrap_3rd_edition.png)
+
