@@ -185,3 +185,50 @@ end
 
 ### 7.3.3 에러 메세지
 
+유저 등록에 실패한 경우, 제일 마지막 수단으로서, 문제가 발생해서 유저 등록이 안되었다는 것을 유저에게 아릭 쉽게 전달하기 위한 에러메세지를 추가해보도록 합시다. Rails에서는 이러한 메세지를 User모델의 검증 시에 자동적으로 생성해줍니다. 예를 들어, 유저 정보의 메일주소가 무효하고, 패스워드ㅡ이 길이가 너무 짧은 상태에서 저장하려고 해봅시다.
+
+```ruby
+$ rails console
+>> user = User.new(name: "Foo Bar", email: "foo@invalid",
+?>                 password: "dude", password_confirmation: "dude")
+>> user.save
+=> false
+>> user.errors.full_messages
+=> ["Email is invalid", "Password is too short (minimum is 6 characters)"]
+```
+
+[6.2.2](Chapter6.md#622-존재성을-검증해보자) 에서 살짝 다루어본 `error.full_messages` 오브젝트는, 에러메세지의 배열을 가지고 있습니다.
+
+
+
+위 콘솔세션에서 표시되고 있는 것 처럼, 저장(등록)이 실패하게되면, `@user` 오브젝트에 고나련된 에러메세지의 리스트가 생성됩니다. 이 메세지를 브라우저에 표시하기 위해서는 유저의 `new` 페이지에서 에레머세지의 파셜(*partial*) 을 출력해봅시다. 이 때, `form-control` 이라고하는 CSS 클래스도 같이 추가하여 Bootstrap이 제대로 동작하는지 확인해봅시다. 수정 결과는 아래와 같습니다. 여기서 사용하고 있는 에러메세지의 파셜은, 어디까지나 시작품인 것을 알아주세요. 최종버전은 13.3.2 에서 다룹니다.
+
+```erb
+<!-- app/views/users/new.html.erb -->
+
+<% provide(:title, 'Sign up') %>
+<h1>Sign up</h1>
+
+<div class="row">
+  <div class="col-md-6 col-md-offset-3">
+    <%= form_for(@user) do |f| %>
+      <%= render 'shared/error_messages' %>
+
+      <%= f.label :name %>
+      <%= f.text_field :name, class: 'form-control' %>
+
+      <%= f.label :email %>
+      <%= f.email_field :email, class: 'form-control' %>
+
+      <%= f.label :password %>
+      <%= f.password_field :password, class: 'form-control' %>
+
+      <%= f.label :password_confirmation, "Confirmation" %>
+      <%= f.password_field :password_confirmation, class: 'form-control' %>
+
+      <%= f.submit "Create my account", class: "btn btn-primary" %>
+    <% end %>
+  </div>
+</div>
+```
+
