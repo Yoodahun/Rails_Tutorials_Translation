@@ -720,3 +720,700 @@ User모델의 `name` 속성을 설정하는, 라벨이 달린 텍스트필드 �
 
 ![](../image/Chapter7/filled_in_form_bootstrap_3rd_edition.png)
 
+7.4에서도 설명드리겠습니다만, 유저 작성에서 중요한 것은 `input` 마다 있는 특수한 `name` 속성입니다.
+
+```html
+<input id="user_name" name="user[name]" - - - />
+.
+.
+.
+<input id="user_password" name="user[password]" - - - />
+```
+
+Rails는 `name` 을 사용하여 초기화한 해시(`params` 변수 경유)로 구성합니다. 이 해시는 입력된 값을 기반으로하여 유저를 생성할 때 사용됩니다. (상세히는 7.3에서 설명합니다.)
+
+
+
+다음으로 중요한 요소는, `form` 태그입니다. Rails에서 `form` 태그를 작성할 때에는 `@user` 오브젝트를 사용합니다. 모든 Ruby 오브젝트는 자신의 클래스 정보를 가지고 있기 때문에 ([4.4.1](Chapter4.md#441-Constructor)) Rails는 `@user` 의 클래스가 User라는 것을 이미 알고 있습니다. 또한 `@user` 는 *새로운* 유저이기 때문에, Rails는 `post` 메소드를 사용하여 폼을 구축해야한다고 판단합니다. 새로운 오브젝트를 작성하기 위해 필요한 HTTP 리퀘스트는 POST이기 때문에, 해당 메소드는 RESTful 아키텍쳐로써 올바른 리퀘스트입니다.([컬럼 3.2](Chapter3.md#컬럼-32-GET이나-그-외-다른-HTTP-메소드에-대해)) 
+
+```HTML
+<form action="/users" class="new_user" id="new_user" method="post">
+```
+
+이 때, 위 코드에서의 `class`와 `id` 속성은 아키텍쳐로써의 기본적으로 관계없습니다. 여기서 중요한 속성은 `action="/users"` 와 `method="post"` 두 개입니다. 이 두 가지 속성은 /user에게 HTTP의 POST 리퀘스트를 보내는 지시를 내립니다.
+
+
+
+`form` 태그 내부에 다음과 같은 HTML이 생성되어있는 것을 눈치채셨나요?
+
+```html
+<input name="utf8" type="hidden" value="&#x2713;" />
+<input name="authenticity_token" type="hidden"
+       value="NNb6+J/j46LcrgYUC60wQ2titMuJQ5lLqyAbnbAUkdo=" />
+```
+
+이 코드는 브라우저상에서는 아무것도 하지 않습니다만, Rails의 내부에서 사용되는 특별한 코드입니다. 따라서 어떠한 의도로 생성되었는지는 현 시점에서 알 필요가 없없습니다. ([컬럼 1.1](Chapter1.md#컬럼-11-숙련-이라고-하는-것은)) 간단히 정리하자면, Unicode 문자의 "`&#x2713`"(체크 마크) 를 사용하여 브라우저가 제대로된 문자코드를 송신하고 있는지, 혹은 *Cross-Site Request Forgery (CSRF)* 을 호출하는 공격을 막기 위해 신뢰할 수 있는 토큰을 포함하거나 합니다.
+
+##### 연습
+
+1. [*Learn Enough HTML to Be Dangerous*](http://learnenough.com/html-tutorial) 에서 HTML을 모두 수동으로 작성하고 있습니다. 어째서 `form` 태그를 사용하지 않은 것일까요?
+
+
+
+## 7.3 유저 등록 실패
+
+폼의 HTML이 어떻게 되어있는지 간단히 설명해보았습니다. 폼을 이해하기 위해선 *유저 등록(생성)을 실패할 때* 가 제일 효과적입니다. 이번 섹션에서는 무효한 데이터송신을 받는 유저 등록폼을 작성하고, 유저 등록 폼을 수정하여 에러 리스트를 표시해보겠습니다. 에러 리스트를 표시하는 디자인은 아래의 목업과 같습니다.
+
+![](../image/Chapter7/signup_failure_mockup_bootstrap.png)
+
+### 7.3.1 올바른 Form
+
+[7.1.2](#712-User-Resource) 에서 `resouces :user` 를 `routes.rb` 파일을 추가하여 자동적으로 Rails 어플리케이션이 특정 RESTful URI로 매칭되도록 한 것을 기억하고 계시나요? 특히 /user로의 POST 리퀘스트는 `create` 액션으로 보내집니다. 이번 설명에서는 `create` 액션에서 Form의 데이터를 수신받고, `User.new` 를 사용하여 새로운 유저 오브젝트를 생성한 후, 유저를 저장 (혹은 저장에 실패) 하고, 다시 리퀘스트 송신용 유저 등록 페이지를 표시하는 방법으로 기능을 구현하고자 합니다. 일단 유저 등록용 폼의 코드를 다시 확인해봅시다.
+
+`<form action="/users" class="new_user" id="new_user" method="post">`
+
+[7.2.2](#722-Form-HTML) 에서 설명드린 것 처럼, 위 HTML은 POST 리퀘스트를 /user 라고하는 URL에 보냅니다.
+
+
+
+유저 등록 폼을 동작시키기 위해, 우선 아래의 코드를 추가해봅시다. 이 코드는 [5.1.3](Chapter5.md#513-파셜-Partial) 의 "Partial" 에서 사용한 `render` 메소드를 또 다시 사용하고 있습니다. `render` 는 컨트롤러의 액션 안에서도 정상적으로 동작합니다. 여기서 예전에 설명한 `if-else` 분기구조를 떠올려보세요. if문을 사용하여 저장해 성공했는지의 여부에 따라 `@user.save` 의 값이 `true` 나 `false` ([6.1.3](Chapter6.md#613-User-Object-를-검색해보자)) 이 될 때, 각각 성공시의 처리와 실패시의 처리를 나눌 수 있습니다.
+
+```ruby
+# app/controllers/users_controller.rb
+class UsersController < ApplicationController
+
+  def show
+    @user = User.find(params[:id])
+  end
+
+  def new
+    @user = User.new
+  end
+
+  def create
+    @user = User.new(params[:user])    # 아직 구현이 끝나지 않았습니다.
+    if @user.save
+      # 저장 성공 시의 결과를 여기에 작성합니다.
+    else
+      render 'new'
+    end
+  end
+end
+```
+
+코멘트를 보면 알 수 있듯이, 위 코드는 아직 구현이 완려되지 않았기 때문에 주의해주세요. 그러나 구현의 출발점으로서는 충분합니다. 최종적인 구현은 7.3.2에서 완료합니다.
+
+
+
+위 코드의 동작을 이해하기 위한 제일 좋은 방법으로는, 실제로 무효한 유저 등록용 데이터를 송신(*submit*) 해보는 것입니다. 송신해본다면 결과는 아래와 같이 됩니다. 또한 이 때의 정보는 아래 두 번째 캡쳐와 같습니다.
+
+![](../image/Chapter7/signup_failure_4th_edition.png)
+
+![](../image/Chapter7/signup_failure_debug_4th_edition.png)
+
+Rails가 리퀘스트를 핸들링하는 방법을 보다 더 깊게 이해하기 위해서는 디버그 정보에서의 파라미터 해시의 `user` 부분을 상세히 확인해볼 필요가 있습니다.
+
+```ruby
+"user" => { "name" => "Foo Bar",
+            "email" => "foo@invalid",
+            "password" => "[FILTERED]",
+            "password_confirmation" => "[FILTERED]"
+          }
+```
+
+이 해시는 User 컨트롤러에 `params` 로써 입력됩니다. [7.1.2](#712-User-Resource) 에 설명드린 것과 같이, `params` 해시에는 각 리퀘스트의 정보가 포함되어 있습니다. 유저 등록 정보의 리퀘스트의 경우, `params` 에 여러개의 해시에 대한 해시(*hash-of-hashes* : 부모와 자식관계의 해시) 가 포함되어 있습니다. (또한 [4.3.3](Chapter4.md#433-Hash와-Symbol) 에서는 hash-of-hashes의 설명과 함께 콘솔세션에서 사용하기 위해 일부러 `params` 라고 하는 이름의 변수를 사용했습니다.) 위 디버그 정보에는 폼의 리퀘스트 송신 결과가, 송신된 값에 대응하는 속성과 함께 `user` 해시에 저장되어 있습니다. 이 해시의 키가 `input` 태그에 있는 `name` 속성의 값입니다.([7.2.2](#722-Form-HTML) 에서 보여드린 HTML 코드를 확인해주세요.) 예를 들어 다음과 같이
+
+`<input id="user_email" name="user[email]" type="email" />`
+
+`"user[email]"` 라고하는 값은 `user` 해시의 `:email` 키의 값과 일치합니다.
+
+해시 키의 형태는, 디버그 정보에서는 문자열의 형태입니다만 Rails에서는 무나졍ㄹ이 아닌, `params[:user]`와 같이 "심볼" 로써 Users 컨트롤러에 입력되고 있음을 주의해주세요. 이 성질에 의해, [4.4.5](Chapter4.md#445-User-Class) 나 위 `create` 액션의 코드에서 처럼, `User.new` 의 파라미터에서 필요한 데이터와 완전히 일치합니다. 즉 지금까지 봐온 다음과 같은 코드는
+
+`@user = User.new(params[:user])`
+
+실제로는 아래와 같은 코드와 같다고 할 수 있습니다.
+
+`@user = User.new(name: "Foo Bar", email: "foo@invalid", password: "foo", password_confirmation: "bar")`
+
+단, 이전 버전에서의 Rails에서는 다음의 코드여도 동작했습니다만,
+
+`@user = User.new(params[:user])`
+
+실제로는, 나쁜 뜻이 있는 유저에 의해 어플리케이션의 데이터베이스를 해킹당할 수도 있기 때문에, 신중하게 대책을 세울 필요가 있습니다. 게다가 그 대책이 다른 에러를 일으킬 위험성도 있기 때문입니다. 그리하여 Rails 4.0 이후에서는 위 코드를 에러를 일으키는 것으로 보안성을 강화하고, *Strong Parameter* 라고 하는 기술을 표준으로 삼았습니다.
+
+### 7.3.2 Strong Parameters
+
+[4.4.5](Chapter4.md#445-User-Class) 에서 아래의 코드를 간단히 설명한 적이 있습니다. 해시를 사용하여 Ruby의 변수와 초기화합니다.
+
+`@user = User.new(params[:user])    # 구현이 아직 끝난 것이 아닙니다.`
+
+위 코드는 최종적인 형태는 아닙니다. 그 이유는 `params` 해시 전체를 초기화하는 행위는 보안상 매우 위험하기 때문입니다. 유저가 보낸 데이터 전체를 `User.new` 에 전달하고 있는 것입니다. 여기서 User모델에 `admin` 속성이라고 하는 것이 있다고 해봅시다. 이 속성은 Web사이트의 관리자인지 아닌지를 나타내는 값입니다. (사실 이 속성을 구현하는 것은 10.4.1 에서 구현합니다.) `admin='1'` 이라고 하는 값을 `params[:user]` 의 일부와 함께 넘긴다면, 이 속성을 `true` 로 하는 것이 가능합니다. 이것은 *curl* 등의 커맨드를 사용하면 간단하게 실현할 수 있습니다. `params` 해시값 전체를 `User.new` 에 넘겨버리면, 어떤 유저라도 `admin='1'` 을 Web 리퀘스트에 같이 포함하는 것으로 Web 사이트의 관리자 권한을 뺏을 수 있게 되어버립니다.
+
+
+
+이전 버전의 Rails에서는 모델에서 *attr_accessible* 메소드를 사용하는 것으로 위와 같은 위험을 방지할 수 있었습니다만, Rails 4.0 이후에서는 컨트롤러층에서 *Strong Parameter* 라는 기술을 사용할 것이 권장되고 있습니다. Strong Parameter 를 사용하는 것으로 *필수* 의 파라미터와 *허가받은* 파라미터를 지정할 수 있습니다. 게다가 위와같이 `params` 해시를 전부 한 번에 넘기면 에러가 발생할 수 있습니다. 때문에 Rails에서는 디폴트 옵션으로 위와 같은 구현을 하게 된 것입니다.
+
+
+
+이 경우, `params` 해시는 `:user` 속성을 필수로하고, 이름, 메일주소, 비밀번호, 비밀번호의 확인 속성을 각각 허가하고, 그 외의 값은 허가하지 않으려 할때, 다음과 같이 기술합니다.
+
+`params.require(:user).permit(:name, :email, :password, :password_confirmation)`
+
+이 코드의 리턴값은 허가된 속성만을 포함한 `params` 의 해시값입니다. (`:user` 속성이 없는 경우에는 에러가 발생합니다.)
+
+
+
+위 파라미터들을 사용하기 쉽게 하기위해, `user_params` 라고 하는 외부 메소드를 사용하는 것이 관습입니다. 이 메소드는 적절히 초기화한 해시값을 리턴하여 `params[:user]` 대신 사용할 수 있게 해줍니다.
+
+`@user = Uesr.new(user_params)`
+
+이 `user_params` 메소드는 Users 컨트롤러 내부에서만 실행되고, Web 경유로 외부 유저로 하여금 실행시킬 필요가 없기 때문에, 아래와 같이 Ruby의 `private` 키워드를 사용하여 *외부에서는 사용할 수 없게* 합니다. (`private` 키워드는 11.1.2에서 자세히 소개합니다.)
+
+```ruby
+# app/controllers/users_controller.rb
+class UsersController < ApplicationController
+  .
+  .
+  .
+  def create
+    @user = User.new(user_params)
+    if @user.save
+      # 保存の成功をここで扱う。
+    else
+      render 'new'
+    end
+  end
+
+  private
+
+    def user_params # 추가한 코드
+      params.require(:user).permit(:name, :email, :password,
+                                   :password_confirmation)
+    end
+end
+```
+
+여담으로, `private` 키워드 이후의 코드를 강조하기 위해, `user_params` 의 들여쓰기를 1단계 더 깊게 들여쓰고 있습니다. (경험적으로는 이것은 현명한 판단이라고 생각합니다. 클래스 내부에 많은 메소드가 있는 경우, `private` 메소드의 위치를 간단히 파악할 수 있기 때문입니다. 들여쓰기가 없는 경우와 비교해보면 어디서부터 `private` 처리가 되는지 고민할 필요가 없어질 것입니다.)
+
+
+
+이 시점에서 (송신버튼을 눌러도 에러가 출력되지 않는다는 의미로) 유저 등록 폼은 동작할 수 있게 되었습니다. 단, 아래의 캡쳐와 같이 (개발자용의 디버그 영역을 제외하고) 잘못된 정보를 송신해도 어떠한 피드백이 돌아오지 않습니다. 이것은 유저가 당황하는 원인이 됩니다. 또한 유효한 유저 정보를 송신해도 새로운 유저가 실제로 작성되었는지 알 방법이 없습니다. 전자의 경우를 7.3.3에서, 후자의 경우를 7.4에서 해결해보겠습니다.
+
+![](../image/Chapter7/invalid_submission_no_feedback_4th_ed.png)
+
+##### 연습
+
+1. /signup?admin=1 에 접속하여 `params` 내부에 `admin` 속성이 포함되어 있는지 디버그 정보로부터 확인해봅시다.
+
+### 7.3.3 에러 메세지
+
+유저 등록에 실패한 경우, 제일 마지막 수단으로서, 문제가 발생해서 유저 등록이 안되었다는 것을 유저에게 아릭 쉽게 전달하기 위한 에러메세지를 추가해보도록 합시다. Rails에서는 이러한 메세지를 User모델의 검증 시에 자동적으로 생성해줍니다. 예를 들어, 유저 정보의 메일주소가 무효하고, 패스워드ㅡ이 길이가 너무 짧은 상태에서 저장하려고 해봅시다.
+
+```ruby
+$ rails console
+>> user = User.new(name: "Foo Bar", email: "foo@invalid",
+?>                 password: "dude", password_confirmation: "dude")
+>> user.save
+=> false
+>> user.errors.full_messages
+=> ["Email is invalid", "Password is too short (minimum is 6 characters)"]
+```
+
+[6.2.2](Chapter6.md#622-존재성을-검증해보자) 에서 살짝 다루어본 `error.full_messages` 오브젝트는, 에러메세지의 배열을 가지고 있습니다.
+
+
+
+위 콘솔세션에서 표시되고 있는 것 처럼, 저장(등록)이 실패하게되면, `@user` 오브젝트에 고나련된 에러메세지의 리스트가 생성됩니다. 이 메세지를 브라우저에 표시하기 위해서는 유저의 `new` 페이지에서 에레머세지의 파셜(*partial*) 을 출력해봅시다. 이 때, `form-control` 이라고하는 CSS 클래스도 같이 추가하여 Bootstrap이 제대로 동작하는지 확인해봅시다. 수정 결과는 아래와 같습니다. 여기서 사용하고 있는 에러메세지의 파셜은, 어디까지나 시작품인 것을 알아주세요. 최종버전은 13.3.2 에서 다룹니다.
+
+```erb
+<!-- app/views/users/new.html.erb -->
+
+<% provide(:title, 'Sign up') %>
+<h1>Sign up</h1>
+
+<div class="row">
+  <div class="col-md-6 col-md-offset-3">
+    <%= form_for(@user) do |f| %>
+      <%= render 'shared/error_messages' %>
+
+      <%= f.label :name %>
+      <%= f.text_field :name, class: 'form-control' %>
+
+      <%= f.label :email %>
+      <%= f.email_field :email, class: 'form-control' %>
+
+      <%= f.label :password %>
+      <%= f.password_field :password, class: 'form-control' %>
+
+      <%= f.label :password_confirmation, "Confirmation" %>
+      <%= f.password_field :password_confirmation, class: 'form-control' %>
+
+      <%= f.submit "Create my account", class: "btn btn-primary" %>
+    <% end %>
+  </div>
+</div>
+```
+
+여기서는 `'shared/error_messages'` 라고 하는 파셜을 `render` 하고 있는 점을 주목해주세요. Rails 전반의 관습으로서 여러개의 뷰에서 사용하는 파셜은 전용 디렉토리 `shared` 에 놓는 관습이 있습니다. (실제로 이 파셜은 10.1.1 에서도 사용합니다.) 단, 지금은 아직 `app/views/shared` 라고 하는 디렉토리는 만들지 않았기 때문에, 이전에 소개해드린 `mkdir` 커맨드를 사용하여 새로운 디렉토리를 작성할 필요가 있습니다.
+
+` $ mkdir app/views/shared`
+
+또한 언제나처럼 텍스트 에디터를 사용하여 파셜 (`_error_messages.html.erb`) 도 작성합니다. 파셜의 내용은 아래와 같습니다.
+
+```erb
+<!-- app/views/shared/_error_messages_html.erb -->
+<!-- form 송신시의 에러메세지를 표시하기 위한 파셜 -->
+
+<% if @user.errors.any? %>
+  <div id="error_explanation">
+    <div class="alert alert-danger">
+      The form contains <%= pluralize(@user.errors.count, "error") %>.
+    </div>
+    <ul>
+    <% @user.errors.full_messages.each do |msg| %>
+      <li><%= msg %></li>
+    <% end %>
+    </ul>
+  </div>
+<% end %>
+```
+
+파셜에 의하여 Rails와 Ruby에는 Rails 에러 오브젝트용의 2개의 메소드를 포함하는 많은 결과물들이 도입되었습니다. 첫 번째로는 `count` 메소드를 소개하겠습니다. 이것은 에러의 개수를 리턴합니다.
+
+```ruby
+>> user.errors.count
+=> 2
+```
+
+다른 메소드로는 `any?` 메소드가 있습니다. 이것은 `empty?` 메소드와 서로 보완적인 관계입니다.
+
+```ruby
+>> user.errors.empty?
+=> false
+>> user.errors.any?
+=> true
+```
+
+[4.2.3](Chapter4.md#423-오브젝트-메세지의-송수신) 에서는 문자열에 대해 `empty?` 메소드를 사용했습니다. Rails의 에러 오브젝트에 대해서도 사용할 수 있습니다. 오브젝트가 비어있을 경우에는 `true`, 그 외에는 `false` 를 리턴합니다. `any?` 메소드는 `empty?` 와는 반대의 동작을 합니다. 내용이 하나도 하나라도 있는 경우에는 `true`, 그렇지 않으면 `false` 를 리턴합니다. (또한 `count, empty?, any?` 메소드는 Ruby의 배열에 대해서도 그대로 사용할 수 있습니다. 13.2에서 응요할 예정입니다.)
+
+
+
+게다가 `pluralize` 라고하는 영어전용 텍스트헬퍼가 새롭게 등장하고 있습니다. 이 것은 `helper` 오브젝트를 통하여 Rails 콘솔에서도 사용해 볼 수 있습니다.
+
+```ruby
+>> helper.pluralize(1, "error")
+=> "1 error"
+>> helper.pluralize(5, "error")
+=> "5 errors"
+```
+
+`pluralize` (복수형으로 나타내다)의 첫 번째 파라미터에 정수가 입력되면, 첫 번째 파라미터에 기반하여 두 번째 파라미터의 영단어를 복수형으로 변경한 것을 리턴해줍니다. 이 메소드의 동작 배경으로는 강력한 *인플렉터* (활용형생성) 이 있으며, 불규칙동사를 포함한 다양한 단어를 복수형으로 만드는 것이 가능합니다.
+
+```ruby
+>> helper.pluralize(2, "woman")
+=> "2 women"
+>> helper.pluralize(3, "erratum")
+=> "3 errata"
+```
+
+`pluraize` 를 사용하면, 코드는 다음과 같이 됩니다.
+
+```erb
+<%= pluralize(@user.errors.count, "error") %>
+```
+
+위 코드는, `"0 errors"`, `"1 error"`, `"2 errors"` 와 같이, 에러의 수에 맞게 단어를 리턴합니다. `"1 errors"` 처럼, 영어의 문법에 맞지 않은 문자열을 피하는 것도 가능합니다. (이것은 Web상에서도 자주 볼 수 있는 에러입니다.)
+
+
+
+위 파셜 코드에서는 에러 메세지에 스타일을 부여하기 위해 CSS id `error_explanation` 을 포함하고 있는 것을 주목해주세요. ([5.1.2](Chapter5.md#512-Bootstrap과-커스텀-CSS) 의 CSS에서 스타일id에 "#" 기호를 사용한 것을 떠올려주세요.) 더욱이 Rails는, 무효한 내용의 송신에 의하여 원래 페이지에 이동되면 CSS 클래스 `field_with_errors` 를 가진 `div` 태그로 에러 표시장소를 자동적으로 감싸줍니다. 이 라벨을 사용하는 것으로 아래와 같이 에러메세지를  SCSS의 형태로 만들 수 있습니다. 여기서는 Sass의 `@extend` 함수를 사용하여 Bootstrap의 `has-error` 라는 CSS 클래스를 적용해보겠습니다.
+
+```scss
+/* app/assets/stylesheets/custom.scss */
+.
+.
+.
+/* forms */
+.
+.
+.
+#error_explanation {
+  color: red;
+  ul {
+    color: red;
+    margin: 0 0 30px 0;
+  }
+}
+
+.field_with_errors {
+  @extend .has-error;
+  .form-control {
+    color: $state-danger-text;
+  }
+}
+```
+
+Form코드와 파셜코드, SCSS의 위 코드를 조합하는 것으로, 무효한 유저등록정보를 송신했을 때의 에러메세지를 알기 쉽게 만들어보았습니다. 이 메세지는 모델의 검증시의 생성되기 때문에, 메일주소의 스타일이나 패스워드의 최소문자열 등을 변경하면 메세지도 자동적으로 변경됩니다.
+
+
+
+이 때, `presence: true` 라고 하는 검증(validation) 과 `has_secure_password` 에 의한 검증 모두 빈 패스워드 (`nil`) 를 체크해버리기 때문에, 유저 등록 폼에서 빈 패스워드를 입력하면 두개의 같은 에레메시지가 표시되어버리고 맙니다. 물론, 이러한 에러 메세지는 직접 수정하는 것도 가능합니다만, 운좋게도 이번 경우에는 나중에 추가할  `allow_nil: true` 라는 옵션으로 이 문제를 해결할 수 있습니다.
+
+![](../image/Chapter7/signup_error_messages_3rd_edition.png)
+
+##### 연습
+
+1. 최소문자수를 `5` 로 변경하면, 에러메세지도 자동적으로 갱신되는 것을 확인해봅시다.
+2. 송신하지 않은 유저 등록 폼의 URL과, 송신이 끝난 유저 등록폼의  URL을 비교해봅시다. 어째서 URL이 다른 것일까요?
+
+
+
+### 7.3.4 실패 시의 테스트
+
+테스트 기능을 갖춘 강력한 Web 프레임워크가 없던 시절에는, 개발자는 입력Form의 테스트를 매번 수동으로 해볼 필요가 있었습니다. 예를 들어, 만약 유저 등록페이지를 수동으로 테스트해야만 한다면, 브라우저에서 해당 페이지를 표시하고, 유효한 데이터와 무효한 데이터를 서로 입력하여 어떤 경우에도 어플리케이션이 정상적으로 동작하는 것을 확인하지 않으면 안되었습니다. 게다가 어플리케이션에 변경사항이 발생할 때마다 똑같은 테스트를 반복해야만 했습니다. 이러한 프로세스는 매우 고통스러운 것이며, 버그를 놓치기도 쉽습니다.
+
+매우 다행스럽게도, Rails에서는 Form용의 테스트 코드를 작성할 수 있으며, 이러한 프로세스를 자동하하는 것이 가능합니다. 이번 섹션에서는 무효한 데이터를 송신했을 때, 올바른 동작을 하는 경우에 대해 테스트 코드를 작성해보겠습니다. 7.4.4에서는 마찬가지 방법으로, 유효한 데이터를 송신했을 때의 올바른 동작을 테스트하는 테스트 코드를 작성해보겠습니다.
+
+
+
+우선 신규 유저 등록용의 통합테스트 케이스를 작성하는 것부터 시작하겠습니다. 컨트롤러의 관습인 "리소스의 이름은 복수형" 을 따라, 통합테스트 코드의 파일이름은 `users_signup` 으로 만들어 보겠습니다.
+
+```
+$ rails generate integration_test users_signup
+      invoke  test_unit
+      create    test/integration/users_signup_test.rb
+```
+
+(7.4.4 에서 작성하는 테스트코드도, 여기서 생성한 파일을 사용합니다.)
+
+
+
+이번 테스트에서는 유저 등록 버튼을 눌렀을 때 (유저 정보가 무효한 데이터이기 때문에), 유저가 *생성되지 않는 것을* 확인합니다. (또한, 에러메세지를 확인하는 테스트코드는 7.3.4의 연습문제에서 확인해보도록 하겠습니다.) 이 테스트 케이스를 확인하기 위해, 유저의 수를 카운트(*count*) 합니다. 이번 테스트 코드에서 동작하는 `count` 메소드는, `User` 를 포함한 모든 Active Record 클래스에서 사용할 수 있습니다.
+
+```ruby
+$ rails console
+>> User.count
+=> 1
+```
+
+[6.3.4](Chapter6.md#634-유저의-생성과-인증) 에서 데이터베이스를 리셋하고 있습니다. 현 시점에서 `User.count` 는 `1` 로 되어있을 것입니다. (도중에 시험삼아 유저의 추가나 삭제를 했기 때문에, 결과값이 다를 수도 있습니다만 신경쓸 필요는 없습니다.) [5.3.4](Chapter5.md#534-링크의-테스트) 에서 처럼, `assert_select` 를 사용하여 관련 페이지의 HTML 요소를 테스트해보겠습니다. 이것으로 이후 깜빡하여 HTML 태그를 변경해도 알아차릴 수 있게 될 것입니다.
+
+
+
+일단 `get` 메소드를 사용하여 유저 등록 페이지에 접근해봅시다.
+
+`get signup_path`
+
+Form 송신을 테스트하기 위해서는, *user_path* 에 대해 `POST` 리퀘스트를 송신할 필요가 있습니다. 이것은 다음과 같이 `post` 메소드를 사용하여 구현이 가능합니다.
+
+```ruby
+assert_no_difference 'User.count' do
+  post users_path, params: { user: { name:  "",
+                                     email: "user@invalid",
+                                     password:              "foo",
+                                     password_confirmation: "bar" }
+    												}
+end
+```
+
+`create` 액션의 `User.new`에서 기대하는 데이터를, `params[:user]` 라는 해시에 정리하여 입력하고 있습니다. Rails 4.2 이전에는 `params` 를 암묵적으로 생략하여도 (`user` 해시만 하여도) 테스트는 통과하였습니다만, Rails 5.0부터는 추천하지 않게 되었습니다. `params` 해시를 명시적으로 선언하는 것을 추천합니다.
+
+
+
+`assert_no_difference` 메소드의 블록 내부에서 `post` 를 사용하고 메소드의 파라미터에는 `'User.count'`  를 넘기도록 합니다. 이것은 `assert_no_difference` 의 블록을 실행하기 전후로 파라미터의 값 (`User.count`) 가 변하지 않는 것을 테스트하는 것입니다. 즉, 이 테스트는 유저의 수를 기억한 후에 데이터를 등록하여보고, 유저수가 변하지 않는 것을 검증하는 테스트입니다. 따라서 다음 코드와 같은 움직임을 하게 되는 것입니다.
+
+```ruby
+before_count = User.count
+post users_path, ...
+after_count  = User.count
+assert_equal before_count, after_count
+```
+
+위 코드들은 똑같은 테스트를 합니다만, `assert_no_difference` 를 사용하는 것이 명료하고 Ruby의 관습적인 측면에서 보았을 때도 올바르다고 할 수 있습니다.
+
+
+
+또한, 위 코드에서는 `get` 메소드를 사용하지 않는 것을 확인해주세요. 이 것은 각 메소드에 기술적은 관련성이 없으며, 유저 등록 페이지에 접근하지 않아도 직접 `post` 메소드를 호출하여 유저 등록을 할 수 있다는 것을 의미합니다. 개인적으로는 컨셉을 명확히 한다는 의미와, 유저 등록 페이지를 더블체크한다는 의미도 겸하여 (실제 순서에 따라서) `get` 과 `post` 를 서로 호출하는 방법이 좋다고 생각합니다.
+
+
+
+위 아이디어를 코드로 옮긴다면, 아래와 같이 됩니다. 또한 데이터 송신시에 실패했을 때, `new` 액션이 실행될 것이기 때문에 `assert_template` 를 사용한 테스트도 포함하고 있는 것을 확인해주세요. 에러 메세지가 올바르게 표시되는지 안되는지는 연습문제에서 확인해보겠습니다.
+
+```ruby
+# test/integration/users_signup_test.rb
+
+require 'test_helper'
+
+class UsersSignupTest < ActionDispatch::IntegrationTest
+
+  test "invalid signup information" do
+    get signup_path
+    assert_no_difference 'User.count' do
+      post users_path, params: { user: { name:  "",
+                                         email: "user@invalid",
+                                         password:              "foo",
+                                         password_confirmation: "bar" } }
+    end
+    assert_template 'users/new'
+  end
+end
+```
+
+어플리케이션 코드는 이미 실행이 끝나있습니다. 이번 통합테스트를 포함하여 모든 테스트 케이스가 GREEN이 될 것입니다.
+
+```
+$ rails test
+```
+
+##### 연습
+
+1. 화면에서의 에러메세지에 대한 테스트 코드를 작성해보세요. 어느정도 만큼 상세히 테스트할 것인지는 전적으로 맡기겠습니다. 아래 첫 번째 코드를 템플릿으로써 준비했으니 참고해주세요.
+2. 유저 등록 Form의 URL은 /signup 입니다만, 무효한 유저 등록용 데이터를 송신했을 때의 URL 이 /users 로 변하고 있습니다. 이것은 이전 5장에서 추가한 Named Route(/signup) 과 RESTful 한 라우팅의 디폴트설정과의 차이에 의해 발생한 결과입니다. 아래 두 번째, 세 번째 코드의 내용을 참고하여 이 문제를 해결해보세요. 제대로 된다면 양쪽의 URL이 모두 /signup 이 될 것입니다. 이상하게도 테스트는 GREEN의 결과로 될 것 같은데..왜그런지 생각해보세요.
+3. 아래 첫 번째 코드에서의 `post`  부분을 변경하여 2번에서 생성한 새로운 URL(/signup) 에 맞춰보도록 합시다. 테스트가 아직 통과하고 있다는 것을 확인해주세요.
+4. 아래 세 번째 코드에서의 Form을 이전 상태로 되돌려보고, 테스트가 역시나 통과하고 있다는 점을 확인해보세요. 이것은 문제가 있습니다. 왜냐하면 현재 post가 송신되는 URL은 올바른 값이 아니기 때문입니다. `assert_select` 를 사용한 테스트를 아래 첫 번째 코드에 추가하고, 해당 버그를 찾아내게끔 해보세요. (테스트를 추가하여 실패한다면 성공입니다.) 이 후, 변경후의 Form(아래 세 번째 코드) 로 수정하여 테스트가 통과하는 것을 확인해보세요. *Hint*: Form에서부터 송신되어 테스트하는 것이 아닌, `form[action="/signup"]` 이라고 하는 부분이 존재하는지에 대하여 테스트해봅시다.
+
+```ruby
+# test/integration/users_signup_test.rb
+require 'test_helper'
+
+class UsersSignupTest < ActionDispatch::IntegrationTest
+
+  test "invalid signup information" do
+    get signup_path
+    assert_no_difference 'User.count' do
+      post users_path, params: { user: { name:  "",
+                                         email: "user@invalid",
+                                         password:              "foo",
+                                         password_confirmation: "bar" } }
+    end
+    assert_template 'users/new'
+    assert_select 'div#<CSS id for error explanation>'
+    assert_select 'div.<CSS class for field with error>'
+  end
+  .
+  .
+  .
+end
+```
+
+```ruby
+# config/routes.rb
+
+Rails.application.routes.draw do
+  root 'static_pages#home'
+  get  '/help',    to: 'static_pages#help'
+  get  '/about',   to: 'static_pages#about'
+  get  '/contact', to: 'static_pages#contact'
+  get  '/signup',  to: 'users#new'
+  post '/signup',  to: 'users#create' #추가하는 코드
+  resources :users
+end
+```
+
+```erb
+<!-- app/views/users/new.html.erb -->
+
+<% provide(:title, 'Sign up') %>
+<h1>Sign up</h1>
+
+<div class="row">
+  <div class="col-md-6 col-md-offset-3">
+    <%= form_for(@user, url: signup_path) do |f| %> <!-- 수정한 코드 -->
+      <%= render 'shared/error_messages' %>
+
+      <%= f.label :name %>
+      <%= f.text_field :name, class: 'form-control' %>
+
+      <%= f.label :email %>
+      <%= f.email_field :email, class: 'form-control' %>
+
+      <%= f.label :password %>
+      <%= f.password_field :password, class: 'form-control' %>
+
+      <%= f.label :password_confirmation, "Confirmation" %>
+      <%= f.password_field :password_confirmation, class: 'form-control' %>
+
+      <%= f.submit "Create my account", class: "btn btn-primary" %>
+    <% end %>
+  </div>
+</div>
+```
+
+
+
+## 7.4 유저 등록 성공
+
+무효한 데이터의 송신을 핸들링할 수 있게 되었습니다. 드디어 신규 유저를 실제로 데이터베이스에 저장할 수 있도록, (물론 데이터가 유효한 경우에만 입니다.) 유저 등록 Form을 완성해봅시다. 우선, 유저를 저장할 수 있게 합니다. 저장에 성공하면, 유저정보는 자동적으로 데이터베이스에 등록됩니다. 다음으로는 브라우저의 표지를 *리다이렉트* 하여 등록된 유저의 프로필을 표시합니다. 겸사겸사 웰컴페이지도 표시해봅시다. 목업은 아래와 같습니다. 저장에 실패한 경우에는 [7.3](#73-유저-등록-실패) 에서 개발한 동작이 실행될 것입니다.
+
+![](../image/Chapter7/signup_success_mockup_bootstrap.png)
+
+### 7.4.1 등록 Form의 완성
+
+유저 등록 Form을 완성하기 위해 `user_contorller.rb` 에서 `create` 액션의 `if`  문 내부를 구현해보도록 합시다. 지금 시점에서는 환경에 따라 세세한 차이는 있을 수 있지만, 기본적으로는 유효한 정보를 송신했을때 에러를 발생시키고 있습니다. 이것은  Rails에서의 디폴트 액션에 대응하는 뷰를 표시하려고 하고있지만, `create` 액션에 대응하는 뷰의 템플릿이 없기 때문입니다.
+
+![](../image/Chapter7/valid_submission_error_4th_ed.png)
+
+(버튼이 동작하질 않습니다.)
+
+![](../image/Chapter7/no_create_template_error.png)
+
+(create 액션의 뷰템플릿이 존재하지 않는 것을 알 수 있습니다.)
+
+
+
+물론, `create` 액션에 대응하는 템플릿을 작성할 수도 있습니다만,  Rails의 일반적인 관습에 따라, 유저 등록에 성공했을 경우는 페이지를 표시하지않고, 다른 페이지로 *리다이렉트 (Redirect)* 하게끔 설정해줍니다. 구체적으로는 새롭게 생성된 유저의 프로필 페이지로 리다이렉트하고자합니다. (경우에 따라서는 루트URL로 리다이렉트하는 것도 하나의 선택지라고 할 수 있습니다.) 실제 어플리케이션 코드는 아래와 같습니다. (`redirect_to` 메소드에 주목해주세요.)
+
+```ruby
+# app/controllers/users_controller.rb
+class UsersController < ApplicationController
+  .
+  .
+  .
+  def create
+    @user = User.new(user_params)
+    if @user.save
+      redirect_to @user #추가된 코드
+    else
+      render 'new'
+    end
+  end
+
+  private
+
+    def user_params
+      params.require(:user).permit(:name, :email, :password,
+                                   :password_confirmation)
+    end
+end
+
+
+```
+
+여기서
+
+`redirect_to @user`
+
+라는 코드가 있습니다만, 이 코드는 다음 코드와 같은 동작을 합니다.
+
+`redirect_to user_url(@user)`
+
+위 코드는 `redirect_to @user` 라는 코드 (Rails 엔지니어가)로 부터 `user_url(@user)` 라고 하는 코드를 실행하고 싶다는 것을 Rails가 제멋대로 해석한 결과인 것입니다.
+
+##### 연습
+
+1. 유한 정보를 송신하여, 유저가 실제로 작성되는 것을  Rails 콘솔을 사용하여 확인해봅시다.
+2. 위 코드를 수정하여, `redirect_to user_url(@user)` 와 `redirect_to @user` 가 같은 결과를 나타내는 것을 확인해봅시다.
+
+### 7.4.2 flash
+
+위 코드에 의해 유저 등록 Form이 실제로 동작하게 되었습니다. 이것으로 브라우저에서부터 올바른 유저 정보를 등록할 수 있게 되었습니다만, 그 전에 Web 어플리케이션에서 상식적으로 구현해놓고 있는 기능을 추가해봅시다. 유저 생성 완료 후에 표시되는 페이지에 메세지를 표시 (이 경우는 신규 유저로의 웰컴 페이지)하고, 2번째 이후에는 해당 페이지에 메세지를 표시하지 않도록 해봅시다.
+
+
+
+Rails에서 이러한 정보를 표시하기 위해서는, *flash* 라고하는 특수한 변수를 사용합니다. 이 변수는, 해시처럼 다룹니다. Rails의 일반적인 관습에 따라, `:success` 라고 하는 키에는 성공시의 메세지를 대입해봅시다.
+
+```ruby
+# app/controllers/users_controller.rb
+class UsersController < ApplicationController
+  .
+  .
+  .
+  def create
+    @user = User.new(user_params)
+    if @user.save
+      flash[:success] = "Welcome to the Sample App!"
+      redirect_to @user
+    else
+      render 'new'
+    end
+  end
+
+  private
+
+    def user_params
+      params.require(:user).permit(:name, :email, :password,
+                                   :password_confirmation)
+    end
+end
+```
+
+`flash` 변수에 대입한 메세지는, 리다이렉트한 직후의 페이지에 표시할 수 있게 됩니다. 이번에는 `flash` 내부에 존재하는 키의 여부를 알아보고, 만약 키가 존재한다면 해당 값(메세지)를 전부 표시하도록 레이아웃을 수정해봅시다. [4.3.3](Chapter4.md#433-Hash와-Symbol) 때, 콘솔에서 실행한 예를 떠올려주세요. 그 때는 일부러 `flash` 라 이름붙인 변수를 사용하여, 해시값을 표시해보았습니다.
+
+```ruby
+# 콘솔에서 flash 해시를 반복하여 출력해봅시다.
+$ rails console
+>> flash = { success: "It worked!", danger: "It failed." }
+=> {:success=>"It worked!", danger: "It failed."}
+>> flash.each do |key, value|
+?>   puts "#{key}"
+?>   puts "#{value}"
+>> end
+success
+It worked!
+danger
+It failed.
+```
+
+위에서 표시한 패턴에 따라,  flash변수의 내용을  Web사이트 전체에 걸쳐 표시할 수 있게하기 위한 코드는 다음과 같습니다.
+
+```erb
+<% flash.each do |message_type, message| %>
+  <div class="alert alert-<%= message_type %>"><%= message %></div>
+<% end %>
+```
+
+또한, 이 코드에서는,  HTML과 ERB코드가 서로 섞여있습니다만, 이것을 깔끔하게 하는 작업은 연습문제에서 해보도록 하겠습니다. 다음으로 ERB 코드에서는
+
+```erb
+alert-<%= message_type %>	
+```
+
+적용하는 CSS 클래스를 메세지의 종류에 따라 변경되도록 하고 있습니다. 이것으로 인하여 예를 들어 `:success` 키의 메세지가 표시될 겨우에 적용되는 CSS클래스는 다음과 같이 됩니다.
+
+`alert-success`
+
+이 때, `:success` 키는 심볼입니다만, 템플렛 내부에서 반영할 때에는  ERB코드가 자동적으로  `"success"` 라고하는 문자열로 변환하는 점을 주의해주세요. 이 성질을 이용하여 키의 내용에 따라 다른 CSS 클래스를 적용할 수 있으며, 메세지의 종류에 따라 스타일을 동적으로 변경할 수 있습니다. 예를들어 8.1.4에서는 `flash[:danger]` 를 사용하여 로그인에 실패했을 때 나타내는 메세지를 표시합니다. (실제로, 이미 `alert-danger` 라고 하는 CSS클래스를 사용하여, 에러 메세지의 스타일을 div태그로 지정하고 있습니다.) Bootstrap CSS는 이러한 flash의 클래스용의 4개의 스타일을 가지고 있습니다. (`success, info, warning, danger`) 또한 본 튜토리얼의 sample 어플리케이션에서는 이 flash 클래스를 경우에 따라 사용해나갈 것입니다. (11.2에서는 `info`, 8.1.4에서는 `danger` 를 사용합니다.)
+
+
+
+템플릿 내부의 flash메세지가 표시되기 때문에, 다음 코드는
+
+`flash[:success] = "Welcome to the Sample App!"`
+
+최종적으로는 아래와 같은 HTML로 변환됩니다.
+
+`<div class="alert alert-success">Welcome to the Sample App!</div>`
+
+앞서 말씀드린 ERB를 레이아웃에 반영한 결과는 아래와 같습니다.
+
+```erb
+<!-- app/views/layouts/application.html.erb -->
+<!DOCTYPE html>
+<html>
+  .
+  .
+  .
+  <body>
+    <%= render 'layouts/header' %>
+    <div class="container">
+ <!-- flash code -->
+      <% flash.each do |message_type, message| %>
+        <div class="alert alert-<%= message_type %>"><%= message %></div>
+      <% end %>
+ <!-- flash code -->
+      <%= yield %>
+      <%= render 'layouts/footer' %>
+      <%= debug(params) if Rails.env.development? %>
+    </div>
+    .
+    .
+    .
+  </body>
+</html>
+```
+
+##### 연습
+
+1. 콘솔에서, 문자열 내부의 식전개 ([4.2.2](Chapter4.md#422-문자열)) 로 심볼을 호출해봅시다. 예를들어  `"#{:success}"`라 하는 코드를 실행하면 어떠한 결과가 리턴됩니까?
+2. 1번의 결과를 참고하여 콘솔상에서의 flash는 어떠한 결과가 되는지 생각해봅시다.
+3. 
