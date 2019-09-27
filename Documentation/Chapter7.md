@@ -71,70 +71,50 @@ User모델이 완성되었습니다. 드디어 유저 생성(등록) 기능을 �
 ###### 컬럼 7.1 Rails의 3가지 환경
 
 > Rails에서는 테스트환경(test), 개발환경(development), 실제 배포환경(production) 의 세 가지 환경이 기본으로 준비되어있습니다. Rails console의 기본 환경은 development입니다.
-
 >
-
 > $ rails console
->   Loading development environment
-
+> Loading development environment
+>
 > ​	Rails.env
 > ​	  => "development"
 > ​	Rails.env.development?
 > ​	  => true
 > ​	Rails.env.test?
 > ​	  => false
-
 >
-
+> 
+>
 > 위와 같이, Rails에서는 `Rails` 라고 하는 오브젝트가 존재하며, 해당 오브젝트의 환경의 논리값을 다루는 `env` 라는 속성이 있습니다. 예를 들어 `Rails.env.test?` 라고 하면 테스트 환경에서는 `true` 를 리턴하고, 그 외의 환경에서는 `false` 를 리턴합니다.
-
 >
-
 > 테스트 환경에서의 디버그 등, 다른 환경에서 console을 실행하는 필요가 생겼을 때는 환경을 파라미터로써 console 스크립트에 직접 입력할 수 있습니다.
-
 >
-
 > $ rails console test
->   Loading test environment
-
+> Loading test environment
+>
 > ​	Rails.env
 > ​	  => "test"
 > ​	Rails.env.test?
 > ​	  => true
-
 >
-
 > 마찬가지로, Rails 서버도 기본 옵션으로는 `development` 가 사용되고 있습니다만, 다음과 같은 다른 환경을 명시적으로 실행하는 것도 가능합니다.
-
 >
-
 > `$ rails server --environment production`
-
 >
-
 > 어플리케이션을 실제 배포환경에서 실행하는 경우, 배포환경의 데이터베이스를 이용하지 않으면 어플리케이션을 실행할 수 없습니다. 때문에 `rails db:migrate` 를 배포환경에서 실행하여 배포환경 데이터베이스를 생성합니다.
-
 >
-
 > `$ rails db:migrate RAILS_ENV=production`
-
 >
-
 > (console, server, migrate의 세 가지 커맨드는, 기본이외의 환경을 지정하는 방법이 제각각 다르기 때문에 혼동스러울 수 있습니다. 때문에 세 가지의 경우의 모든 방법을 칼럼에서 설명했습니다. 또한 `RAILS_ENV=<env>` 를 커맨드의 앞 부분에 놓아도 상관 없습니다. 예를 들면, `RAILS_ENV=production rails server` 등의 문장을 입력해도 됩니다.)
-
 >
-
 > Sample 어플리케이션을 기존에 Heroku 상에 배포(디플로이) 한 경우에는, `heroku run rails console` 이라고 하는 커맨드를 입력하여 실제 배포환경을 확인해볼 수 있습니다.
-
->  $ heroku run rails console
-
+>
+> `$ heroku run rails console`
+>
 > ​	Rails.env
 > ​	  => "production"
 > ​	Rails.env.production?
 > ​	  => true
-
 >
-
 > 당연한 이야기지만, Heroku는 실제 배포용 플랫폼이기 때문에, 실행되는 어플리케이션은 모두 실제 배포환경입니다.
 
 디버그출력을 예쁘게하기 위해, [제 5장](Chapter5.md) 에서 생성한 커스텀 스타일 시트를 아래와 같이 추가합니다.
@@ -302,7 +282,7 @@ end
 
 
 
-유저의 뷰와 액션을 정의했습니다. /users/1 은 완전하게 동작할 것입니다. 이 때, 만일 bcrypt gem을 추가하고 나서 한 번도 Rails 서버를 동작하지 않은 경우라면, 여기서 재부팅을 해보세요. ([컬럼 1.1](Chapter1.md#컬럼-11-숙련-이라고-하는-것은)) 재부팅을 하면 /users/1에 접속하여 디버그정보로부터 `params[:id]` 의 값을 확인할 수 있을 겁니다.
+유저의 뷰와 액션을 정의했습니다. /users/1 은 완전하게 동작할 것입니다. 이 때, 만일 bcrypt gem을 추가하고 나서 한 번도 Rails 서버를 동작하지 않은 경우라면, 여기서 재부팅을 해보세요. ([컬럼 1.1](Chapter1.md#컬럼-11-숙련이라고-하는-것은)) 재부팅을 하면 /users/1에 접속하여 디버그정보로부터 `params[:id]` 의 값을 확인할 수 있을 겁니다.
 
 ```
 ---
@@ -752,7 +732,7 @@ Rails는 `name` 을 사용하여 초기화한 해시(`params` 변수 경유)로 
        value="NNb6+J/j46LcrgYUC60wQ2titMuJQ5lLqyAbnbAUkdo=" />
 ```
 
-이 코드는 브라우저상에서는 아무것도 하지 않습니다만, Rails의 내부에서 사용되는 특별한 코드입니다. 따라서 어떠한 의도로 생성되었는지는 현 시점에서 알 필요가 없없습니다. ([컬럼 1.1](Chapter1.md#컬럼-11-숙련-이라고-하는-것은)) 간단히 정리하자면, Unicode 문자의 "`&#x2713`"(체크 마크) 를 사용하여 브라우저가 제대로된 문자코드를 송신하고 있는지, 혹은 *Cross-Site Request Forgery (CSRF)* 을 호출하는 공격을 막기 위해 신뢰할 수 있는 토큰을 포함하거나 합니다.
+이 코드는 브라우저상에서는 아무것도 하지 않습니다만, Rails의 내부에서 사용되는 특별한 코드입니다. 따라서 어떠한 의도로 생성되었는지는 현 시점에서 알 필요가 없없습니다. ([컬럼 1.1](Chapter1.md#컬럼-11-숙련이라고-하는-것은)) 간단히 정리하자면, Unicode 문자의 "`&#x2713`"(체크 마크) 를 사용하여 브라우저가 제대로된 문자코드를 송신하고 있는지, 혹은 *Cross-Site Request Forgery (CSRF)* 을 호출하는 공격을 막기 위해 신뢰할 수 있는 토큰을 포함하거나 합니다.
 
 ##### 연습
 
@@ -1423,7 +1403,7 @@ alert-<%= message_type %>
 
 `$ rails db:migrate:reset`
 
-환경에 따라서는, 여기서 Web서버를 재부팅할 필요가 있습니다. 필요에 따라서 Ctrl+C등을 사용하여 재부팅해주세요.([컬럼 1.1](Chapter1.md#컬럼-11-숙련-이라고-하는-것은))
+환경에 따라서는, 여기서 Web서버를 재부팅할 필요가 있습니다. 필요에 따라서 Ctrl+C등을 사용하여 재부팅해주세요.([컬럼 1.1](Chapter1.md#컬럼-11-숙련이라고-하는-것은))
 
 
 
@@ -1607,7 +1587,7 @@ SSL를 도입하였습니다. 다음은 어플리케이션의 설정을 변경�
 
 
 
-제일 첫 단계로는, *puma gem* 을 `Gemfile` 에 추가하는 것입니다만, Rails 5에서 Puma는 기본설정으로 사용할 수 있게 되어있습니다. 따라서 제일 첫 단계는 스킵해도 무방합니다. (즉, Rails 4.2 이전에는 `config/puma.rb` 파일을 작성하고, 아래와 같은 설정을 하였습니다.) 다음 단계로는 [Heroku의 Puma문서](https://devcenter.heroku.com/articles/deploying-rails-applications-with-the-puma-web-server) 에 따라 설정을 변경해봅시다. 설정을 변경한다고는 해도 이번에는 문서의 코드를 그 대로 인용한 것뿐이기 때문에 내용은 이해하지 않아도 괜찮습니다. ([컬럼 1.1](Chapter1.md#컬럼-11-숙련-이라고-하는-것은))
+제일 첫 단계로는, *puma gem* 을 `Gemfile` 에 추가하는 것입니다만, Rails 5에서 Puma는 기본설정으로 사용할 수 있게 되어있습니다. 따라서 제일 첫 단계는 스킵해도 무방합니다. (즉, Rails 4.2 이전에는 `config/puma.rb` 파일을 작성하고, 아래와 같은 설정을 하였습니다.) 다음 단계로는 [Heroku의 Puma문서](https://devcenter.heroku.com/articles/deploying-rails-applications-with-the-puma-web-server) 에 따라 설정을 변경해봅시다. 설정을 변경한다고는 해도 이번에는 문서의 코드를 그 대로 인용한 것뿐이기 때문에 내용은 이해하지 않아도 괜찮습니다. ([컬럼 1.1](Chapter1.md#컬럼-11-숙련이라고-하는-것은))
 
 ```ruby
 # config/puma.rb
