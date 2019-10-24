@@ -205,6 +205,240 @@ Rails에서는 위와 같이 작성하는 것 만으로도 "Form의 `action` 은
 
 1. `new.html.erb` 에서 작성한 폼의 정보를 송신하면, Sessions 컨트롤러의   `create` 액션에 보내지게됩니다. Rails는 이것을 어떻게 구현하고 있는 것일까요? 생각해봅시다. *Hint*: 위 HTML의 맨 첫 줄을 주목해주세요.
 
+### 8.1.3 유저의 검증과 인증
+
+유저의 등록에서는 최초로 유저를 작성해보았습니다. 로그인에서 세션을 작성하는 경우, 제일 처음 이루어지는 것은, 입력이 *무효* 한 경우의 처리입니다. 제일 처음으로, 폼 데이터가 송신되어졌을 때의 동작을 생각하고 이해해봅시다. 그 다음으로 로그인이 실패했을 경우에 표시되는 에러메세지를 배치할 것입니다. 그 다음으로 로그인에 성공한 경우 (8.2)에 사용하는 기초부분을 작성해볼 것입니다. 일단 여기서는 로그인 데이터가 송신될 때마다 패스워드와 메일주소의 조합이 유효한지를 판정하는 로직을 구현해볼 것입니다.
+
+
+
+제일 처음으로, 최소한의 `create` 액션을 Sessions 컨트롤러에서 정의하고, 아무것도 정의되어있지 않은 `new` 액션과 `destroy` 액션도 겸사겸사 작성해봅시다. 아래의 코드에서 `create` 액션의 안에서는 아무것도 이루저지지 않습니다만, 액션을 실행하면 `new` 뷰가 표시될 것이기 때문에 이걸로 충분합니다. 결과적으로는 /session/new 폼에서 데이터를 보내면 아래 두 번째 예시처럼 될 것입니다.
+
+```ruby
+class SessionsController < ApplicationController
+
+  def new
+  end
+
+  def create
+    render 'new'
+  end
+
+  def destroy
+  end
+end	
+```
+
+![](../image/Chapter8/initial_failed_login_3rd_edition.png)
+
+위 캡쳐에서 표시되어지고 있는 디버그 정보를 확인해주세요. [8.1.2](#812-로그인-Form) 의 마지막에서도 간단히 다루어보았던, `params` 해시에서는 다음과 같이 `session` 키의 아래에 메일주소와 패스워드가 있습니다.
+
+```
+---
+session:
+  email: 'user@example.com'
+  password: 'foobar'
+commit: Log in
+action: create
+controller: sessions
+```
+
+유저 등록의 경우와 마찬가지로, 이러한 파라미터는 네스트화된 해시로 되어있습니다. 특히 `params` 는 다음과 같은 네스트 해시로 되어있습니다. 해시 안에 해시가 있는 구조입니다.
+
+`{ session: { password: "foobar", email: "user@example.com" } }`
+
+즉, 다음과 같은 해시가 있는 경우
+
+`params[:session]`
+
+이 해시에 다시 해시가 포함되어 있으며
+
+`{ password: "foobar", email:"user@example.com" }`
+
+결과적으로는 다음과 같이 데이터를 접근할 수 있습니다.
+
+`params[:session][:password]`
+
+또한 위처럼 한다면 폼으로부터 송신되어진 패스워드를 확인할 수 있습니다.
+
+
+
+요컨대 `create` 액션의 내부에는, 유저의 인증에 필요한 모든 정보를 `params` 해시로부터 간단하게 얻을 수 있는 것입니다. 그리고 인증에 필요한 모든 메소드도 8장까지 오면서 다 배웠습니다. (그렇게 되도록 본 튜토리얼이 구성되어 있습니다.) 여기서는 Active Record가 제공하는 `User.find_By` 메소드와, `has_secure_password` 가 제공하는 `authenticate` 메소드를 사용하고 있습니다. 여기서 `authenticate` 메소드는 인증에 실패했을 때 `false` 를 리턴하는 것을 기억하고 계시나요? 이상의 내용을 정리하여 유저의 로그인 부분을 구현한 것이 아래의 코드입니다.
+
+```ruby
+# app/controller/sessions_controller.rb
+class SessionsController < ApplicationController
+
+  def new
+  end
+
+  def create
+    user = User.find_by(email: params[:session][:email].downcase)
+    if user && user.authenticate(params[:session][:password])
+      # 유저 로그인 후에 유저 정보 페이지로 리다이렉트
+    else
+      # 에러메세지 작성
+      render 'new'
+    end
+  end
+
+  def destroy
+  end
+end
+```
+
+
+
+`create`의 첫 번째 행에서는 전달받은 로그인폼의 메일주소를 사용하여 데이터베이스로부터 유저를 조회하고 있습니다. ([6.2.5](Chapter6.md#625-유니크성을-검증해보자) 에서는 메일주소를 모두 소문자로 변환하여 저장하고 있었던 것을 기억하시나요? 그렇기 때문에 여기서는 `downcase`메소드르 사용하여 유효한 메일주소가 입력되었을 때 확실하게 매칭될 수 있게 하고 있습니다.) 그 다음 행은 살짝 이해하기 어려울 지도 모르겠습니다만, Rails 프로그래밍에서는 정석적인 방법입니다.
+
+`user && user.authenticate(params[:session][:password])`
+
+`&&`(논리곱, and) 는, 조회결과로 얻은 유저가 유효한지를 판단하기 위해 사용됩니다. Ruby에서는 `nil`과 `false` 이외의 모든 오브젝트는, 진리값으로는 `true` 가 되는([4.2.3](Chapter4.md#423-오브젝트-메세지의-송수신)) 성질을 고려한다면, `&&` 의 전후의 값과 조합한 결과는 아래의 표와 같은 결과가 됩니다. 입력된 메일 주소를 가진 유저가 데이터베이스에 존재하며, 또한 입력된 패스워드가 해당 유저의 패스워드와 일치하는 경우에만 `if` 문의 결과가 `true` 가 되는 것을 알 수 있습니다. 조금 더 간략하게 설명하자면, "유저가 데이터베이스에 존재하면서, 인증에 성공했을 경우에만" 이라는 조건이 됩니다.
+
+| **User**        | **Password**                   | **a && b**                 |
+| --------------- | ------------------------------ | -------------------------- |
+##### 연습
+
+1. Rails 콘솔을 사용하여 위 표의 조건의 식이 올바른지를 확인해봅시다. 일단 `user = nil` 의 경우를, 그 다음으로는 `user = User.first` 의 경우를 확인해봅시다. *Hint* : 반드시 논리값을 가진 오브젝트가 될 수 있도록, [4.2.3](Chapter4.md#423-오브젝트-메세지의-송수신) 에서 소개해드린 `!!` 의 기술을 사용해봅시다. 예시 : `!!(user && user.authenticate('foobar'))`
+
+### 8.1.4 flash message를 사용해보자
+
+[7.3.3](Chapter7.md#733-에러-메세지) 에서는 유저 등록 시의 에러메세지를 표시할 때, User모델의 에러메세지를 이용했던 것을 기억하시나요? 유저 등록의 경우, 에러메세지는 특정한 Active Record 오브젝트에 관련지어져 있었기 때문에, 그 방법을 이용했습니다. 그러나 세션에서는 Active Record의 모델을 사용하고 있지 않기 때문에, 그 때의 그 방법대로는 사용할 수 없습니다. 여기서 로그인에 실패했을 경우에는 대신에 플래시 메세지를 표시하도록 해봅시다. 제일 첫 코드는 아래와 같습니다. (이 코드는 일부러 조금 틀리게 작성했습니다.)
+
+```ruby
+class SessionsController < ApplicationController
+
+  def new
+  end
+
+  def create
+    user = User.find_by(email: params[:session][:email].downcase)
+    if user && user.authenticate(params[:session][:password])
+      # 유저 로그인 후에 유저 정보 페이지로 리다이렉트
+    else
+      flash[:danger] = 'Invalid email/password combination' # 본래는 정확하지 않은 표현
+      render 'new'
+    end
+  end
+
+  def destroy
+  end
+end
+```
+
+플래시 메세지는 Web사이트의 레이아웃으로 표시되기 때문에, `flash[:danger]` 으로 설정한 메세지는 자동적으로 표시됩니다. Bootstrap CSS의 덕분으로 적절한 스타일도 표시됩니다.
+
+![](../image/Chapter8/failed_login_flash_3rd_edition.png)
+
+위에서 설명드렸다시피, 코드가 조금 잘못되어있습니다. 페이지에서는 제대로 에러메세지를 출력하고 있습니다만, 어디가 문제일까요? 실은 위 코드대로라면은 *리퀘스트* 의 플래시 메세지가 한 번 표시되면 사라지지않고 계속 남아있게 됩니다. 7장에서는 리다이렉트를 사용했던 것 과는 다르게, 표시된 템플레이트를 `render` 메소드로 강제적으로 리렌더링하여도 리퀘스트로 판단하지 않기 때문에, 리퀘스트의 메세지가 사라지지 않습니다. 예를들어 일부러 무효한 정보를 입력하여 송신하여 에러메세지를 표시하면, Home 페이지를 쿨릭하여 이동하면 해당 화면에서도 플래시 메세지가 표시된 채로 남아있습니다. 이 문제는 8.1.5에서 수정하도록 해보겠습니다.
+
+![](../image/Chapter8/flash_persistence_3rd_edition.png)
+
+### 8.1.5 flash 의 테스트
+
+플래시 메세지가 사라지지 않는 문제는, 우리의 어플리케이션의 작은 버그입니다. [컬럼 3.3](Chapter3.md#컬럼-33-결국-테스트는-언제-하는-것이-좋은가) 에서 해설한 테스트의 가이드라인에 따르면, 이것은 "에러를 캐치하는 테스트를 먼저 작성하고, 그 후에 에러가 해결되게끔 코드를 작성한다" 라는 항목에 해당하는 상황입니다. 그러면 로그인 폼의 송신에 대해 간단한 결합테스트 코드를 작성해보도록 합시다. 이 결합테스트 코드는 해당 버그에 대한 문서로도 활용될 수도 있으며 이후에 회귀버그의 발생을 막아줄 수 있는 효과도 있습니다. 게다가 앞으로 이 결합테스트를 기반으로하여 보다 더 본격적인 결합테스트 코드를 작성할 때도 편리하게 될 것입니다.
+
+
+
+어플리케이션의 로그인의 움직임을 테스트하기 위해선, 제일 처음으로 결합테스트 코드를 작성해봅시다.
+
+```
+$ rails generate integration_test users_login
+      invoke  test_unit
+      create    test/integration/users_login_test.rb
+```
+
+다음으로 앞서 보았던 버그들을 재현하기 위한 필요가 있습니다. 기본적인 순서는 다음과 같습니다.
+
+1. 로그인용 주소로 접속합니다.
+2. 새로운 세션의 폼이 제대로 표시되는지를 확인합니다.
+3. 일부러 무효한 `params` ㅎㅐ시를 사용하여 세션용 패스를 POST로 보냅니다.
+4. 새로운 세션의 폼이 다시 출력되고, 플래시메세지가 추가되어 있는 것을 확인한다.
+5. 다른 페이지 (Home 등)으로 이동한다.
+6. 이동한 페이지에서 플래시메세지가 표시*되지 않는 것* 을 확인한다.
+
+위 순서를 코드로 작성한 것이 아래와 같습니다.
+
+```ruby
+# test/intergration/users_login_test.rb
+require 'test_helper'
+
+class UsersLoginTest < ActionDispatch::IntegrationTest
+
+  test "login with invalid information" do
+    get login_path
+    assert_template 'sessions/new'
+    post login_path, params: { session: { email: "", password: "" } }
+    assert_template 'sessions/new'
+    assert_not flash.empty?
+    get root_path
+    assert flash.empty?
+  end
+end
+```
+
+위 테스트 코드를 실행하면, 실패(RED)할 것입니다.
+
+```
+$ rails test test/integration/users_login_test.rb
+```
+
+또한 위의 예시와 같이, `rails test` 의 파라미터에 테스트파일을 전달하면, 해당 테스트파일만을 실행할 수 있습니다.
+
+
+
+위의 실패하는 테스트코드를 성공시키기 위해서는,  컨트롤러에서의 `flash` 를 `flash.now` 로 수정해야합니다. `flash.now` 는 렌더링이 끝난 페이지에서 특별하게 플래시메세지를 표시할 수 있습니다. `flash` 메세지와는 다르게, `flash.now` 의 메세지는 이 이후 리퀘스트가 발생하였을 때 사라지게 됩니다. 수정된 코드는 아래와 같습니다.
+
+```ruby
+# app/controllers/sessions_controller.rb
+class SessionsController < ApplicationController
+
+  def new
+  end
+
+  def create
+    user = User.find_by(email: params[:session][:email].downcase)
+    if user && user.authenticate(params[:session][:password])
+      # ユーザーログイン後にユーザー情報のページにリダイレクトする
+    else
+      flash.now[:danger] = 'Invalid email/password combination'
+      render 'new'
+    end
+  end
+
+  def destroy
+  end
+end
+```
+
+이어서, 로그인의 결합테스트를 포함한 모든 테스트 스위트를 실행해보면, 전투 통과 (GREEN)하는 것을 확인할 수 있을 것이빈다.
+
+```
+$ rails test test/integration/users_login_test.rb
+$ rails test
+```
+
+##### 연습
+
+1. [8.1.4](#814-flash-message를-사용해보자) 의 처리 플로우가 제대로 동작하고 있는지 브라우저에서 확인해봅시다. 특히 flash가 제대로 기능하는지를 flash 메세지가 표시된 다음에 다른 페이지로 꼭 이동해보세요.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
