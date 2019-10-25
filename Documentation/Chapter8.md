@@ -423,6 +423,92 @@ $ rails test
 
 
 
+## 8.2 Login
+
+무효한 값을 송신해도, 로그인폼에서 제대로 처리할 수 있게끔 하였습니다. 그 다음으로는 실제로 로그인 도중의 상태에서 유효한 값을 송신했을 때, 로그인 폼이 제대로 핸들링할 수 있도록 해봅시다. 이번 섹션에서는 cookie를 사용한 일시적인 세션을 사용하여 유저를 로그인할 수 있게 해보겠습니다. 이 cookies는 브라우저를 닫으면 자동적으로 무효하게 되는 성질을 가지고 있습니다. 9.1에서는 브라우저를 닫아도 보존되는 세션을 추가해볼 것입니다.
+
+
+
+세션을 구현하기 위해서는 많은 컨트롤러나 뷰에서 매우 복잡하고 많은 수의 메소드를 정의할 필요가 있습니다. Ruby의 *모듈* 을 사용한다면, 그러한 많은 메소드르를 한 곳으로 모아 패키지화할 수 있다는 것을 [4.2.5](Chapter4.md#425-다시-한-번-Title-Helper) 에서 배웠습니다. 매우 감사하게도 Sessions 컨트롤러 ([8.1.1](#811-Sessions-Controller)) 를 생성했을 때의 시점에서 이미 세션용의 헬퍼 모듈이 생성되어 있습니다. 게다가 Rails의 세션용 헬퍼는 뷰에서도 자동적으로 인식되어 사용할 수 있습니다. Rails의 모든 컨트롤러의 상위 클래스인 Application 컨트롤러에 이 모듈을 읽어들일 수 있게한다면, 어떠한 컨트롤러에서도 사용할 수 있게 됩니다.
+
+```ruby
+# app/controllers/application_controller.rb
+class ApplicationController < ActionController::Base
+  protect_from_forgery with: :exception
+  include SessionsHelper
+end
+```
+
+설정이 끝났다면, 드디어 유저 로그인 기능의 코드를 작성해볼 차례입니다.
+
+### 8.2.1 log_in 메소드
+
+Rails에서 사전 정의가 되어있는 `session` 메소드를 사용하여, 단순한 로그인이 가능하게끔 해봅시다. (또한 이것은 [8.1.1](#811-Sessions-Controller) 에서 생성한 Sessions 컨트롤러와 아무런 관계가 없습니다.) 이 `session` 메소드는 해시처럼 사용할 수 있습니다. 값은 다음과 같이 입력합니다.
+
+`session[:user_id] = user.id`
+
+위 코드를 실행하면, 유저의 브라우저 내부의 일시적인 cookies에 암호화된 유저 id가 자동으로 생성됩니다. 그 다음의 페이지에서 `session[:user_id]` 를 사용하여 유저 ID의 원래 값으로 꺼내어 사용할 수 있습니다. 한편, `cookies` 메소드는 (9.1) 이 것과 대조적으로 `session` 메소드에서 생성된 일시적인 cookies는 브라우저를 닫은 순간에 무효하게 되어버립니다.
+
+
+
+같은 로그인 방법을 여러 장소에서 사용할 수 있게 하기 위해, Session 헬퍼에 `log_in` 이라고 하는 이름의 메소드를 정의해보도록 합시다.
+
+```ruby
+# app/helpers/sessions_helper.rb
+module SessionsHelper
+
+  def log_in(user)
+    session[:user_id] = user.id
+  end
+end
+```
+
+`session` 메소드에서 생성한 일시 cookies는 자동적으로 암호화되기 때문에 위 코드는 보호받게 됩니다. 그리고 여기가 중요한 포인트입니다만, 공격자가 설령 이 정보를 cookies로부터 빼내려한다고 하더라도, 그 것을 사용하여 진짜 유저로서 로그인할 수는 없습니다. 단, 지금 여기서 말씀드린 `session` 메소드를 "일시적인 세션" 에만 해당하는 말입니다. `cookies` 메소드를 사용하여 작성한 "영구적인 세션" 에서는 정보가 빠져나갔어도 그 것을 이용하여 로그인할 수 없다고는 *단언할 수 없습니다.* 영속적인 cookies에는 *세션 하이잭* 이라는 공격을 받을 가능성이 항상 있습니다. 유저의 브라우저 상의 저장되는 정보에 대해서는 제 9장에서 조금 더 주의깊게 다루어보도록 해보겠습니다.
+
+
+
+위 코드에서 `log_in` 이라고 하는 헬퍼 메소드를 정의하였기에, 드디어 유저 로그인하여 세션의 `create` 메소드를 완료하고, 유저의 프로필 페이지로 리다이렉트할 준비가 되었습니다. 작성한 코드는 아래와 같습니다.
+
+```ruby
+# app/controllers/sessions_controller.rb
+class SessionsController < ApplicationController
+
+  def new
+  end
+
+  def create
+    user = User.find_by(email: params[:session][:email].downcase)
+    if user && user.authenticate(params[:session][:password])
+      log_in user
+      redirect_to user
+    else
+      flash.now[:danger] = 'Invalid email/password combination'
+      render 'new'
+    end
+  end
+
+  def destroy
+  end
+end
+```
+
+위 코드에서는 리다이렉트를 사용하고 있습니다만,
+
+`redirect_to user`
+
+이 것은 [7.4.1](Chapter7.md#741-등록-Form의-완성) 에서 사용한 메소드와 동일한 구조입니다. Rails에서는 위의 코드를 자동적으로 변환하여 다음과 같은 프로필페이지로 라우팅합니다.
+
+`user_url(user)`
+
+위 `sessions_controller.rb` 코드의 `create` 액션의 정의가 완성되었습니다. 8.4에서 정의할 로그인폼도 제대로 동작할 것입니다. 지금은 로그인해도 화면표시가 변하지 않기 때문에 유저가 로그인중인지 아닌지는 브라우저 세션을 직접 확인하지 않으면 알 수 없습니다. 이 상태로는 곤란하니, 로그인하고 있는 것을 알 수 있게 해봅시다. [8.2.2](#822-현재의-유저) 에서는 세션에 포함되어 있는 ID를 이용하여, 데이터베이스로부터 현재의 유저이름을 조회하여 화면에 표시할 예정입니다. 8.2.3에서는 어플리케이션의 레이아웃 상의 링크를 변경할 예정입니다. 이 링크를 클릭하면 현재 로그인하고 있는 유저의 프로필이 표시됩니다.
+
+##### 연습
+
+1. 유효한 유저로 실제로 로그인하여, 브라우저에서 cookies의 정보를 확인해보세요. 이 때, session값은 어떻게 되어있습니까? *Hint* : 브라우저에서 cookies를 알아보기 위한 방법은 알고 계신가요? 한 번 검색해보세요.
+2. 1번을 한 것과 마찬가지로 `Expires` 의 값에 대해 알아보세요.
+
+
+
 
 
 
