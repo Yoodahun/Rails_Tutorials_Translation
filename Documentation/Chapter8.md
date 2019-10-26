@@ -1,4 +1,4 @@
-# 제 8장 기본적인 로그인 기능
+# 	제 8장 기본적인 로그인 기능
 
 [제 7장](Chapter7.md) 에서 Web사이트에서의 신규 유저 등록이 가능하게 되었습니다. 이번에는 유저가 로그인하거나 로그아웃할 수 있게 해봅시다. 이번 챕터에서는 로그인의 기본적인 구조를 구현해보겠습니다. 여기서 말하는 로그인의 기본적인 구조란, 브라우저가 로그인하고 있는 상태를 유지하고, 유저에 의해 브라우저가 닫혀지면 그 상태를 없애버리는 구조 (*인증 시스템(Authentification System*)) 입니다. 이 인증시스템의 기반을 구현한다면, 로그인되어져있는 유저 (current user) 만이 접근할 수 있는 페이지나, 무언가를 조작할 수 있는 기능 등을 제어할 수 있습니다. 또한 이러한 제한이나 제어의 구조를 *인가 모델(Authorization Model)* 이라 부릅니다. 예를 들어 이번 챕터에서 구현하는 로그인상태인지 아닌지를 헤더부분에서 확인할 수 있는 구조도 이것에 해당하빈다.
 
@@ -694,21 +694,537 @@ end
 <여기에 무엇이 표시되나요?>
 ```
 
+### 8.2.3 레이아웃 링크를 변경해보자
+
+로그인 기능의 제일 처음으로, 구체적인 응용 방법으로서 유저가 로그인하고 있을 때와 그렇지 않을 때의 레이아웃을 변경해봅시다. 특히 아래와 같은 목업으로 표시한 것 처럼, "로그아웃" 링크, "유저 설정" 링크, "유저 리스트" 링크, "프로필 표시" 링크도 추가해봅시다. 아래 목업에서는 로그아웃의 링크와 프로필 링크는 "Account" 메뉴의 항목으로써 표시되는 점에 주목해주세요. 이후에 Bootstrap을 사용하여 아래와 같은 메뉴를 구현해볼 것 입니다.
+
+![](../image/Chapter8/login_success_mockup.png)
+
+필자라면 이 시점에서 메뉴에 대한 결합 테스트 코드를 작성할 것 같습니다. [컬럼 3.3](Chapter3.md#컬럼-33-결국-테스트는-언제-하는-것이-좋은가) 에서도 설명드렸다 시피, Rails의 테스트 툴을 몸에 익혀감에 따라, 아무것도 제시되어 있지 않은 상황이라도 필자처럼 이 시점에서 테스트를 작성해보고 싶어질 것입니다. 그렇다고는 해도 지금은 무리하지 않아도 됩니다. 이 테스트 또한 몇가지 새로운 개념을 배울 필요가 있기 때문에, 테스트 코드의 작성은 8.2.4 이후에 해보겠습니다.
+
+
+
+그럼 레이아웃의 링크를 변경하는 방법으로써 생각해봄직한 것은, ERB코드의 안에서 if-else 를 이용하여 조건에 맞게 표시하는 링크를 구분하는 것입니다.
+
+``` erb
+<% if logged_in? %>
+  // 로그인해있는 유저용의 링크
+<% else %>
+  // 로그인해있지 않았을 때의 링크
+<% end %>
+```
+
+이 코드를 작성하기 위해서는, 논리값을 리턴하는 `logged_in?` 메소드가 필요하기에, 일단 해당 메소드를 정의해봅시다.
+
+
+
+유저가 로그인 중의 상태라는 것은, "session에 유저 ID가 존재한다" 라는 것입니다. 즉, `current_user` 가 `nil` 이 아니라는 상태를 의미합니다. 이것을 체크하기 위해서는 부정연산자 ([4.2.3](Chapter4.md#423-오브젝트-메세지의-송수신)) 가 필요하기 때문에, `!` 를 사용해봅시다. 사용한 `logged_in?` 메소드는 아래와 같습니다.
+
+```ruby
+# app/helpers/sessions_helper.rb
+
+module SessionsHelper
+
+  # 전달받은 유저로 로그인한다
+  def log_in(user)
+    session[:user_id] = user.id
+  end
+
+  # 현재 로그인 중인 유저를 리턴한다
+  def current_user
+    if session[:user_id]
+      @current_user ||= User.find_by(id: session[:user_id])
+    end
+  end
+
+  # 유저가 로그인 해 있으면 true, 아니라면 false를 리턴한다.
+  def logged_in?
+    !current_user.nil?
+  end
+end
+```
+
+위 코드를 추가했으니, 이것으로 유저가 로그인했을 떄의 레이아웃을 변경할 준비가 되었습니다. 또한 새롭게 만들 링크는 4개입니다만, 이 중 다음 2개의 링크에 대해서는 일단은 작성하지는 않을 것입니다. (제 10장에서 작성합니다.)
+
+```
+<%= link_to "Users",    '#' %>
+<%= link_to "Settings", '#' %>
+```
+
+로그아웃 용의 링크는, 이전에 정의한 로그아웃 용 패스를 사용합니다.
+
+```
+<%= link_to "Log out", logout_path, method: :delete %>
+```
+
+위 코드에서는 로그아웃 용 링크의 파라미터로써 해시값을 넘기고 있는 점을 확인해주세요. 이 해시는 HTTP의 DELETE 리퀘스트를 사용하도록 지시하고 있습니다. 프로필용 링크에 대해서도 마찬가지로 다음과 같이 변경해줍니다.
+
+```
+<%= link_to "Profile", current_user %>
+```
+
+위 코드는 생략형으로, 아래와 같이 작성하는 것도 가능합니다.
+
+```
+<%= link_to "Profile", user_path(current_user) %>
+```
+
+하지만 이번 경우에서는 `current_user` 를 사용하는 것이, Rails에 의해 `user_path(current_user)` 로 변환되어, 프로필 링크가 자동적으로 생성되도록 하는 것이 편리할 것입니다. 다음으로, 유저가 로그인*하고 있지 않은 경우* , 로그인용 패스를 사용하여 다음과 같이 로그인 폼으로의 링크를 작성합니다.
+
+```
+<%= link_to "Log in", login_path %>
+```
+
+여기까지의 수정결과를 헤더의 파셜부분에 적용하면, 아래와 같이 될 것 입니다.
+
+```ERB
+<!-- app/views/layouts/_header.html.erb -->
+
+<header class="navbar navbar-fixed-top navbar-inverse">
+  <div class="container">
+    <%= link_to "sample app", root_path, id: "logo" %>
+    <nav>
+      <ul class="nav navbar-nav navbar-right">
+        <li><%= link_to "Home", root_path %></li>
+        <li><%= link_to "Help", help_path %></li>
+        <% if logged_in? %> <!-- 추가 -->
+          <li><%= link_to "Users", '#' %></li> <!-- 추가 -->
+          <li class="dropdown">
+            <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+              Account <b class="caret"></b>
+            </a>
+            <ul class="dropdown-menu">
+              <li><%= link_to "Profile", current_user %></li> <!-- 추가 -->
+              <li><%= link_to "Settings", '#' %></li> <!-- 추가 -->
+              <li class="divider"></li>
+              <li>
+                <%= link_to "Log out", logout_path, method: :delete %> <!-- 추가 -->
+              </li>
+            </ul>
+          </li>
+        <% else %> <!-- 추가 -->
+          <li><%= link_to "Log in", login_path %></li> <!-- 추가 -->
+        <% end %> <!-- 추가 -->
+      </ul>
+    </nav>
+  </div>
+</header>
+```
+
+레이아웃에 새롭게 링크를 추가했습니다. 위 코드에는 Bootstrap의 드롭다운 메뉴 기능을 적용할 수 있는 상태가 되었습니다. 구체적으로는 Bootstrap에 포함되어 있는 CSS의 `dropdown` 클래스와 `dropdown-menu` 등을 사용합니다. 이러한 드롭다운기능을 유효하게 하기 위해서, Rails의 `application.js` 파일을 통해, Bootstrap의 적용되어 있는 Javascript 라이브러리와 jQuery를 읽어들일 수 있도록, 에셋 파이프라인에 작성합니다.
+
+```javascript
+// app/assets/javascripts/appllication.js
+
+//= require rails-ujs
+//= require jquery
+//= require bootstrap
+//= require turbolinks
+//= require_tree .
+```
+
+이 시점에서, 로그인 패스에 접속하여 유효한 유저 (유저 이름이 `example@railstutorial.org`, 패스워드는 `foobar`) 로서 로그인할 수 있게 되었습니다. 지금까지의 3개의 섹션에서의 코드를 효율좋게 테스트할 수 있게 되었습니다. 위 2개의 코드에 의하여 아래와 같이 드롭다운 메뉴와 로그인 중의 유저용의 링크가 표시되는 것을 확인해봅시다.
+
+
+
+또한 브라우저를 완전히 닫으면, 예상대로 어플리케이션의 로그인 정보가 삭제되고, 다시 로그인해야하는 것을 확인해봅시다.
+
+![](../image/Chapter8/profile_with_logout_link_3rd_edition.png)
+
+##### 연습
+
+1. 브라우저의 cookie 인스펙터 기능을 사용하여, 세션용의 cookie를 삭제해보세요. 헤더부분에 있는 링크는 로그인하지 않은 상태의 링크로 돌아가나요? 확인해봅시다.
+2. 한 번 더 로그인해서, 헤더의 레이아웃이 변한 것을 확인해봅시다. 그 다음, 브라우저를 새로 열고, 다시 로그인하지 않은 상태로 되어있는지 확인해보세요. *주의* : 만약, 브라우저의 "닫기 전 상태로 되돌아가기" 기능을 사용하고 있다면, 세션정보도 복원될 가능성이 있습니다. 만약 이 기능을 사용하고 있는 경우에는, 잊지말고 Off로 해주시길 바랍니다.
+
+### 8.2.4 레이아웃의 변경을 테스트해봅시다.
+
+어플리케이션에서의 로그인 성공을 수동으로 확인해보았습니다. 일단 좀 더 진행하기 전에, 결합테스트 코드를 작성하여 해당 동작을 테스트로 표현하고, 이후의 회귀버그의 발생을 캐치할 수 있도록 해봅시다. 아래의 조작순서를 테스트 코드로 작성하여 확인해봅시다.
+
+1. 로그인용의 패스로 접속한다.
+2. 세션용의 패스에 유효한 정보를 POST로 보낸다.
+3. 로그인 용 링크가 표지되지 않는 것을 확인한다.
+4. 로그아웃용 링크가 표시되는 것을 확인한다.
+5. 프로필용 링크가 표시되는 것을 확인한다.
+
+위 변경을 확인하기 위해서는, 테스트 시에 등록이 끝난 유저로 로그인해놓을 필요가 있습니다. 당연하지만, 데이터베이스에 해당 유저가 등록되어있지 않으면 안될 것입니다. Rails에서는, 이러한 테스트요으이 데이터를 *fixture* 로 작성할 수 있습니다. 이 fixture를 사용하여, 테스트에 필요한 데이터를 test데이터베이스에 저장해놓을 수도 있습니다. [6.2.5](Chapter6.md#625-유니크성을-검증해보자) 에서는 메일의 유니크성 테스트가 통과할 수 있기 위한 디폴트값의 fixture를 삭제할 필요가 있었습니다. 이번에는 자신이 직접 빈 fixture 파일을 작성하여 데이터에 추가해봅시다.
+
+
+
+현 시점에서의 테스트에서는, 유저는 한 명이면 충분합니다. 해당 유저에게는 유효한 이름과 유효한 메일주소를 설정합니다. 테스트중에 해당 유저로써 자동로그인하기 위해서, 해당 유저의 유효한 패스워드도 준비하여 Session 컨트롤러의 `create` 액션에 송신된 패스워드와 비교할 수 있도록 할 필요가 있습니다. 이전 6장에서의 데이터 모델을 한 번 더 확인해보면, `password_diegest` 속성을 유저의 fixture 에 추가하면 된다는 것을 알 수 있을 것이빈다. 그 때문에, `digest` 메소드를 독자적으로 정의해보도록 합시다.
+
+
+
+[6.3.1](Chapter6.md#631-해시화된-비밀번호) 에서 설명드린 것 처럼, `has_secure_password` 에서 bcrypt 패스워드가 생성되기 때문에, 같은 방법으로 fixture용의 패스워드를 생성해봅시다. Rails의 [secure_password의 소스코드](https://github.com/rails/rails/blob/master/activemodel/lib/active_model/secure_password.rb) 를 확인해보면, 다음의 부분에서 패스워드가 생성되는 것을 알 수 있을 것입니다.
+
+```
+BCrypt::Password.create(string, cost: cost)
+```
+
+위 `string` 은 해시화하는 문자열, `cost` 는 *코스트 파라미터* 로 불리는 값입니다. 코스트 파라미터에서는, 해시를 산출하기 위한 계산 코스트를 지정합니다. 코스트 파라미터의 값을 높게 설정하면, 해시로부터 오리지널의 패스워드를 계산하여 추축하는 것은 매우 어렵게 되기에, 실제 배포환경에서는 보안상 매우 중요합니다. 하지만 테스트 중에서는 코스트를 높게할 의미는 없기 때문에, `digest` 메소드의 계산은 되도록 가볍게 해놓고 싶습니다. 이 점에 대해서도,  `secure_password` 의 소스코드에는 다음과 같은 행을 참고할 수 있습니다.
+
+```
+cost = ActiveModel::SecurePassword.min_cost ? BCrypt::Engine::MIN_COST :
+                                              BCrypt::Engine.cost
+```
+
+조금 읽기 어려울 수 있습니다만, 코스트 파라미터를 테스트 중에는 최소화하고, 실제 배포환경에서는 제대로된 계산을 할 수 있도록하면 충분합니다. 또한 `?` ~ `:` 라고 하는 문법에서는, 9.2 에서 설명합니다.
+
+
+
+이 `digest` 메소드는, 이후 여러가지 장면에서 활용할 것입니다. 예를 들어 9.1.1 에서는 `digest` 를 다시 사용하기 때문에, 이 `digest` 메소드는, User 모델 (`user.rb`) 에 작성해도록 합시다. 이 계산은 유저마다 적용할 필요는 없기 때문에, fixture 파일 등에서 일부러 유저 오브젝트에 액세스할 필요는 없습니다. (즉, 인스턴스 메소드에서 정의할 필요는 없습니다.) 그렇기 때문에,  `digest` 메소드를 User 클래스 자신 내부에 작성하고 클래스 메소드로 사용하도록 합시다. (*클래스 메소드* 의 작성방법에 대해서는 [4.4.1](Chapter4.md#441-Constructor) 에서 간단히 설명했습니다.) 작성한 코드는 아래와 같습니다.
+
+```ruby
+# app/models/user.rb
+
+class User < ApplicationRecord
+  before_save { self.email = email.downcase }
+  validates :name,  presence: true, length: { maximum: 50 }
+  VALID_EMAIL_REGEX = /\A[\w+\-.]+@[a-z\d\-.]+\.[a-z]+\z/i
+  validates :email, presence: true, length: { maximum: 255 },
+                    format: { with: VALID_EMAIL_REGEX },
+                    uniqueness: { case_sensitive: false }
+  has_secure_password
+  validates :password, presence: true, length: { minimum: 6 }
+
+  # 추가 #
+  # 입력받은 문자열의 해시값을 리턴
+  def User.digest(string)
+    cost = ActiveModel::SecurePassword.min_cost ? BCrypt::Engine::MIN_COST :
+                                                  BCrypt::Engine.cost
+    BCrypt::Password.create(string, cost: cost)
+  end
+  # 추가 #
+end
+```
+
+위 코드에서 `digest` 메소드를 작성했습니다. 유효한 유저를 나타낼 fixture 를 작성할 수 있게 되었습니다.
+
+```ruby
+michael:
+  name: Michael Example
+  email: michael@example.com
+  password_digest: <%= User.digest('password') %>
+```
+
+위 코드에 있는 것 처럼, fixture 에서는 ERB코드를 작성할 수 있는 것을 확인해주세요.
+
+`<%= User.digest('password') %>`
+
+위 ERB 코드에서 테스트 유저용의 유효한 패스워드를 작성할 수 있습니다.
+
+
+
+ `has_secure_password` 에서 필요한 `password_digest` 속성은 이것으로 준비가 끝났습니다만, 해시화되지 않은 패스워드도 참조할 수 있으면 편리할 것입니다. 그러나 안타깝게도, fixture 에서는 이렇게 하는 것은 불가능합니다. 게다가 위 코드에서 `password` 속성을 추가하면, 그러한 컬럼은 데이터베이스에 존재하지 않는다고하는 에러가 발생합니다. 실제로, 데이터베이스에는 그러한 컬럼은 존재하지 않습니다. 이런 상황을 돌파하기 위해, 테스트용의 fixture 에서는 모두 같은 패스워드 `password` 라는 단어를 사용하도록 합시다. (이 것은 fixture에서 자주 사용되는 방법입니다.)
+
+
+
+유효한 유저용의 fixture도 작성했습니다. 테스트에서는 다음과 같이 fixture 의 데이터를 참조할 수 있게 되었습니다.
+
+```
+user = users(:michael)
+```
+
+위 `users` 는 fixture의 파일이름 `users.yml` 을 나타내며, `:michael` 이라고 하는 심볼은, fixture의 유저를 참조하기 위한 키값입니다.
+
+
+
+fixture의 유저를 참조할 수 있게 되었습니다. 레이아웃의 링크를 테스트할 준비가 되었습니다. 레이아웃의 링크를 테스트하기 위해서는 앞서 말씀드린 조작순서대로 테스트 코드를 작성해야합니다.
+
+```ruby
+# test/integration/users_login_test.rb
+
+require 'test_helper'
+
+class UsersLoginTest < ActionDispatch::IntegrationTest
+
+  def setup
+    @user = users(:michael)
+  end
+  .
+  .
+  .
+  test "login with valid information" do
+    get login_path
+    post login_path, params: { session: { email:    @user.email,
+                                          password: 'password' } }
+    assert_redirected_to @user
+    follow_redirect!
+    assert_template 'users/show'
+    assert_select "a[href=?]", login_path, count: 0
+    assert_select "a[href=?]", logout_path
+    assert_select "a[href=?]", user_path(@user)
+  end
+end
+```
+
+위 코드에서 다음 코드는
+
+`assert_redirectd_to @user`
+
+리다이렉트를 하는 곳이 올바른지를 체크하는 코드입니다.
+
+`follow_redirect!`
+
+또한, 위 코드는 해당 페이지에 실제로 이동합니다. 위 `user_login_test.rb` 에서는 로그인 용 링크가 표시되지 않는 것도 확인하고 있습니다. 이 체크는 로그인 패스의 링크가 페이지에 없는지를 판정합니다.
+
+```
+assert_select "a[href=?]", login_path, count: 0
+```
+
+`count: 0` 이라는 옵션을 `assert_select` 에 추가하면, 넘겨진 패턴에 일치하는 링크가 0인지를 확인하게 됩니다.
+
+
+
+어플리케이션의 코드는 이미 동작할 수 있게 되어있습니다. 여기서 테스트를 실행하면 GREEN이 될 것입니다.
+
+`$ rails test test/integration/users_login_test.rb`
+
+##### 연습
+
+1. 시험삼아, Session 헬퍼의 `logged_in?` 메소드에서 `!` 를 삭제하여 위 테스트가 RED가 되는 것을 확인해봅시다.
+2. 위에서 삭제한 부분을 다시 되돌리고, 테스트가 GREEN이 되는 것을 확인해봅시다.
+
+### 8.2.5 유저 등록 시의 로그인 처리
+
+이상으로, 인증시스템이 동작하게 되었습니다만, 이대로는 등록이 끝난 유저가 디폴트로는 로그인하고 있지 않은 상태이기 때문에, 유저가 당황할 가능성이 있습니다. 유저 등록이 끝나고 유저에게 수동으로 로그인하게 하면, 유저에게 불필요한 조작을 강제하는 꼴이 됩니다. 유저 등록을 하면서 로그인되게끔 해봅시다. 유저 등록을 하면서 로그인하게 하려면, Users 컨트롤러의 `create` 액션에 `log_in` 을 추가하는 것으로 끝납니다.
+
+```ruby
+# ap/controllers/users_controller.rb
+class UsersController < ApplicationController
+
+  def show
+    @user = User.find(params[:id])
+  end
+
+  def new
+    @user = User.new
+  end
+
+  def create
+    @user = User.new(user_params)
+    if @user.save
+      log_in @user #추가
+      flash[:success] = "Welcome to the Sample App!"
+      redirect_to @user
+    else
+      render 'new'
+    end
+  end
+
+  private
+
+    def user_params
+      params.require(:user).permit(:name, :email, :password,
+                                   :password_confirmation)
+    end
+end
+```
+
+위 코드를 테스트하기 위해서는, 이전에 작성해놓은 테스트 코드에 한 줄을 추가하여, 유저가 로그인 중인지를 체크해봅니다. 그렇게 하기 위해서는, 위에서 정의한 `logged_in?` 헬퍼 메소드와는 별도로, `is_logged_in?` 헬퍼 메소드를 정의해놓는다면 편리할 것입니다. 이 헬퍼 메소드는, 테스트의 세션에 유저가 있다면 `true`, 그렇지 않으면 `false` 를 리턴합니다. 아쉽게도, 헬퍼 메소드는 테스트에서부터 호출할 수 없습니다. `session` 메소드는 테스트에서도 이용할 수 있기 때문에, 이것을 대신 사용해봅시다. 여기에서는 실수를 막기 위해, `logged_in?` 대신에 `is_logged_in?` 을 사용하여, 헬퍼 메소드 이름이 테스트 헬퍼와 Session 헬퍼에서 호출되는 것을 막기 위함입니다.
+
+```ruby
+# test/test_helper.rb
+# 테스트 중의 로그인 상태의 논리값을 리턴하는 메소드
+
+ENV['RAILS_ENV'] ||= 'test'
+.
+.
+.
+class ActiveSupport::TestCase
+  fixtures :all
+
+  # 테스트 유저가 로그인 중인지 상태를 리턴하는 메소드
+  def is_logged_in?
+    !session[:user_id].nil?
+  end
+end
+```
+
+위 코드를 작성하면, 유저 등록이 끝난 유저가 로그인한 상태인지를 알 수 있게 됩니다.
+
+```ruby
+# test/integration/users_signup_test.rb
+require 'test_helper'
+
+class UsersSignupTest < ActionDispatch::IntegrationTest
+  .
+  .
+  .
+  test "valid signup information" do
+    get signup_path
+    assert_difference 'User.count', 1 do
+      post users_path, params: { user: { name:  "Example User",
+                                         email: "user@example.com",
+                                         password:              "password",
+                                         password_confirmation: "password" } }
+    end
+    follow_redirect!
+    assert_template 'users/show'
+    assert is_logged_in? #추가
+  end
+end
+```
+
+이 것으로 테스트를 실행하면 GREEN이 될 것입니다.
+
+`$ rails test`
+
+##### 연습
+
+1. Users 컨트롤러의  `create` 액션에서 `log_in` 라인을 코멘트아웃하면, 테스트 코드의 실행결과가 RED가 되나요? 아니면 GREEN이 되나요? 확인해봅시다.
+2. 현재 사용하고 있는 테스트 에디터의 기능을 사용하여, Users 컨트롤러의 코드를 한 번에 코멘트할 수 있는지 알아봅시다. 또한 코멘트처리 전후로 테스트 코드를 실행하여, 코멘트하면 RED로, 코멘트를 풀면 GREEN이 되는 것을 확인해봅시다.
+
+
+
+## 8.3 로그아웃
+
+[8.1](#81-Session) 에서 말씀드린 것 처럼, 이 어플리케이션에서 다루는 인증 모델에서는, 유저가 명시적으로 로그아웃할 떄까지는 로그인 상태를 유지해야만 합니다. 이번 섹션에서는 이러한 처리를 위해 필요한 로그아웃 기능을 추가해보도록 하겠습니다. 로그아웃용 링크는 이전에 작성해놓았기 때문에, 유저 세션을 없애기 위한 유효한 액션을 컨트롤러에서 작성하기만 하면 끝날 것입니다.
+
+
+
+지금까지, Sessions 컨트롤러의 액션은 RESTful 룰에 따라 작성해왔습니다. `new` 로그인 페이지를 표시하고, `create` 에서 로그인을 완료하는 이러한 처리들이 RESTful한 처리입니다. 세션을 없애기 위한 `destroy` 액션도, 마찬가지 방법으로 작성해볼 것입니다. 단, 로그인의 경우와는 다르게, 로그아웃의 ㅊㅓ리는 한 곳에서만 처리하기 때문에, `destroy` 액션에 직접 로그아웃 처리를 작성해볼 것입니다. 9.3에서도 설명할 예정입니다만, 이러한 설계(및 약간의 리팩토링) 덕분에 인증 메커니즘의 테스트를 실행하기 쉬워집니다.
+
+
+
+로그아웃의 처리에서는 이전에 `log_in` 메소드의 실행결과를 취소합니다. 즉, 세션에서 유저 ID를 삭제합니다. 다음과 같이 `delete` 메소드를 실행합니다.
+
+`session.delete(:user_id)`
+
+위 코드에서, 현재의 유저를 `nil` 로 설정합니다. 이번에는 로그인하지 않은 경우, 바로 루트 URL로 리다이렉트할 수 있게 하고 있기 때문에, 이 코드에서 특별히 문제가 될만한 것은 없습니다. 다음으로 `log_in` 및 관련 메소드와 마찬가지로,  Session헬퍼 모듈에 놓을  `log_out` 메소드를 아래와 같이 정의해봅시다.
+
+```ruby
+# app/helpers/sessions_helper.rb
+module SessionsHelper
+
+  # 입력받은 유저로 로그인합니다.
+  def log_in(user)
+    session[:user_id] = user.id
+  end
+  .
+  .
+  .
+  # 현재의 유저를 로그아웃 합니다.
+  def log_out
+    session.delete(:user_id)
+    @current_user = nil
+  end
+end
+```
 
 
 
 
 
+여기서 정의한 `log_out` 메소드는, Sessions 컨트롤러의 `destroy` 액션에서도 마찬가지로 사용할 수 있습니다.
+
+```ruby
+# app/controllers/sessions_controller.rb
+class SessionsController < ApplicationController
+
+  def new
+  end
+
+  def create
+    user = User.find_by(email: params[:session][:email].downcase)
+    if user && user.authenticate(params[:session][:password])
+      log_in user
+      redirect_to user
+    else
+      flash.now[:danger] = 'Invalid email/password combination'
+      render 'new'
+    end
+  end
+
+  def destroy # 추가
+    log_out
+    redirect_to root_url
+  end
+end
+```
+
+로그아웃 기능을 테스트하기 위해, 유저 로그인의 테스트에 순서를 약간 추가해놓읍시다. 로그인 후, `delete` 메소드 에서 DELETE 리퀘스트를 로그아웃용 패스에 보내어, 유저가 로그아웃하여 루트 URL로 리다이렉트하게 되는 것을 확인합니다. 로그인용 링크가 다시 표시되는 것과 로그아웃용 링크와 프로필용 링크가 표시되지 않는 것을 확인해봅시다. 순서대로 추가한 테스트는 아래와 같습니다.
+
+```ruby
+# test/integration/users_login_test.rb
+require 'test_helper'
+
+class UsersLoginTest < ActionDispatch::IntegrationTest
+  .
+  .
+  .
+  test "login with valid information followed by logout" do
+    get login_path
+    post login_path, params: { session: { email:    @user.email,
+                                          password: 'password' } }
+    assert is_logged_in? # 추가
+    assert_redirected_to @user
+    follow_redirect!
+    assert_template 'users/show'
+    assert_select "a[href=?]", login_path, count: 0
+    assert_select "a[href=?]", logout_path
+    assert_select "a[href=?]", user_path(@user)
+# 추가
+		delete logout_path
+    assert_not is_logged_in?
+    assert_redirected_to root_url
+    follow_redirect!
+    assert_select "a[href=?]", login_path
+    assert_select "a[href=?]", logout_path,      count: 0
+    assert_select "a[href=?]", user_path(@user), count: 0
+# 추가    
+  end
+end
+```
+
+ 테스트에서 `is_logged_in?` 헬퍼메소드를 사용할 수 있게 된 덕분에, 유효한 정보를 세션용 패스에 POST 로 송신한 직후에 `assert is_logged_in?` 에서 간단하게 테스트할 수 있습니다.
 
 
 
+세션용의 `destroy` 액션의 정의와 테스트도 완성했습니다. 드디어 sample 어플리케이션의 기본이 되는 유저 등록, 로그인, 로그아웃 기능을 모두 오나성했습니다. 지금 이 시점에서도 테스트 코드는 GREEN이 될 것 입니다.
+
+`$ rails test`
+
+##### 연습
+
+1. 브라우에서 [Log out] 링크를 클릭하여, 어떠한 변화가 일어나는지 확인해봅시다. 또한, 직전에 수정한 테스트코드에서 3개의 스텝을 실행해보고, 제대로 움직이는지 확인해봅시다.
+2. cookies의 내용을 알아보고, 로그아웃 후에 session이 정상적으로 삭제되었는지를 확인해봅시다.
 
 
 
+## 8.4 마지막으로
+
+이번 챕터에서는 sample 어플리케이션의 기본적인 로그인 기능 (인증 시스템)을 구현해보았습니다. 다음 챕터에서는 이 로그인 기능을 좀 더 개선하여, 세션보다 오래 로그인 정보를 가지고 있는 방법에 대해 배워볼 것이빈다.
 
 
 
+그러면 다음 장으로 가기 전에, 이번 장에서의 변경사항을 master 브런치에 머지해봅시다.
 
+```
+$ rails test
+$ git add -A
+$ git commit -m "Implement basic login"
+$ git checkout master
+$ git merge basic-login
+```
 
+머지 후, 리모트 레포지토리에 Push 해봅시다.
 
+```
+$ rails test
+$ git push
+```
+
+마지막으로 Heroku에 배포해봅시다.
+
+`$ git push heroku`
+
+### 8.4.1 8장의 정리
+
+- Rails의 `session` 메소드를 사용하면, 어떤 페이지에서 다른 페이지로 이동할 때의 상태를 유지할 수 있다. 일시적인 상태의 보존에는 cookies를 사용할 수 있다.
+- 로그인폼에는 유저가 로그인하기 위해 새로운 세션을 생성한다.
+- `flash.now` 메소드를 사용하면, 이미 표시된 페이지에도 플래시메세지를 표시할 수 있다.
+- 테스트 주도 개발은, 회귀 버그를 막기에 편리하다.
+- `session` 메소드를 사용하면, 유저 ID 를 브라우저에 일시적으로 저장할 수 있다.
+- 로그인 상태에 따라 페이지 내부에 표시하는 링크를 바꿀 수 있다.
+- 결합 테스트에서는 라우팅, 데이터베이스의 갱신, 레이아웃의 변경이 제대로 되는지를 확인할 수 있다.
 
