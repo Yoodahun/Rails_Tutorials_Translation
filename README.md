@@ -157,49 +157,49 @@ Rails Tutorial은, 실제 Web Application의 개발에서 공개까지, 실제�
 			- [ ] [6.3.4 유저 생성과 인증](Documentation/Chapter6.md#634-유저-생성과-인증)
 		- [x] [6.4  마지막으로](Documentation/Chapter6.md#64-마지막으로)
 			- [ ] [6.4.1 6장의 정리](Documentation/Chapter6.md#641-6장의-정리)
-	- [ ] [제 7장 유저의 등록](Documentation/Chapter7.md)
-		- [ ] [7.1 유저를 표시해보자](Documentation/Chapter7.md#71-유저를-표시해보자)
+	- [x] [제 7장 유저의 등록](Documentation/Chapter7.md)
+		- [x] [7.1 유저를 표시해보자](Documentation/Chapter7.md#71-유저를-표시해보자)
 			- [ ] [7.1.1 Debug와 Rails 환경](Documentation/Chapter7.md#711-Debug와-Rails-환경)
 			- [ ] [7.1.2 Users Resource](Documentation/Chapter7.md#712-Users-Resource)
 			- [ ] [7.1.3 Debugger 메소드](Documentation/Chapter7.md#713-Debugger-메소드)
 			- [ ] [7.1.4 Gravatar 이미지와 사이드바](Documentation/Chapter7.md#714-Gravatar-이미지와-사이드바)
-		- [ ] [7.2 유저 등록 Form](Documentation/Chapter7.md#72-유저-등록-Form)
+		- [x] [7.2 유저 등록 Form](Documentation/Chapter7.md#72-유저-등록-Form)
 			- [ ] [7.2.1 Form_for를 사용해보자](Documentation/Chapter7.md#721-Form_for를-사용해보자)
 			- [ ] [7.2.2 Form HTML](Documentation/Chapter7.md#722-Form-HTML)
-		- [ ] [7.3 유저 등록 실패](Documentation/Chapter7.md#73-유저-등록-실패)
+		- [x] [7.3 유저 등록 실패](Documentation/Chapter7.md#73-유저-등록-실패)
 		  - [ ] [7.3.1 올바른 Form](Documentation/Chapter7.md#731-올바른-Form)
 		  - [ ] [7.3.2 Strong Parameters](Documentation/Chapter7.md#732-Strong-Parameters)
 		  - [ ] [7.3.3 에러 메세지](Documentation/Chapter7.md#733-에러-메세지)
 		  - [ ] [7.3.4 등록 실패시의 테스트](Documentation/Chapter7.md#734-등록-실패시의-테스트)
 		
-		- [ ] [7.4 유저 등록 성공](Documentation/Chapter7.md#74-유저-등록-성공)
+		- [x] [7.4 유저 등록 성공](Documentation/Chapter7.md#74-유저-등록-성공)
 		  - [ ] [7.4.1 등록 Form의 완성](Documentation/Chapter7.md#741-등록-Form의-완성)
 		  - [ ] [7.4.2 flash](Documentation/Chapter7.md#742-flash)
 		  - [ ] [7.4.3 실제 유저 등록](Documentation/Chapter7.md#743-실제-유저-등록)
 		  - [ ] [7.4.4 유저 등록 성공시의 테스트](Documentation/Chapter7.md#744-유저-등록-성공시의-테스트)
-		- [ ] [7.5 프로의 배포](Documentation/Chapter7.md#75-프로의-배포)
+		- [x] [7.5 프로의 배포](Documentation/Chapter7.md#75-프로의-배포)
 		  - [ ] [7.5.1 실제 배포환경에서의 SSL](Documentation/Chapter7.md#751-실제-배포환경에서의-SSL)
 		  - [ ] [7.5.2 실제 배포환경용의 Web서버](Documentation/Chapter7.md#752-실제-배포환경용의-Web서버)
 		  - [ ] [7.5.3 실제 배포환경으로의 배포](Documentation/Chapter7.md#753-실제-배포환경으로의-배포)
-		- [ ] [7.6 마지막으로](Documentation/Chapter7.md#76-마지막으로)
+		- [x] [7.6 마지막으로](Documentation/Chapter7.md#76-마지막으로)
 		  - [ ] [7.6.1 7장의 정리](Documentation/Chapter7.md#761-7장의-정리)
 		
-	- [ ] 제 8장 기본적인 로그인 구조
-		- [ ] 8.1 Session
-			- [ ] 8.1.1 Sessions Controller
-			- [ ] 8.1.2 Login Form
-			- [ ] 8.1.3 로그읜 유저의 검증과 로그인
-			- [ ] 8.1.4 Flash 메세지를 표시해보자
-			- [ ] 8.1.5 Flash의 테스트
-		- [ ] 8.2 Login
-			- [ ] 8.2.1 log_in Method
-			- [ ] 8.2.2 현재 로그인한 유저
-			- [ ] 8.2.3 레이아웃의 링크를 변경해보자
-			- [ ] 8.2.4 레이아웃의 변경을 테스트해보자
-			- [ ] 8.2.5 회원가입 후의 로그인
-		- [ ] 8.3 Logout
-		- [ ] 8.4 마지막으로
-			- [ ] 8.4.1 8장의 정리
+	- [x] [제 8장 기본적인 로그인 기능](Documentation/Chapter8.md#제-8장-기본적인-로그인-기능)
+		- [x] [8.1 Session](Documentation/Chapter8.md#81-Session)
+			- [ ] [8.1.1 Sessions Controller](Documentation/Chapter8.md#811-Sesssions-Controller)
+			- [ ] [8.1.2 Login Form](Documentation/Chapter8.md#812-Login-Form)
+			- [ ] [8.1.3 유저의 검증과 인증](Documentation/Chapter8.md#813-유저의-검증과-인증)
+			- [ ] [8.1.4 Flash Message를 표시해보자](Documentation/Chapter8.md#814-Flash-Message를-표시해보자)
+			- [ ] [8.1.5 Flash의 테스트](Documentation/Chapter8.md#815-Flash의-테스트)
+		- [x] [8.2 Login](Documentation/Chapter8.md#82-Login)
+			- [ ] [8.2.1 Log_in Method](Documentation/Chapter8.md#821-Log_in-Method)
+			- [ ] [8.2.2 로그인 되어있는 유저](Documentation/Chapter8.md#822-로그인-되어있는-유저)
+			- [ ] [8.2.3 레이아웃 링크를 변경해보자](Documentation/Chapter8.md#823-레이아웃-링크를-변경해보자)
+			- [ ] [8.2.4 레이아웃의 변경을 테스트해보자](Documentation/Chapter8.md#824-레이아웃의-변경을-테스트해보자)
+			- [ ] [8.2.5 회원가입 후의 로그인](Documentation/Chapter8.md#825-회원가입-후의-로그인)
+		- [x] [8.3 Logout](Documentation/Chapter8.md#83-Logout)
+		- [x] [8.4 마지막으로](Documentation/Chapter8.md#84-마지막으로)
+			- [ ] [8.4.1 8장의 정리](Documentation/Chapter8.md#841-8장의-정리)
 	- [ ] 제 9장 진보된 로그인 구조
 		- [ ] 9.1 「Remember me」 
 			- [ ] 9.1.1 Remember Token과 암호화
