@@ -168,3 +168,60 @@ end
 
 ##### 연습
 
+1. 콘솔을 열고, 데이터베이스에 존재하는 제일 첫 번째 유저를 변수 `user`에 대입하여 봅시다. 그 다음, 해당 `user` 오브젝트에서 `remember` 메소드가 제대로 움직인지를 확인해봅시다. 또한,  `remember_token`과  `remember_digest` 과의 차이도 확인해봅시다.
+2. 위 코드에서는 명시적으로 `User` 클래스를 호출하여 새로운 토큰이나 Digest용의 클래스메소드를 정의하였습니다. 실제로 *User.new_token* 이나 *User.digest* 를 사용하여 호출할 수 있도록 했기 때문에, 아마도 제일 명확한 클래스메소드의 정의방법이라고도 할 수 있을 것입니다. 그러나 사실은 보다 더 "Ruby적으로 올바른" 클래스 메소드의 정의방법은 2가지가 있습니다. 첫 번째는 조금 알기 복잡하며, 다른 하나는 매우 혼란스러울 것입니다. 테스트 코드를 실행하여 조금 알기 어려운 아래 첫 번째 코드의 구현이나, 매우 이해하기 혼란스러운 아래 두 번째 코드의 구현도 다 실행되는 것을 확인해보세요. *Hint* :  `self` 는 평상시의 문맥에서는 User "모델", 즉 유저 오브젝트의 *Instance* 를 지칭하고 있습니다만, 아래 코드들에서는  `self` 는 `User` "클래스" 를 지칭하고 있는 것을 알아주세요. 
+
+```ruby
+class User < ApplicationRecord
+  .
+  .
+  .
+  # 입력받은 문자열의 해시값을 리턴한다.
+  def self.digest(string)
+    cost = ActiveModel::SecurePassword.min_cost ? BCrypt::Engine::MIN_COST :
+                                                  BCrypt::Engine.cost
+    BCrypt::Password.create(string, cost: cost)
+  end
+
+  # 랜덤한 토큰을 생성하여 리턴한다.
+  def self.new_token
+    SecureRandom.urlsafe_base64
+  end
+  .
+  .
+  .
+end
+```
+
+```ruby
+class User < ApplicationRecord
+  .
+  .
+  .
+  class << self
+    # 입력받은 문자열의 해시값을 리턴한다.
+    def digest(string)
+      cost = ActiveModel::SecurePassword.min_cost ? BCrypt::Engine::MIN_COST :
+                                                    BCrypt::Engine.cost
+      BCrypt::Password.create(string, cost: cost)
+    end
+
+    # 랜덤한 토큰을 생성하여 리턴한다.
+    def new_token
+      SecureRandom.urlsafe_base64
+    end
+  end
+  .
+  .
+```
+
+### 9.1.2 로그인 상태의 저장
+
+
+
+
+
+
+
+
+
