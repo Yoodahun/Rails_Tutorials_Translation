@@ -217,11 +217,284 @@ class User < ApplicationRecord
 
 ### 9.1.2 로그인 상태의 저장
 
+`user.remember` 메소드가 동작할 수 있게 되었습니다. 유저의 암호화가 끝난 ID와 기억 토큰을 브라우저의 영속적 cookies에 저장하여 영속적인 세션을 생성할 준비가 되었습니다. 이 것을 실제로 실행하기 위해 `cookies` 메소드를 사용합니다. 이 메소드는 `session` 과 비슷하게 해시로 다루어집니다. 개별적인 cookies는 하나의 `value` 와 옵션의 `expires`(유효기간) 으로 구성되어 있습니다. 유효기한은 생략가능 합니다. 예를 들어, 다음과 같이 20년 후에 기한이 끝나는 기억 토큰과 같은 값을 cookies에 저장하여, 영속적인 세션을 생성할 수 있습니다.
+
+`cookies[:remember_token] = {value: remember_token, expires: 20.years.from_now.utc}`
+
+(위 코드에서는 Rails의 편리한 time헬퍼도 사용하고 있습니다. 상세한 내용은 [컬럼 9.1](#컬럼91-cookies는-지금부터-20년후에-만료된다-20.years.from_now) 을 확인해주세요.) 이렇게 20년 후에 끝나는 cookies설정은 자주 쓰이기에, 지금은 Rails에서도 `permanent` 라 하는 전용 메소드가 추가되었을 정도입니다. 이 메소드를 사용하면 코드는 다음과 같이 매우 심플하게 바뀝니다.
+
+`cookies.permanent[:remember_token] = remember_token`
+
+위 메소드에 의해서 Rails는 기한을 `20.years.from_now` 로 설정합니다.
+
+###### 컬럼 9.1 cookies는 지금으로부터 20년후에 만료된다(20.years.from_now)
+
+> Ruby의 기본 클래스들을 포함한 모든 클래스에 메소드를 추가할 수 있다는 것을 [4.4.2](Chapter4.md#442-Class의-상속) 에서 학습했습니다. 그 때는 `palindrome?` 이라는 메소드를 String 클래스에 추가했습니다. (겸사겸사 "deified" 도 거꾸로 표현할 수 있는 문자라는 것을 알게 되었습니다.) 또한, Rails가 사실은 `blank?` 메소드를 Object 클래스에 추가하고 있는 것도 알게 되었습니다. (이것으로, `"".blank?`, `" ".blank?`, `nil.blank?` 는 어떤 것도 `true`를 리턴합니다. 이 `cookies.permanent` 메소드에서는, cookies가 20년후에 만료된다는 (`20.years.from_now`) 지정을 할 수 있습니다만, 이것은 Rails의 *time* 헬퍼를 사용한 예제입니다. time헬퍼는 Rails에 의해 수치관련된 기저클래스인 `Fixnum` 클래스에 추가되어 있습니다.
+>
+> ``` ruby
+>  $ rails console
+>   >> 1.year.from_now
+>   => Wed, 21 Jun 2017 19:36:29 UTC +00:00
+>   >> 10.weeks.ago
+>   => Tue, 12 Apr 2016 19:36:44 UTC +00:00
+> ```
+>
+> Rails는 다음과 같은 헬퍼도 가지고 있습니다.
+>
+>  ```ruby
+>   >> 1.kilobyte
+>   => 1024
+>   >> 5.megabytes
+>   => 5242880
+>  ```
+>
+> 위 헬퍼는 파일의 업로드에 `5.megabytes` 등의 제한을 부여할 때 편리합니다.
+>
+>  
+>
+>  메소드를 기본 클래스에 추가할 수 있는 높은 유연성덕분에, 순수한 Ruby를 자연스럽게 확장시키는 것도 가능합니다. (물론 주의할 필요는 있습니다.) 실제로 Rails의 멋지고 우아한 스펙의 많은 부분은, Ruby의 높은 확장성에 의해 실현된 것들입니다.
+
+유저 ID를 cookies에 저장하기 위해서는, `session`  메소드를 사용한 것과 같은 패턴을 사용합니다. 구체적으로는 아래와 같습니다.
+
+`cookies[:user_id] = user.id`
+
+그러 이대로는 ID가 ID 그 자체로의 텍스트로써 cookies에 저장되기 때문에, 어플리케이션의 cookies의 형식이 외부로 노출되기 쉬워져, 공격자에 의한 ID 유출이 매우 쉬워집니다. 이것을 피하기 위해 *서명이 달려있는* cookies를 사용합니다. 이 것은 cookies를 브라우저에 저장하기 전에 안전하게 암호화하는 절차입니다.
+
+`cookies.signed[:user_id] = user.id`
+
+cookies를 설정하면, 이 이후 페이지의 뷰에서 아래와 같이 cookies로부터 유저 정보를 습득할 수 있습니다.
+
+`User.find_by(id: cookies.signed[:user_id])`
+
+`cookies.signed[:user_id]` 에서는 자동적으로 유저 ID의 cookies를 복호화시켜 원래대로 되돌립니다. 이어서 bcrypt를 사용하여 `cookies[:remember_token]` 이 `remember_digest` 와 일치하는 것을 확인해봅시다. 한편, 서명된 유저 ID가 있다면, 기억토큰은 불필요한것이 아니냐는 의문을 가질 수도 있습니다. 그러나 기억 토큰이 없다면, 암호화된 ID를 습득한 공격자는, 암호화 ID를 그냥 그대로 사용하여 로그인해버릴 수도 있습니다. 현재의 설계상으로는 공격자가 설사 양쪽의 cookies를 습득한다고 해도, 진짜 유저가 로그아웃해버리면 로그인할 수 없도록 되어져 있습니다.
 
 
 
+드디어 마지막입니다. 넘겨진 토큰이 유저의 remember Digest와 일치하는 것을 확인합니다. 이 일치 작업을 bcrypt에서 확인하기 위한 여러가지 방법이 있습니다. [secure_password의 소스코드](https://github.com/rails/rails/blob/master/activemodel/lib/active_model/secure_password.rb) 를 확인해보면 다음과 같은 비교를 행하는 코드가 있습니다.
+
+```ruby
+BCrypt::Password.new(password_digest) == unencrypted_password
+```
+
+우리의 경우, 위 코드를 참고하여 아래와 같은 코드를 사용해봅시다.
+
+```ruby
+BCrypt::Password.new(remember_digest) == remember_token
+```
+
+이 코드에 대해 조사해보면, 신기하게 구현되어 있습니다. bcrypt로 암호화된 패스워드를, 토큰과 직접 비교합니다. 즉, ==으로 비교할 때, Digest를 *암호화* 하고 있는 것일까요? 그렇지만 bcrypt의 해시는 복호화할 수 없을 것이기에, 복호화하고 있는 것은 아닙니다. [bcrypt gem의 소스코드](https://github.com/codahale/bcrypt-ruby/blob/master/lib/bcrypt/password.rb)  를 자세히 확인해보면, 비교를 하고 있는 `==` 연산자가 재정의되어있습니다. 실제로 비교를 코드로 나타낸다면 다음과 같이 되어 있습니다.
+
+```ruby
+BCrypt::Password.new(remember_digest).is_password?(remember_token)
+```
+
+실제 비교 동작은 `==` 대신 `is_password?` 라고 하는 논리값을 다루는 메소드가 행하고 있습니다. 이것으로 조금은 알게 되셨나요? 지금부터 작성할 코드에서도 이것과 비슷한 방법으로 해보겠습니다.
 
 
 
+위 설명을 바탕으로, Remember toekn과 Remember Digest를 비교하는 `authenticated?` 메소드를 User모델 안에 정의하면 되지않을까 하고 추측해볼 수 있을 것입니다. 이 메소드는  `has_secure_password` 가 제공하는 유저 인증용의 `authenticate` 메소드와 매우 닮아 있습니다. 이 메소드의 구현결과는 아래와 같습니다. 이 `authenticated?` 메소드는 Remember Digest와 매우 끈끈하게 묶여있습니다만, 사실 다른 여러가지 용도로도 응용해볼 수 있습니다. [제 10장](Chapter10.md) 에서 이 메소드를 일반화해볼 것입니다.
+
+```ruby
+# app/models/user.rb
+class User < ApplicationRecord
+  attr_accessor :remember_token
+  before_save { self.email = email.downcase }
+  validates :name,  presence: true, length: { maximum: 50 }
+  VALID_EMAIL_REGEX = /\A[\w+\-.]+@[a-z\d\-.]+\.[a-z]+\z/i
+  validates :email, presence: true, length: { maximum: 255 },
+                    format: { with: VALID_EMAIL_REGEX },
+                    uniqueness: { case_sensitive: false }
+  has_secure_password
+  validates :password, presence: true, length: { minimum: 6 }
+
+  # 입력받은 문자열의 해시값을 리턴한다.
+  def User.digest(string)
+    cost = ActiveModel::SecurePassword.min_cost ? BCrypt::Engine::MIN_COST :
+                                                  BCrypt::Engine.cost
+    BCrypt::Password.create(string, cost: cost)
+  end
+
+  # 랜덤한 토큰을 리턴한다.
+  def User.new_token
+    SecureRandom.urlsafe_base64
+  end
+
+  # 영속적인 세션을 위해 유저를 데이터베이스로부터 검색한다. 
+  def remember
+    self.remember_token = User.new_token
+    update_attribute(:remember_digest, User.digest(remember_token))
+  end
+
+  # 입력받은 토큰이 Digest와 일치하면 true를 리턴한다. 
+  def authenticated?(remember_token)
+    BCrypt::Password.new(remember_digest).is_password?(remember_token)
+  end
+end
+```
+
+`authenticated?` 메소드의 로컬변수로서 정의한 `remember_token` 은, 위 모델 코드의 `attr_accessor :remember_token` 에서 정의한 접근자와는 다르다는 것을 주의해주세요. 이번 경우에는 `is_password?`의 파라미터는 메소드 내부의 로컬변수를 참조하고 있습니다. 또한 `remember_digest` 의 속성의 쓰임새에 대해서도 주목해주세요. 이것은  `self.remember_digest` 와 마찬가지이며, 즉 [제 6장](Chapter6.md) 의 `name` 이나 `email` 을 사용하던 방법과 같은 것입니다. 실제로 `remember_digest` 의 속성은 데이터베이스의 컬럼에 대응하고 있기 때문에, Active Record에 의해 간단하게 검색하거나 저장할 수도 있습니다.
 
 
+
+이 것으로 로그인한 유저를 기억하는 처리의 준비를 끝냈습니다. `remember` 헬퍼 메소드를 추가하여 `log_in` 과 연계시켜봅시다.
+
+```ruby
+# app/controllers/sessions_controller.rb
+class SessionsController < ApplicationController
+
+  def new
+  end
+
+  def create
+    user = User.find_by(email: params[:session][:email].downcase)
+    if user && user.authenticate(params[:session][:password])
+      log_in user
+      remember user #추가한 부분
+      redirect_to user
+    else
+      flash.now[:danger] = 'Invalid email/password combination'
+      render 'new'
+    end
+  end
+
+  def destroy
+    log_out
+    redirect_to root_url
+  end
+end
+```
+
+`log_in` 과 마찬가지로, 위 코드에서는 실제로 Sessions 헬퍼의 동작은 `remember` 메소드의 속성인 `user.remember` 를 호출할 때까지 연기되며, 여기서 Remember token을 사용하여 생성한 토큰의 Digest를 데이터베이스에 저장합니다. 이어서 위와 마찬가지로, `cookies` 메소드로 유저 ID와 Remember token의 영속적인 `cookies`를 작성해봅시다. 작성한 코드는 아래와 같습니다.
+
+```ruby
+# app/helpers/sessions_helper.rb
+module SessionsHelper
+
+  # 입력받은 유저로 로그인합니다.
+  def log_in(user)
+    session[:user_id] = user.id
+  end
+
+  # 유저의 세션을 영속화합니다. 
+  def remember(user)
+    user.remember
+    cookies.permanent.signed[:user_id] = user.id
+    cookies.permanent[:remember_token] = user.remember_token
+  end
+
+  # 현재 로그인해있는 유저를 리턴합니다. 
+  def current_user
+    if session[:user_id]
+      @current_user ||= User.find_by(id: session[:user_id])
+    end
+  end
+
+  # 유저가 로그인해있으면 true, 그렇지 않다면 false를 리턴합니다. 
+  def logged_in?
+    !current_user.nil?
+  end
+
+  # 현재 유저를 로그아웃합니다.
+  def log_out
+    session.delete(:user_id)
+    @current_user = nil
+  end
+end
+```
+
+위 코드에서는 로그인하는 유저는 브라우저에서 유효한 Remember token을 얻을 수 있게금 저장됩니다만, `current_user` 메소드에서는 일시적인 세션만 다루고 있기 때문에, 이대로라면 제대로 움직이진 않을 것입니다.
+
+```
+@current_user ||= User.find_by(id: session[:user_id])
+```
+
+영속적인 세션의 경우, `session[:user_id]` 가 존재한다면, 일시적인 세션으로부터 유저를 검색해내고, 그 이외의 경우에는 `cookies[:user_id]` 로부터 유저를 검색해내어 대응하는 영속적 세션에 로그인할 필요가 있습니다. 이것을 구현하기 위해서는 아래와 같이 코드를 작성합니다.
+
+```ruby
+if session[:user_id]
+  @current_user ||= User.find_by(id: session[:user_id])
+elsif cookies.signed[:user_id]
+  user = User.find_by(id: cookies.signed[:user_id])
+  if user && user.authenticated?(cookies[:remember_token])
+    log_in user
+    @current_user = user
+  end
+end
+```
+
+위 코드에서도  `user && user.authenticated` 를 사용하는 점에 주목해주세요. 이 코드도 동작은 합니다만, 지금 이대로라면 `session` 메소드도 `cookies` 메소드도 각각 2번씩 사용되기 때문에 불필요한 호출을 하고 있습니다. 이 것을 해결하기 위해 아래와 같이 로컬변수를 사용합니다.
+
+```ruby
+if (user_id = session[:user_id])
+  @current_user ||= User.find_by(id: user_id)
+elsif (user_id = cookies.signed[:user_id])
+  user = User.find_by(id: user_id)
+  if user && user.authenticated?(cookies[:remember_token])
+    log_in user
+    @current_user = user
+  end
+end
+```
+
+위 코드에서는 다음과 같은 구조가 사용되고 있습니다만, 조금은 이해하기 어려울 수도 있습니다.
+
+`if (user_id = session[:user_id])`
+
+위 코드는 비교를 하고 있는 것 처럼 보입니다만, 이것은 비교를 하고 있지 않습니다. 비교라고 한다면 `==` 를 써야합니다만, 여기에서는 *대입* 을 하고 있습니다. 이 코드를 말로 설명하자면, "유저ID가 유저 ID의 세션과 같다면.." 이 아닌, "**유저 ID에 유저 ID의 세션을 대입한 결과**, 유저 ID의 세션이 존재한다면" 이 됩니다.
+
+
+
+앞서 설명했듯이 `current_user` 헬퍼를 정의하면, 아래와 같이 됩니다.
+
+```ruby
+# app/helpers/sessions_helper.rb
+module SessionsHelper
+
+  # 입력받은 유저로 로그인합니다.
+  def log_in(user)
+    session[:user_id] = user.id
+  end
+
+  # 유저의 세션을 영속화합니다. 
+  def remember(user)
+    user.remember
+    cookies.permanent.signed[:user_id] = user.id
+    cookies.permanent[:remember_token] = user.remember_token
+  end
+
+  # Remember token cookie에 대응하는 유저를 리턴합니다.
+  def current_user
+    if (user_id = session[:user_id])
+      @current_user ||= User.find_by(id: user_id)
+    elsif (user_id = cookies.signed[:user_id])
+      user = User.find_by(id: user_id)
+      if user && user.authenticated?(cookies[:remember_token])
+        log_in user
+        @current_user = user
+      end
+    end
+  end
+
+  # 유저가 로그인해있으면 true, 그렇지 않다면 false를 리턴합니다. 
+  def logged_in?
+    !current_user.nil?
+  end
+
+  # 현재 유저를 로그아웃합니다.
+  def log_out
+    session.delete(:user_id)
+    @current_user = nil
+  end
+end
+```
+
+위 코드에서는 새롭게 로그인한 유저는 제대로 기록됩니다. 실제로 로그인하고나서 브라우저를 닫고, 어플리케이션을 재실행하고나서 다시 브라우저로 어플리케이션에 접속해보면, 기대했던 것 처럼 동작하는 것을 확인할 수 있습니다. 브라우저의  cookies를 브라우저에서 직접 확인해볼 수도 있습니다.
+
+![](../image/Chapter9/cookie_in_browser_chrome.png)
+
+어플리케이션에 현재 남겨진 문제는 이제 하나 남았습니다. 브라우저의 cookies를 삭제하는 방법이 아직 없습니다. (20년 후에는 삭제됩니다만) 유저가 로그아웃할 수 없습니다. 이것은 당연하게도 테스트 코드를 실행하면 확인할 수 있는 문제이며, 테스트 실행 결과는 실패할 것입니다.
+
+##### 연습
+
+1. 브라우저의 cookies를 알아보고, 로그인 후의 브라우저에서는 `remember_token` 과 암호화되어진 `user_id` 가 있는 것을 확인해봅시다.
+2. 콘솔을 열고 `authenticated?` 메소드가 제대로 동작하는지 확인해봅시다.
