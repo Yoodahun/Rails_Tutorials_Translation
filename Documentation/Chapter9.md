@@ -498,3 +498,270 @@ end
 
 1. 브라우저의 cookies를 알아보고, 로그인 후의 브라우저에서는 `remember_token` 과 암호화되어진 `user_id` 가 있는 것을 확인해봅시다.
 2. 콘솔을 열고 `authenticated?` 메소드가 제대로 동작하는지 확인해봅시다.
+
+### 9.1.3 유저 정보 파기
+
+유저가 로그아웃할 수 있도록 하기 위해, 유저를 기억하기 위한 메소드와 마찬가지로 유저의 정보를 파기하기 위한 메소드를 정의합니다. 이  `user.forget` 메소드를 이용하여 `user.remember` 를 파기해봅시다. 구체적으로는 Remeber Digest를 `nil` 로 업데이트 합니다.
+
+```ruby
+# app/models/user.rb
+class User < ApplicationRecord
+  attr_accessor :remember_token
+  before_save { self.email = email.downcase }
+  validates :name,  presence: true, length: { maximum: 50 }
+  VALID_EMAIL_REGEX = /\A[\w+\-.]+@[a-z\d\-.]+\.[a-z]+\z/i
+  validates :email, presence: true, length: { maximum: 255 },
+                    format: { with: VALID_EMAIL_REGEX },
+                    uniqueness: { case_sensitive: false }
+  has_secure_password
+  validates :password, presence: true, length: { minimum: 6 }
+
+  # 입력받은 문자열의 해시값을 리턴한다.
+  def User.digest(string)
+    cost = ActiveModel::SecurePassword.min_cost ? BCrypt::Engine::MIN_COST :
+                                                  BCrypt::Engine.cost
+    BCrypt::Password.create(string, cost: cost)
+  end
+
+  # 랜덤한 토큰을 리턴한다.
+  def User.new_token
+    SecureRandom.urlsafe_base64
+  end
+
+  # 영속적인 세션을 위해 유저를 데이터베이스로부터 검색한다. 
+  def remember
+    self.remember_token = User.new_token
+    update_attribute(:remember_digest, User.digest(remember_token))
+  end
+
+  # 입력받은 토큰이 Digest와 일치하면 true를 리턴한다. 
+  def authenticated?(remember_token)
+    BCrypt::Password.new(remember_digest).is_password?(remember_token)
+  end
+  
+  # 유저의 로그인 정보를 파기한다.
+  def forget
+  	update_attribute(:remember_digest, nil)
+  end
+end
+```
+
+위 코드를 사용하면, 영속적인 세션을 종료시킬 수 있는 준비가 되었습니다. 종료하기 위해선 `forget` 헬퍼 메소드를 추가하여 `log_out` 헬퍼 메소드로부터 호출합니다. 아래의 코드를 잘 보시면, `forget` 헬퍼 메소드에서는 `user.forget` 을 호출하고 나서  `user_id`와 `remember_token` 의 쿠키를 삭제하는 것을 알 수 있습니다.
+
+```ruby
+# app/helpers/sessions_helper.rb
+module SessionsHelper
+
+  # 입력받은 유저로 로그인합니다.
+  def log_in(user)
+    session[:user_id] = user.id
+  end
+  .
+  .
+  .
+  # 영속적인 세션을 파기합니다.
+  def forget(user)
+    user.forget
+    cookies.delete(:user_id)
+    cookies.delete(:remember_token)
+  end
+
+  # 현재 유저를 로그아웃 시킵니다.
+  def log_out
+    forget(current_user)
+    session.delete(:user_id)
+    @current_user = nil
+  end
+end
+```
+
+이 시점에서 모든 테스트 케이스는 GREEN이 될 것입니다.
+
+`$ rails test`
+
+##### 연습
+
+1. 로그아웃 한 다음에, 브라우저에 대응하는 cookies가 삭제되어있는 것을 확인해봅시다.
+
+### 9.1.4 2개의 눈에 띄지 않는 버그
+
+사실은 작은 버그가 2개 남아 있으며, 이 2개의 버그는 서로 관련된 버그입니다. 하나는, 유저에 따라서는 같은 사이트를 여러개의 탭 (혹은 윈도우) 로 로그인할 수 있습니다. 로그아웃 용 링크는 로그인 중일때만 표시됩니다만, 현재의  `current_user` 는 유저가 1개의 탭으로 로그아웃하고 다른 하나의 탭으로 로그인하려고하면 에러를 일으킵니다. 이것은 다른 하나의 탭에서 "Log out" 링크를 클릭하면,  `current_user` 가 `nil` 이 되어버리기 때문에,   `log_out` 메소드 내부의 `forget(currrent_user)`  가 실패해버리기 때문입니다. 이 문제를 피하기 위해서는 유저가 로그인 중인 경우에만 로그아웃 시킬 필요가 있습니다.
+
+
+
+두 번째의 버그는, 유저가 여러개의 브라우저에서 로그인해있을 때 발생합니다. 예를 들어, Firefox에서 로그아웃하고,  Chrome에서는 로그아웃하지 않고 브라우저를 종료시키고,  다시 Chrome으로 같은 페이지를 열면, 이 문제가 발생합니다. Firefox와 Chrome을 사용한 구체적인 예를 생각해봅시다. 유저가  Firefox에서 로그아웃하면,  `user.forget` 메소드에 의해  `remember_digest` 가 `nil` 이 됩니다. 이 시점에서 Firefox는 아직 어플리케이션이 제대로 동작하고 있을 것입니다. 이 때 `log_out` 메소드에 의해 유저ID가 삭제되기 때문에, 아래 2개의 조건은  `false` 가 됩니다.
+
+```ruby
+# Remember token cookies에 대응하는 유저를 리턴한다.
+def current_user
+  if (user_id = session[:user_id]) #조건 1
+    @current_user ||= User.find_by(id: user_id)
+  elsif (user_id = cookies.signed[:user_id]) #조건 2
+    user = User.find_by(id: user_id)
+    if user && user.authenticated?(cookies[:remember_token])
+      log_in user
+      @current_user = user
+    end
+  end
+end
+```
+
+결과적으로는 `current_user` 메소드의 최종적인 처리결과는 기대했던 대로  `nil` 이 됩니다.
+
+
+
+한 편, Chrome을 닫은 뒤에, `session[:user_id]` 는 `nil` 이 됩니다. (이것은 브라우저가 닫힐 때, 모든 세션변수의 기간이 종료되기 때문입니다.) 그러나 `cookies` 는 브라우저의 안에서 남아서 계속 살아남기때문에, Chrome을 재기동하여 sample 어플리케이션에 접속하면, 데이터베이스로부터 해당 유저를 찾아낼 수 있습니다.
+
+```ruby
+# Remember token cookies에 대응하는 유저를 리턴한다.
+def current_user
+  if (user_id = session[:user_id]) 
+    @current_user ||= User.find_by(id: user_id)
+  elsif (user_id = cookies.signed[:user_id]) #여기서부터
+    user = User.find_by(id: user_id)
+    if user && user.authenticated?(cookies[:remember_token]) #여기까지
+      log_in user
+      @current_user = user
+    end
+  end
+end
+```
+
+결과적으로 다음 `if` 문의 조건식이 처리됩니다.
+
+`user && user.authenticated?(cookies[:remember_token])`
+
+이 때, `user` 가 `nil` 이라면 첫 번째의 조건식에서 처리가 종료됩니다만 실제로는 `nil`이 아니기 때문에 2번째 조건식까지 실행되어, 이 때 에러가 발생합니다. 원인은 Firefox에서 로그아웃했을 때 유저의  `remember_digest` 가 삭제됨에도 불구하고, Chrome에서 어플리케이션에 접속할 때 다음의 코드가 실행되어 버립니다.
+
+```
+BCrypt::Password.new(remember_digest).is_password?(remember_token)
+```
+
+즉 ,위 `remember_digest` 가 `nil`  이 되기 때문에, bcrypt 라이브러리 내부의 예외가 발생하게 됩니다. 이 문제를 해결하기 위해서는 `remember_digest` 가 존재하지 않을 때에는 `false` 를 리턴하는 처리를 `authenticated?` 에 추가할 필요가 있습니다.
+
+
+
+테스트 주도 개발은, 이러한 자잘한 버그를 처리하는 데에 매우 적합합니다. 여기서 2개의 에러를 캐치하는 테스트 코드를 작성해봅시다. 일단 8장에서 작성한 결합테스트를 기반으로 테스트가 실패하는 테스트코드를 작성해봅시다.
+
+```ruby
+# test/integration/users_login_test.rb
+require 'test_helper'
+
+class UsersLoginTest < ActionDispatch::IntegrationTest
+  .
+  .
+  .
+  test "login with valid information followed by logout" do
+    get login_path
+    post login_path, params: { session: { email:    @user.email,
+                                          password: 'password' } }
+    assert is_logged_in?
+    assert_redirected_to @user
+    follow_redirect!
+    assert_template 'users/show'
+    assert_select "a[href=?]", login_path, count: 0
+    assert_select "a[href=?]", logout_path
+    assert_select "a[href=?]", user_path(@user)
+    delete logout_path
+    assert_not is_logged_in?
+    assert_redirected_to root_url
+    # 2번째 윈도우에서 로그아웃을 클릭하는 유저를 시뮬레이션한다.
+    delete logout_path
+    follow_redirect!
+    assert_select "a[href=?]", login_path
+    assert_select "a[href=?]", logout_path,      count: 0
+    assert_select "a[href=?]", user_path(@user), count: 0
+  end
+end
+```
+
+위 코드에서는 `current_user` 가 없기 때문에, 2번째 `delete logout_path` 을 호출하는 부분에서 에러가 발생하고, 테스트케이스 실행 결과는 RED가 될 것입니다.
+
+`$ rails test`
+
+다음으로는 이 테스트를 성공시켜보겠습니다. 구체적으로는 아래의 코드에서, `logged_in?` 이 true의 경우에만 한하여 `log_out` 메소드를 호출해보도록 합시다.
+
+```ruby
+# app/controllers/sessions_controller.rb
+class SessionsController < ApplicationController
+  .
+  .
+  .
+  def destroy
+    log_out if logged_in?
+    redirect_to root_url
+  end
+end
+```
+
+2번째 버그는, 결합테스트에서 2종류의 브라우저를 시뮬레이션하는 것은 꽤나 어려운 일입니다. 그 대신에, 같은 문제를 User모델에서 직접 테스트하는 정도라면 간단하게 해볼 수 있습니다. Remember Digest를 가지고 있지 않은 유저를 준비하고, (`setup` 메소드에서 정의한 `@user` 인스턴스변수에서는 true가 됩니다.) 이어서 `authenticated?` 를 호출해봅니다. 여기서 Remember_token을 비어있는 상태로 하는 것을 주목해주세요. Remember_token이 사용되기 전에 에러가 발생하기 때문에, Remember token의 값은 아무거나 상관없습니다.
+
+```ruby
+# test/models/user_test.rb
+require 'test_helper'
+
+class UserTest < ActiveSupport::TestCase
+
+  def setup
+    @user = User.new(name: "Example User", email: "user@example.com",
+                     password: "foobar", password_confirmation: "foobar")
+  end
+  .
+  .
+  .
+  test "authenticated? should return false for a user with nil digest" do
+    assert_not @user.authenticated?('')
+  end
+end
+```
+
+위 코드에서는 `BCrypt::Password.new(nil)` 에서 에러가 발생하기 때문에, 테스트는 실패할 것입니다.
+
+`$ rails test `
+
+이 테스트를 성공시키기 위해서는, Remember Digest가 `nil` 의 경우,  `false` 를 리턴하게끔 하는 것이 좋을 것 같습니다.
+
+```ruby
+class User < ApplicationRecord
+  .
+  .
+  .
+  # 입력받은 토큰이 Digest와 일치하면 true를 리턴합니다. 
+  def authenticated?(remember_token)
+    return false if remember_digest.nil? #추가
+    BCrypt::Password.new(remember_digest).is_password?(remember_token)
+  end
+
+  # 유저의 로그인 정보를 파기합니다.
+  def forget
+    update_attribute(:remember_digest, nil)
+  end
+end
+```
+
+여기서 Remember Digest가 `nil` 의 경우에는 `return ` 키워드에서 그 즉시 메소드가 종료할 것입니다. 처리를 도중에 종료하는 경우에 자주 쓰이는 테크닉입니다. 다음 코드도 상관 없습니다만
+
+```ruby
+if remember_digest.nil?
+  false
+else
+  BCrypt::Password.new(remember_digest).is_password?(remember_token)
+end
+```
+
+필자는 명시적으로 return하는 코드를, 한 줄이라도 더 짧아지는 것도 있기도해서 좋아합니다.
+
+
+
+위 코드를 사용하면 테스트 코드 전체가 통과할 것이빈다. 서브 타이틀은 양쪽 모두 수정될 것입니다.
+
+`$ rails test`
+
+##### 연습
+
+1. `app/controllers/sessions_controller.rb` 에서의  `destroy` 메소드를 코멘트아웃하고, 2개의 로그인이 되어있는 탭에 의한 버그를 실제로 확인해봅시다. 일단 한 쪽 탭에서 로그아웃하고, 그 후 다른 한 쪽의 탭에서 다시 로그아웃해보세요.
+2. `app/models/user.rb` 에서의 `authenticated?` 의 수정된 부분을 코멘트아웃하고 2개의 로그인 되어 있는 브라우저에 의한 버그를 확인해봅시다. 일단 한 쪽의 브라우저에서 로그아웃하고, 다른 한 쪽의 브라우저를 종료 후 다시 실행하고, sample 어플리케이션에 접속해보세요.
+3. 위 코드에서 코멘트아웃한 부분을 원래대로 돌리고, 테스트를 실행해봅시다.
+
+
+
