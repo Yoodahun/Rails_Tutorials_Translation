@@ -200,18 +200,18 @@ Rails Tutorial은, 실제 Web Application의 개발에서 공개까지, 실제�
 		- [x] [8.3 Logout](Documentation/Chapter8.md#83-Logout)
 		- [x] [8.4 마지막으로](Documentation/Chapter8.md#84-마지막으로)
 			- [ ] [8.4.1 8장의 정리](Documentation/Chapter8.md#841-8장의-정리)
-	- [ ] 제 9장 진보된 로그인 구조
-		- [ ] 9.1 「Remember me」 
-			- [ ] 9.1.1 Remember Token과 암호화
-			- [ ] 9.1.2 로그인 상태 유지와 보존
-			- [ ] 9.1.3 유저 해제?(이상함)
-			- [ ] 9.1.4 2개의 눈에 띄지않는 버그
-		- [ ] 9.2 「Remember me」  Checkbox
-		- [ ] 9.3 「Remember me」 의 테스트
-			- [ ] 9.3.1 「Remember me」 박스를 테스트해보자
-			- [ ] 9.3.2 「Remember me」 를 테스트해보자
-		- [ ] 9.4 마지막으로
-			- [ ] 9.4.1 9장의 정리
+	- [x] [제 9장 진보된 로그인 구조](Documentation/Chapter9.md)
+		- [x] [9.1 Remember me 기능](Documentation/Chapter9.md#91-Remember-me-기능)
+			- [ ] [9.1.1 Remember Token과 암호화](Documentation/Chapter9.md#911-Remember-Token과-암호화)
+			- [ ] [9.1.2 로그인 상태의 저장](Documentation/Chapter9.md#912-로그인-상태의-저장)
+			- [ ] [9.1.3 유저 정보 파기](Documentation/Chapter9.md#913-유저-정보-파기)
+			- [ ] [9.1.4 2개의 눈에 띄지않는 버그](Documentation/Chapter9.md#914-2개의-눈에-띄지않는-버그)
+		- [x] [9.2 「Remember me」  Checkbox](Documentation/Chapter9.md#92-Remember-me-Checkbox)
+		- [x] [9.3 「Remember me」 의 테스트](Documentation/Chapter9.md#93-Remember-me-의-테스트)
+			- [ ] [9.3.1 「Remember me」 박스를 테스트해보자](Documentation/Chapter9.md#931-Remember-me-박스를-테스트해보자)
+			- [ ] [9.3.2 「Remember me」 를 테스트해보자](Documentation/Chapter9.md#932-Remember-me-를-테스트해보자)
+		- [x] [9.4 마지막으로](Documentation/Chapter9.md#94-마지막으로)
+			- [ ] [9.4.1 9장의 정리](Documentation/Chapter9.md#941-9장의-정리)
 	- [ ] 제 10장 유저의 업데이트, 출력, 삭제
 		- [ ] 10.1 유저를 업데이트해보자.
 			- [ ] 10.1.1 Update Form
