@@ -206,7 +206,7 @@ Rails Tutorial은, 실제 Web Application의 개발에서 공개까지, 실제�
 			- [ ] [9.1.2 로그인 상태의 저장](Documentation/Chapter9.md#912-로그인-상태의-저장)
 			- [ ] [9.1.3 유저 정보 파기](Documentation/Chapter9.md#913-유저-정보-파기)
 			- [ ] [9.1.4 2개의 눈에 띄지않는 버그](Documentation/Chapter9.md#914-2개의-눈에-띄지않는-버그)
-		- [x] [9.2 「Remember me」  Checkbox](Documentation/Chapter9.md#92-remember-me-체크박스)
+		- [x] [9.2 「Remember me」  Checkbox](Documentation/Chapter9.md#92-remember-me-체크-박스)
 		- [x] [9.3 「Remember me」 의 테스트](Documentation/Chapter9.md#93-remember-me-의-테스트)
 			- [ ] [9.3.1 「Remember me」 박스를 테스트해보자](Documentation/Chapter9.md#931-remember-me-박스를-테스트해보자)
 			- [ ] [9.3.2 「Remember me」 를 테스트해보자](Documentation/Chapter9.md#932-remember-me-를-테스트해보자)
