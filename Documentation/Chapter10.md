@@ -447,5 +447,402 @@ end
 1. 실제로 유저 정보의 수정이 제대로 되는지 확인해봅시다.
 2. 만약 Gravatar와 연결되지 않은, 적당한 메일주소(foobar@example.com 등) 으로 변경하는 경우, 프로필 영상은 어떻게 표시됩니까? 실제로 수정 Form에 메일 주소를 변경하여 확인해봅시다.
 
+
+
 ## 10.2 권한 부여 (Authorization)
+
+웹 어플리케이션의 문맥에서는 *인증(Authentication)* 은 사이트의 유저를 식별하기 위함이고, *권한 부여(authorization)* 는 해당 유저가 실행가능한 조작을 관리하는 것입니다. [제 8장](Chapter8.md) 에서 인증시스템을 구축한 것으로, 권한 부여를 위한 시스템을 구현할 준비도 되었습니다.
+
+
+
+[10.1](Chapter10.md#101-유저를-수정해보자) 의 edit액션과 update액션은 이미 완전하게 동작하고 있습니다만, 보안상의 큰 문제가 하나 있습니다. 어느 유저라도 모든 액션에 접근할 수 있기 때문에, 누구나 (로그인해있지 않은 유저도) 유저 정보를 편집할 수 있습니다. 이번 섹션에서는 유저에게 로그인을 요구하고, 자신 이외의 유저 정보를 변경할 수 없게 제어할 수 있게 해봅니다. (이러한 보안상의 제어기능을 *보안 모델* 이라고 부릅니다.) 
+
+
+
+10.2.1에서는 로그인하지 않은 유저가 제한된 페이지로 액세스하려고 할 때에 대해 대응해봅니다. 이러한 케이스는 어플리케이션을 사용하면 보통 있을 수 있기 때문에, 로그인 페이지로 리다이렉트하고 알기 쉬운 메세지도 표시할 수 있게 해봅니다. 목업은 아래와 같습니다. 한 편으로는 허가되지 않은 페이지에 대해서 접근하려고 하는 로그인이 끝난 유저가 있다면, (예를 들어 타인의 유저 정보 편집 페이지에 접속하려고 한다면) 루트URL로 리다이렉트하게끔 해봅니다.(10.2.2)
+
+![](../image/Chapter10/login_page_protected_mockup.png)
+
+
+
+### 10.2.1 유저에게 로그인을 요청해보자
+
+위 목업과 같이, 리다이렉트하는 구조를 구현하고 싶을 때에는 Users 컨트롤러 안에서 *before filter* 를 사용합니다. before 필터는 `before_action` 메소드를 사용하고 어떠한 처리가 실행되는 직전에 특정 메소드를 실행시키는 구조입니다. 이번에는 유저에게 로그인을 요청하기 위해, 아래 코드처럼  `logged_in_user` 메소드를 구현하고,  `before_action :logged_in_user` 이라고 하는 형식으로 사용합니다.
+
+```ruby
+# app/controllers/users_controller.rb
+class UsersController < ApplicationController
+  # 추가
+  before_action :logged_in_user, only: [:edit, :update]
+  .
+  .
+  .
+  private
+
+    def user_params
+      params.require(:user).permit(:name, :email, :password,
+                                   :password_confirmation)
+    end
+
+    # before 액션
+
+    # 로그인한 유저인지를 확인
+    def logged_in_user
+      unless logged_in?
+        flash[:danger] = "Please log in."
+        redirect_to login_url
+      end
+    end
+end
+```
+
+ 디폴트로는 before 필터는 컨트롤러 내부의 모든 액션에 적용되기 때문에, 여기서는 적절하게 `:only` 옵션(해시) 를 사용하는 것으로, `:edit`과 `:update` 액션만 해당 필터가 적용될 수 있도록 제한을 걸어놓습니다.
+
+
+
+before 필터를 사용하여 구현한 결과는, 한 번 로그아웃하고 유저 정보 수정 페이지(/users/1/edit) 으로 액세스하려고 하면 확인할 수 있습니다.
+
+![](../image/Chapter10/protected_log_in_3rd_edition.png)
+
+지금 단계에서 테스트는 실패합니다.
+
+`$ rails test`
+
+원인으로는, edit 액션이나 update 액션에서 로그인을 요청하도록 하고 있기 때문에, 로그인해있지 않은 유저라면, 해당 테스트가 실패할 수 밖에 없기 때문입니다.
+
+
+
+때문에 edit액션이나 update액션을 테스트하기 전에 로그인해놓을 필요가 있습니다. 해결책은 간단합니다. [9.3](Chapter9.md#93-Remember-me-의-테스트) 에서 개발한  `log_in_as` 헬퍼를 사용하는 것입니다. 수정한 결과는 아래와 같습니다.
+
+```ruby
+# test/integration/users_edit_test.rb
+require 'test_helper'
+
+class UsersEditTest < ActionDispatch::IntegrationTest
+
+  def setup
+    @user = users(:michael)
+  end
+
+  test "unsuccessful edit" do
+    log_in_as(@user) #추가
+    get edit_user_path(@user)
+    .
+    .
+    .
+  end
+
+  test "successful edit" do
+    log_in_as(@user) #추가
+    get edit_user_path(@user)
+    .
+    .
+    .
+  end
+end
+```
+
+(`setup` 메소드 내부에서 로그인 처리를 한 번에 묶어서 하는 것도 가능합니다. 하지만 10.2.3 에서 테스트를 로그인하기 전에 정보 수정 페이지에 접속하려고 유도하고 싶기 때문에, 여기서 묶어서 처리해도 결국은 원래대로 되돌려야합니다.)
+
+
+
+이번에는 테스트 케이스는 통과할 것입니다.
+
+`$ rails test`
+
+이 것으로 테스트 케이스가 통과하게끔 되었습니다만, 사실 before 필터의 구현은 아직 끝나지 않았습니다. 보안 모델에 관한 구현을 코멘트아웃 처리해도 테스트가 통과하는지 어떤지 실제로 코멘트아웃하여 확인해봅시다. 안타깝게도 모든 테스트케이스가 통과할 것입니다. before 필터를 코멘트아웃하여 거대한 보안 구멍이 생겨버렸습니다. 테스트 코드에서 해당 문제를 검출해낼 수 있어야합니다. 즉, 아래 코드는 테스트에서 통과하면 안됩니다. 테스트를 작성하여 이 문제를 대처해봅시다.
+
+```ruby
+# app/controllers/users_controller.rb
+class UsersController < ApplicationController
+  # before_action :logged_in_user, only: [:edit, :update]
+  .
+  .
+  .
+end
+```
+
+before 필터는 기본적으로 액션마다 적용하기 때문에,  Users 컨트롤러의 테스트도 액션별로 작성해나갑니다. 구체적으로는 올바른 종류의 HTTP 리퀘스트를 사용하여 `edit` 액션과 `update` 액션을 각각 실행시켜, flash에 메세지가 대입되어져 있는지, 로그인 화면으로 리다이렉트 되어져 있는지를 확인해봅시다. 7장에서 적절한 리퀘스트는 각각 `GET` 과 `PATCH` 라는 것을 알고 계실 것입니다. 따라서 테스트 내부에서는 `get` 메소드와  `patch` 메소드를 사용합니다. 변경 결과는 아래와 같습니다.
+
+```ruby
+# test/controllers/users_controllerb_test.rb
+require 'test_helper'
+
+class UsersControllerTest < ActionDispatch::IntegrationTest
+
+  def setup
+    @user = users(:michael)
+  end
+  .
+  .
+  .
+  test "should redirect edit when not logged in" do
+    get edit_user_path(@user)
+    assert_not flash.empty?
+    assert_redirected_to login_url
+  end
+
+  test "should redirect update when not logged in" do
+    patch user_path(@user), params: { user: { name: @user.name,
+                                              email: @user.email } }
+    assert_not flash.empty?
+    assert_redirected_to login_url
+  end
+end
+```
+
+2번째의 테스트에서는  `patch` 메소드를 사용하여 `user_path(@user)` 에 PATCH리퀘스트를 송신하고 있는 점을 주목해주세요. 7장에서도 확인했듯, 이 리퀘스트는 Users 컨트롤러의 `update` 액션으로 적절하게 연결해줍니다.
+
+
+
+이 것으로 테스트 케이스는 통과하지 못할 것입니다. 준비가 다 되었으면 before 필터의 코멘트아웃 처리를 원래대로 돌리고, 테스트가 잘 통과하는지를 확인해봅시다.
+
+```ruby
+# app/controllers/users_controller.rb
+class UsersController < ApplicationController
+  before_action :logged_in_user, only: [:edit, :update]
+  .
+  .
+  .
+end
+```
+
+코멘트아웃하였던 부분을 원래대로 되돌리면, 테스트가 통과할 것입니다.
+
+`$ rails test`
+
+이러한 테스트를 구현해보는 것으로, 누구라도 유저의 정보를 수정해버리는 버그가 있어도 바로 찾아낼 수 있게 되었습니다.
+
+##### 연습
+
+1. 디폴트의 before필터는 모든 액션에 대해 제한을 겁니다. 이번 케이스라면 로그인 페이지나 유저 등록 페이지에도 제한이 걸릴 것 입니다.(결과적으로 테스트도 실패할 것입니다.) `:only` 옵션을 코멘트아웃하여보고 테스트 코드가 해당 에러를 캐치하는 지(테스트가 실패하는지) 를 확인해봅시다.
+
+### 10.2.2 올바른 유저를 요청해보자
+
+당연하게도, 로그인을 요구하는 것만으로는 충분하지 않습니다. 유저가 *자신의 정보만* 을 수정할 수 있도록 할 필요가 있습니다. [10.2.1](#1021-유저에게-로그인을-요청해보자) 에는 심각한 보안상의 결함을 찾아내는 테스트를 해보았습니다. 이번 섹션에서는 보안 모델이 제대로 구현되어있는지 확신을 가지기 위해서 테스트 주도 개발을 진행해봅시다. 따라서  Users 컨트롤러의 테스트를 보완하기 위해, 테스트를 추가해보는 것 부터 시작해봅시다.
+
+
+
+우선은 유저의 정보를 서로 편집할 수 없는 것을 확인하기 위해, sample 유저를 한 명 더 추가합니다. 유저용의 fixture 필터에 2번째 유저를 추가해봅시다.
+
+```
+// test/fixture/users.yml
+michael:
+  name: Michael Example
+  email: michael@example.com
+  password_digest: <%= User.digest('password') %>
+
+archer:
+  name: Sterling Archer
+  email: duchess@example.gov
+  password_digest: <%= User.digest('password') %>
+```
+
+다음으로는 9장에서 정의한 `log_in_as` 메소드를 사용하여 `edit` 액션과 `update` 액션을 테스트해봅니다. 이 때, 이미 로그인 되어져 있는 유저를 대상으로 하기 때문에, 로그인페이지가 아닌 루트 URL로 리다이렉트하는 점을 주의해주세요.
+
+```ruby
+# test/controllers/users_controller_test.rb
+require 'test_helper'
+
+class UsersControllerTest < ActionDispatch::IntegrationTest
+
+  def setup
+    @user       = users(:michael)
+    @other_user = users(:archer) #추가
+  end
+  .
+  .
+  .
+  test "should redirect edit when logged in as wrong user" do
+    log_in_as(@other_user)
+    get edit_user_path(@user)
+    assert flash.empty?
+    assert_redirected_to root_url
+  end
+
+  test "should redirect update when logged in as wrong user" do
+    log_in_as(@other_user) 
+    patch user_path(@user), params: { user: { name: @user.name,
+                                              email: @user.email } }
+    assert flash.empty?
+    assert_redirected_to root_url
+  end
+end
+```
+
+다른 유저의 프로필을 수정하려고 하면 리다이렉트되기 때문에, ` correct_user` 라고 하는 메소드를 작성하고,  before 필터로부터 해당 메소드를 호출하도록 해봅시다. before 필터의  `correct_user` 에서 `@user` 변수를 정의하고 있기 때문에, 아래 코드에서는 `edit` 와 `update` 의 각 액션으로부터 `@user` 로의 대입문을 삭제하고 있는 점을 주의해주세요.
+
+```ruby
+class UsersController < ApplicationController
+  before_action :logged_in_user, only: [:edit, :update]
+  before_action :correct_user,   only: [:edit, :update]
+  .
+  .
+  .
+  def edit
+  end
+
+  def update
+    if @user.update_attributes(user_params)
+      flash[:success] = "Profile updated"
+      redirect_to @user
+    else
+      render 'edit'
+    end
+  end
+  .
+  .
+  .
+  private
+
+    def user_params
+      params.require(:user).permit(:name, :email, :password,
+                                   :password_confirmation)
+    end
+
+    # before 액션
+
+    # 유저가 로그인했는지를 확인
+    def logged_in_user
+      unless logged_in?
+        flash[:danger] = "Please log in."
+        redirect_to login_url
+      end
+    end
+
+    # 올바른 유저인지를 확인
+    def correct_user
+      @user = User.find(params[:id])
+      redirect_to(root_url) unless @user == current_user
+    end
+end
+```
+
+이번 테스트는 통과할 것입니다.
+
+`$ rails test`
+
+마ㄱ마으로, 리팩토링이긴 합니다만, 일반적인 관습을 따라 `current_user?` 라고 하는 논리값을 리턴하는 메소드를 구현합니다.  `correct_user` 안에서 사용하기 위한 것으로, Sessions 헬퍼의 내부에 이 메소드를 추가해봅시다. 이 메소드를 사용하면 지금까지의
+
+`unless @user == current_user`
+
+라고 하는 부분이, 다음과 같이 알기 쉬운 코드로 바뀝니다.
+
+`unless current_user?(@user)`
+
+```ruby
+# app/helpers/sessions_helper.rb
+module SessionsHelper
+
+  # 입력된 유저로 로그인
+  def log_in(user)
+    session[:user_id] = user.id
+  end
+
+  # 영속적 세션으로서 유저를 기억한다.
+  def remember(user)
+    user.remember
+    cookies.permanent.signed[:user_id] = user.id
+    cookies.permanent[:remember_token] = user.remember_token
+  end
+
+  # 입력받은 유저가 로그인해있다면 true를 리턴한다. 
+  def current_user?(user)
+    user == current_user
+  end
+
+  # Remember token(cookie) 에 대응하는 유저를 리턴한다.
+  def current_user
+    .
+    .
+    .
+  end
+  .
+  .
+  .
+end
+```
+
+앞서 메소드를 사용하여 비교연산하고 있던 행을 수정하면 아래와 같이 됩니다.
+
+```ruby
+# app/controllers/users_controller.rb
+class UsersController < ApplicationController
+  before_action :logged_in_user, only: [:edit, :update]
+  before_action :correct_user,   only: [:edit, :update]
+  .
+  .
+  .
+  def edit
+  end
+
+  def update
+    if @user.update_attributes(user_params)
+      flash[:success] = "Profile updated"
+      redirect_to @user
+    else
+      render 'edit'
+    end
+  end
+  .
+  .
+  .
+  private
+
+    def user_params
+      params.require(:user).permit(:name, :email, :password,
+                                   :password_confirmation)
+    end
+
+    # before 액션
+
+    # 유저가 로그인했는지를 확인
+    def logged_in_user
+      unless logged_in?
+        flash[:danger] = "Please log in."
+        redirect_to login_url
+      end
+    end
+
+    # 올바른 유저인지를 확인
+    def correct_user
+      @user = User.find(params[:id])
+      #수정
+      redirect_to(root_url) unless current_user?(@user)
+    end
+end
+```
+
+##### 연습
+
+1. 어째서 `edit` 액션과 `update` 액션을 양쪽다 보호할 필요가 있는 것일까요?
+2. 위 액션 중, 어느쪽이던 브라우저에서 간단하게 테스트할 수 있는 액션인가요?
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
