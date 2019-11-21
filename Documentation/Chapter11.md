@@ -84,5 +84,97 @@ end
 
 ### 11.1.2 Account Activation DataModel
 
+앞서 살짝 말씀드렸다시피, 유효화의 메일에는 유니크한 유효화토큰이 필요합니다. 바로 생각나는거정도는 송신메일과 데이터베이스 각각에 같은 문자열을 준비하는 방법입니다. 그러나 이 방법은 만에 하나 데이터베이스의 내용이 유출된다면 막대한 피해로 이어질 수 있습니다. 예를 들어 공격자가 데이터베이스로의 액세스에 성공했을 경우, 새롭게 등록하는 유저 계정의 유효화 토큰을 훔쳐내어, 유저가 사용하기 전에 해당 토큰을 사용해버리는  (그리고 해당 유저라고 속이고 로그인해버립니다) 케이스를 생각해볼 수 있습니다.
 
+
+
+이러한 사태를 막기 위해, 패스워드의 구현 ([제 6장](Chapter6.md)) 이나 Remember 토큰 ([제 9장](Chapter9.md)) 과 같이 가상의 속성을 사용하여 해시화한 문자열을 데이터베이스에 저장해볼 것 입니다. 구체적으로는 다음과 같이 가상의 유효화 토큰에 액세스하여
+
+`user.activation_token`
+
+아래와 같은 코드로 유저를 인증할 수 있게 해볼 것 입니다.
+
+`user.authenticated?(:activation, token)`
+
+(위 코드를 하기 위해서는 이전 9장에서의 `authenticated?` 메소드를 리팩토링할 필요가 있습니다.)
+
+
+
+이어서 `activated` 속성을 추가하여 논리값을 다루도록 해봅시다. 이것으로 [10.4.1](Chapter10.md#1041-관리자) 에서 설명했던 자동생성되는 논리값을 다루는 메소드와 비슷한 느낌으로 유저가 유효한 유저인지 아닌지를 테스트해볼 수 있을 것 입니다.
+
+`if user.activated?`
+
+마지막으로 본 튜토리얼에서 사용하는 것은 아니지만, 유저를 유효하게 했을 때의 시간도 기록해두도록 해봅시다. 변경후의 데이터 모델은 아래와 같습니다.
+
+![](../image/Chapter11/user_model_account_activation.png)
+
+다음으로 마이그레이션을 커맨드라인에서 실행하여, 데이터 모델을 추가하면, 3개의 속성이 새롭게 추가될 것 입니다.
+
+```
+$ rails generate migration add_activation_to_users \
+> activation_digest:string activated:boolean activated_at:datetime
+```
+
+([8.2.4](Chapter8.md#824-레이아웃의-변경을-테스트해보자) 에서도 말씀드렸습니다만, 위의 2번째 줄에 있는 `>` 는 개행을 나타내기 위해 쉘이 자동적으로 입력한 문자입니다. 수동으로 입력하지 않도록 주의해주세요.) 다음으로 `admin` 속성을 추가할 때와 마찬가지로, `activated` 속성의 디폴트 논리값도 `false` 으로 해놓습니다.
+
+```ruby
+class AddActivationToUsers < ActiveRecord::Migration[5.0]
+  def change
+    add_column :users, :activation_digest, :string
+    add_column :users, :activated, :boolean, default: false
+    add_column :users, :activated_at, :datetime
+  end
+end
+```
+
+언제나처럼 마이그레이션을 실행합니다.
+
+`$ rails db:migrate`
+
+#### Activation token의 Callback
+
+유저가 새롭게 등록을 완료하기 위해서 반드시 account의 유효화를 할 필요가 있기 때문에, 유효화 토큰이나 유효화 digest는 유저 오브젝트가 생성되기 전에 만들어놓을 필요가 있습니다. 이것과 비슷한 상황을 [6.2.5](Chapter6.md#625-유니크성을-검증해보자) 에서도 설명한 적이 있습니다. 메일 주소를 데이터베이스에 저장하기 전에, 메일 주소를 전부 소문자로 변환할 필요가 있었습니다. 그 때에는 `before_save` 콜백에 `downcase` 메소드를 지정하였습니다. 오브젝트에 `before_save` 콜백을 준비해놓으면, 오브젝트가 저장되기 직전, 오브젝트의 생성시나 수정 시의 해당 콜백이 호출됩니다. 그러나 이번에는 오브젝트가 생성되었을 떄만 콜백을 호출하고 싶습니다. 그 외의 때에는 호출하고 싶지 않습니다. 여기서 `before_create` 콜백이 필요하게 됩니다. 이 콜백은 다음과 같이 정의할 수 있습니다.
+
+```
+before_create :create_activation_digest
+```
+
+위 코드는 *메소드 참조* 라고 불리는 것인데, 이렇게 해놓으면 Rails는 `create_activation_digest` 라고하는 메소드를 찾아 유저를 생성하기 전에 실행하게 됩니다. (6장에서는 `before_save` 에 명시적으로 블록을 전달하고 있습니다만, 사실 메소드를 참조하는 편을 추천합니다.)
+
+`create_activation_digest` 메소드 자체는 User 모델 내부에서밖에 사용하지 않기 때문에, 외부에 공개할 필요는 없습니다. [7.3.2](Chapter7.md#732-Strong-Parameters) 와 마찬가지로 `private` 키워드를 지정하여 해당 메소드를 은폐합니다.
+
+```ruby
+private
+
+  def create_activation_digest
+    # 유효화 토큰과 Digest의 생성 및 대입을 한다.
+  end
+```
+
+클래스 안에서의 `private` 키워드로 인해 아래 작성한 메소드는 자동적으로 비공개가 됩니다. 이것은 콘솔에서도 바로 확인할 수 있습니다.
+
+```ruby
+$ rails console
+>> User.first.create_activation_digest
+NoMethodError: private method `create_activation_digest' called for #<User>
+```
+
+이번 `before_create` 콜백을 사용하는 목적은, 토큰과 그것에 대응하는 Digest를 할당하기 위해서입니다. 실제로 할당은 아래와 같습니다.
+
+```ruby
+self.activation_token  = User.new_token
+self.activation_digest = User.digest(activation_token)
+```
+
+이 코드에서는 Remeber 토큰과 Remember Digest를 위해 작성한 메소드를 재활용합니다. 9장에서의 `remember` 메소드와 비교해봅시다.
+
+```ruby
+# 영속적인 세션을 위해 유저를 데이터베이스에 저장한다.
+def remember
+  self.remember_token = User.new_token
+  update_attribute(:remember_digest, User.digest(remember_token))
+end
+```
+
+주된 차이점은, 후자의 `update_attribute`의 사용법에 있습니다. 이 차이는, Remember 토큰과 Digest는 이미 데이터베이스에 존재하는 유저를 위해 생성하는 것에 비해, `before_create`  콜백은 유저가 생성되기 *전* 에 호출되기 때문입니다. 이 콜백의 존재로 인하여 `User.new` 로 새로운 유저를 정의하면, `activation_token` 속성이나 `activation_digest` 속성을 확인할 수 있게 되는 것입니다. 또한 후자의 `activation_digest` 속성은 이미 데이터베이스의 컬럼과 관련지어져있기 때문에, 유저가 저장될 때 같이 저장됩니다.
 
