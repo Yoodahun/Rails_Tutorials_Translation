@@ -178,3 +178,595 @@ end
 
 주된 차이점은, 후자의 `update_attribute`의 사용법에 있습니다. 이 차이는, Remember 토큰과 Digest는 이미 데이터베이스에 존재하는 유저를 위해 생성하는 것에 비해, `before_create`  콜백은 유저가 생성되기 *전* 에 호출되기 때문입니다. 이 콜백의 존재로 인하여 `User.new` 로 새로운 유저를 정의하면, `activation_token` 속성이나 `activation_digest` 속성을 확인할 수 있게 되는 것입니다. 또한 후자의 `activation_digest` 속성은 이미 데이터베이스의 컬럼과 관련지어져있기 때문에, 유저가 저장될 때 같이 저장됩니다.
 
+
+
+위에 설명한 것을 User모델에 구현해보면 아래와 같이 됩니다. 유효화 토큰은 본질적으로 가상의 토큰이어야만합니다. 따라서 이 모델에서는 `attr_accessor` 에 하나 더 추가해봅니다. 이전에 구현한 메일 주소를 소문자로 바꾸는 메소드도 메소드 참조형으로 바꾸고 있다는 것을 참고해주세요.
+
+```ruby
+# app/models/user.rb
+class User < ApplicationRecord
+  attr_accessor :remember_token, :activation_token
+  before_save   :downcase_email
+  before_create :create_activation_digest
+  validates :name,  presence: true, length: { maximum: 50 }
+  .
+  .
+  .
+  private
+
+    # 메일 주소를 전부 소문자로 바꾼다.
+    def downcase_email
+      self.email = email.downcase
+    end
+
+    # 유효화 토큰과 digest 생성 및 대입을 한다.
+    def create_activation_digest
+      self.activation_token  = User.new_token
+      self.activation_digest = User.digest(activation_token)
+    end
+end
+```
+
+#### Sample 유저의 작성 테스트
+
+진행하기에 앞서, 샘플 데이터와 fixture를 수정하여 테스트시의 샘플과 유저를 사전에 유효화해놓습니다. 또한 `Time.zone.now` 는 Rails에서의 기본 제공 헬퍼이며, 서버의 타임존에 따라서 타임 스탬프를 리턴합니다.
+
+```ruby
+# db/seeds.rb
+User.create!(name:  "Example User", 
+						email: "example@railstutorial.org",
+             password:              "foobar",
+             password_confirmation: "foobar",
+             admin:     true,
+             activated: true,
+             activated_at: Time.zone.now)
+
+99.times do |n|
+  name  = Faker::Name.name
+  email = "example-#{n+1}@railstutorial.org"
+  password = "password"
+  User.create!(name:  name,
+              email: email,
+              password:              password,
+              password_confirmation: password,
+              activated: true,
+              activated_at: Time.zone.now)
+end
+```
+
+```
+// test/fixtures/users.yml
+
+michael:
+  name: Michael Example
+  email: michael@example.com
+  password_digest: <%= User.digest('password') %>
+  admin: true
+  activated: true
+  activated_at: <%= Time.zone.now %>
+
+archer:
+  name: Sterling Archer
+  email: duchess@example.gov
+  password_digest: <%= User.digest('password') %>
+  activated: true
+  activated_at: <%= Time.zone.now %>
+
+lana:
+  name: Lana Kane
+  email: hands@example.gov
+  password_digest: <%= User.digest('password') %>
+  activated: true
+  activated_at: <%= Time.zone.now %>
+
+malory:
+  name: Malory Archer
+  email: boss@example.gov
+  password_digest: <%= User.digest('password') %>
+  activated: true
+  activated_at: <%= Time.zone.now %>
+
+<% 30.times do |n| %>
+user_<%= n %>:
+  name:  <%= "User #{n}" %>
+  email: <%= "user-#{n}@example.com" %>
+  password_digest: <%= User.digest('password') %>
+  activated: true
+  activated_at: <%= Time.zone.now %>
+<% end %>
+```
+
+언제나럼 데이터베이스를 초기화하고, 샘플데이터를 다시 생성하여 위 변경사항을 적용해봅시다.
+
+```
+$ rails db:migrate:reset
+$ rails db:seed
+```
+
+##### 연습
+
+1. 이번 섹션에서 변경한 점을 적용하고, 테스트가 통과하는지 확인해봅시다.
+2. 콘솔에서 User 클래스의 인스턴스를 생성하고, 해당 오브젝트로부터 `create_activation_digest` 메소드를 호출해보면 (private 메소드 이기 때문에) `NoMethodError` 가 발생하는 것을 확인해봅시다. 또한 해당 User 오브젝트로부터 Digest값도 확인해봅시다.
+3. 이전 6장에서 메일주소의 소문자화는 `email.downcase!` 라고 하는 (대입하지 않고 끝나는) 메소드가 있는 것을 기억하고 있습니다. 이 메소드를 사용하여 `downcase_email` 메소드를 개선해봅시다. 또한 제대로 변경했다면, 테스트 코드를 실행하여 제대로 동작하는지를 확인해봅시다.
+
+
+
+## 11.2 Account 유효화의 메일 발신
+
+데이터의 모델화가 끝났습니다. 이번에는 account 유효화 메일의 발신함에 있어 필요한 코드를 추가해보겠습니다. 이 메소드에서는 Action Mailer 라이브러리를 사용하여 User의 *Mailer* 를 추가해봅니다. 이 메일러는 User 컨트롤러의  `create` 액션에서 유효화 링크를 메일 발신하기 위해 사용할 것입니다. 메일러의 구성은 컨트롤러의 액션과 매우 비슷하며, 메일의 템플레이트를 뷰와 비슷한 방법으로 정의할 것 입니다. 이 템플렛의 안에 유효화 토큰과 메일 주소 (=유효하게 하는 account의 주소) 링크를 포함하여 사용해볼 것 입니다.
+
+### 11.2.1 발신 메일의 템플릿
+
+메일러는 모델이나 컨트롤러과 마찬가지로 `rails generate` 로 생성할 수 있습니다.
+
+`$ rails generate mailer UserMailer account_activation password_reset`
+
+위 코드를 실행하는 것으로 이번에 필요한 `account_activation` 메소드와, 제 12장에서 사용할 `password_reset` 메소드가 생성됩니다.
+
+
+
+또한, 위 코드에서는 생성한 메일러별로 뷰의 템플렛이 2개씩 생성됩니다. 하나는 텍스트 메일 용의 템플렛과, 하나는 HTML 메일용의 템플렛입니다. account 유효화에 사용하는 템플렛은 아래 2개의 코드입니다. 또한 패스워드 재설정에서 사용하는 템플렛은 제 12장에서 사용해볼 것 입니다.
+
+```erb
+<!-- app/views/user_mailer/account_activation.text.erb -->
+UserMailer#account_activation
+
+<%= @greeting %>, find me in app/views/user_mailer/account_activation.text.erb
+```
+
+```erb
+<!-- app/views/user_mailer/account_activation.html.erb -->
+<h1>UserMailer#account_activation</h1>
+
+<p>
+  <%= @greeting %>, find me in app/views/user_mailer/account_activation.html.erb
+</p>
+```
+
+생성된 메일러의 동작을 간단하게 확인해봅시다. 아래 첫 번째 코드는 기본으로 `from` 주소 (어플리케이션 전체적으로 공통) 이 있습니다. 아래 두 번째 코드의 각 메소드에는 수신하는 메일주소도 있습니다. 첫 번째 코드에서는 메일의 포맷에 대응하는 메일러 레이아웃도 사용할 수 있습니다. 또한 본 튜토리얼의 설명에는 직접적인 관계는 없습니다만, 생성된 HTML 메일러의 레이아웃이나 텍스트 메일러의 레이아웃은 `app/views/layouts` 에서 확인할 수 있습니다. 생성된 코드에는 인스턴스 변수 `@greeting` 도 포함되어 있습니다. 이 인스턴스 변수는 보통 뷰의 컨트롤러의 인스턴스 변수를 이용할 수 있는 것과 마찬가지로, 메일러 뷰에서 사용할 수 있습니다.
+
+```ruby
+# app/mailers/application_mailer.rb
+class ApplicationMailer < ActionMailer::Base
+  default from: "from@example.com"
+  layout 'mailer'
+end
+```
+
+```ruby
+# app/mailers/user_mailer.rb
+class UserMailer < ApplicationMailer
+
+  # Subject can be set in your I18n file at config/locales/en.yml
+  # with the following lookup:
+  #
+  #   en.user_mailer.account_activation.subject
+  #
+  def account_activation
+    @greeting = "Hi"
+
+    mail to: "to@example.org"
+  end
+
+  # Subject can be set in your I18n file at config/locales/en.yml
+  # with the following lookup:
+  #
+  #   en.user_mailer.password_reset.subject
+  #
+  def password_reset
+    @greeting = "Hi"
+
+    mail to: "to@example.org"
+  end
+end
+```
+
+제ㄹ 처음으로 생성된 템플렛을 커스터마이즈하여 실제로 유효화 메일에서 사용할 수 있도록 해봅시다. 그 다음으로 유저를 포함하는 인스턴스 변수를 생성하여 뷰에서 사용할 수 있도록하고, `user.email` 에 메일을 발신해봅시다. 아래 두번째 코드에서는 `mail` 에 `subject` 키를 파라미터로서 넘기고 있습니다. 이 값은 메일의 제목이 됩니다.
+
+```ruby
+# app/mailers/application_mailer.rb
+class ApplicationMailer < ActionMailer::Base
+  default from: "noreply@example.com"
+  layout 'mailer'
+end
+```
+
+``` ruby
+# app/mailers/user_mailer.rb
+class UserMailer < ApplicationMailer
+
+  def account_activation(user)
+    @user = user
+    mail to: user.email, subject: "Account activation"
+  end
+
+  def password_reset
+    @greeting = "Hi"
+
+    mail to: "to@example.org"
+  end
+end
+```
+
+템플릿 뷰는 통상의 뷰와 마찬가지로 ERB로 자유롭게 커스터마이즈할 수 있습니다. 여기서는 인사문에 유저 이름을 포함한 커스텀에 유효화 링크를 추가해보겠습니다. 그 후, Rails 서버에서 유저를 메일주소로 검색하여 유효화 토큰을 인증할 수 있게 하고자, 링크에는 메일주소와 토큰을 같이 포함해놓을 필요가 있습니다. AccountActivation 리소스에서 유효화를 모델화하였습니다. 토큰 자체는 앞서 정의한 named root의 파라미터로 사용합니다.
+
+```
+edit_account_activation_url(@user.activation_token, ...)
+```
+
+여기서 예전 생각을 다시 해봅시다.
+
+```
+edit_user_url(user)
+```
+
+위 메소드는 다음 형식의 URL을 생성합니다.
+
+`http://www.example.com/users/1/edit`
+
+여기에 대응하는 account 유효화 링크의 베이스 URL은 다음과 같습니다.
+
+```
+http://www.example.com/account_activations/q5lt38hQDc_959PVoo6b7A/edit
+```
+
+위 URL의 「`q5lt38hQDc_959PVoo6b7A`」 라고 하는 부분은 `new_token` 메소드에서 생성된 것 입니다. URL 에서 사용할 수 있도록 Base64 에서 인코딩하고 있습니다. 이것은 마침 /users/1/edit 의 `1` 과 같이, 유저 ID와 같은 역할을 하고 있습니다. 이 토큰은 특히 AccountActivations 컨트롤러의 `edit`  액션에서 `params` 해시로 `params[:id]` 로써 참조합니다.
+
+
+
+*Query parameter* 를 사용하여 해당 URL에 메일주소를 한 번 넣어봅시다. Query parameter란 URL의 마지막에 의문부호 `?` 를 넣고, 그 다음에 키와 값의 페어를 기술한 것 입니다.
+
+```
+account_activations/q5lt38hQDc_959PVoo6b7A/edit?email=foo%40example.com
+```
+
+이 때, 메일주소의 `@`기호가 URL에서는 `%40` 으로 변환되어 있는 점을 주목해주세요. 이것은 "Escape" 라고 불리는 수법으로, 통상 URL에서는 다루지 않는 문자를 다루기 위해 변환하고 있습니다. Rails에서 Query parameter 를 설정하기 위해서는, named root에 대하여 다음과 같이 해시를 추가합니다.
+
+```
+edit_account_activation_url(@user.activation_token, email: @user.email)
+```
+
+여까지 왔다면, `user_mailer.rb` 에서 정의한 `@user` 인스턴스 변수, edit로의 named root, ERB를 조합하여 필요한 링크를 생성할 수 있습니다. 아래 첫 번째 코드의 HTML 템플릿에서는 올바른 링크를 조합하기 위해 `link_to` 메소드를 사용하는 것을 확인해주세요.
+
+```erb
+<!-- app/views/user_mailer/account_activation.text.erb -->
+Hi <%= @user.name %>,
+
+Welcome to the Sample App! Click on the link below to activate your account:
+
+<%= edit_account_activation_url(@user.activation_token, email: @user.email) %>
+```
+
+```erb
+<!-- app/views/user_mailer/account_activation.html.erb -->
+<h1>Sample App</h1>
+
+<p>Hi <%= @user.name %>,</p>
+
+<p>
+Welcome to the Sample App! Click on the link below to activate your account:
+</p>
+
+<%= link_to "Activate", edit_account_activation_url(@user.activation_token,
+                                                    email: @user.email) %>
+```
+
+##### 연습
+
+1. 콘솔을 실행하고, `CGI` 모듈의 `escape` 메소드에서 메일주소의 문자열을 escape 할 수 있는 것을 확인해봅시다. 이 메소드에서 `"Don't panic!"` 를  escape하면 어떤 결과가 나오나요?
+
+```
+>> CGI.escape('foo@example.com')
+=> "foo%40example.com"
+```
+
+### 11.2.2 발신 메일의 Preview
+
+템플렛의 실제 표시를 간단하기 확인하기 위해, *Mail Preview* 라고 하는 테크닉을 사용해봅시다. Rails에서는 특수한 URL 에 액세스하면, 메일의 메세지를 그 자리에서 미리 볼 수 있습니다. 메일을 실제로 발신하지 않아도 되기에 매우 편리합니다. 이것을 이용하려면 application의 development환경의 설정을 손볼 필요가 있습니다.
+
+```ruby
+# config/environments/development.rb
+Rails.application.configure do
+  .
+  .
+  .
+  config.action_mailer.raise_delivery_errors = true
+  config.action_mailer.delivery_method = :test
+  host = 'example.com' # 여기를 이대로 복사하여 붙여넣으면 실패합니다. 자신의 환경에 맞추어 수정해주세요.
+  config.action_mailer.default_url_options = { host: host, protocol: 'https' }
+  .
+  .
+  .
+end
+```
+
+위 코드에 있는 호스트명 `example.com` 의 부분은, 각자의 development 환경에 맞추어서 변경해주세요. 예를 들어 필자는 클라우드 IDE를 사용하고 있기 때문에 아래처럼 바꾸었습니다.
+
+```ruby
+host = 'rails-tutorial-mhartl.c9users.io'     # cloud IDE
+config.action_mailer.default_url_options = { host: host, protocol: 'https' }
+```
+
+혹시 자신이 로컬환경에서 개발하고 있는 경우에는 다음과 같습니다.
+
+```ruby
+host = 'localhost:3000'                     # local
+config.action_mailer.default_url_options = { host: host, protocol: 'http' }
+```
+
+development 서버를 재부팅하여 위 설정을 읽어들이게 하면, 자동생성된 User 메일러의 Preview 파일의 수정이 필요합니다.
+
+```ruby
+# test/mailers/previews/user_mailer_preview.rb
+# Preview all emails at http://localhost:3000/rails/mailers/user_mailer
+class UserMailerPreview < ActionMailer::Preview
+
+  # Preview this email at
+  # http://localhost:3000/rails/mailers/user_mailer/account_activation
+  def account_activation
+    UserMailer.account_activation
+  end
+
+  # Preview this email at
+  # http://localhost:3000/rails/mailers/user_mailer/password_reset
+  def password_reset
+    UserMailer.password_reset
+  end
+end
+```
+
+`user_mailer.rb` 에서 생성한 `account_activation` 의 파라미터에는 유효한 User 오브젝트를 입력할 필요가 있기 때문에, 위 코드는 동작하지 않습니다. 이것을 피하기 위해 `user` 변수가 개발용 데이터베이스의 제일 첫 번째 유저가 되도록 정의하고, 그 것을 `UserMailer.account_activation` 의 파라미터로써 넘깁니다. 이 때 아래 코드에서는 `user.activation_token` 의 값에도 대입하고 있는 점을 주목해주세요. 이전 템플릿에서는 account 유효화의 토큰이 필요하기 때문에, 대입은 생략할 수 없습니다. 또한 `activation_token` 에서는 가상의 속성이므로, 데이터베이스의 유저는 이 값을 실제로 가지고 있지 않습니다.
+
+```ruby
+# test/mailers/previews/user_mailer_preview.rb
+# Preview all emails at http://localhost:3000/rails/mailers/user_mailer
+class UserMailerPreview < ActionMailer::Preview
+
+  # Preview this email at
+  # http://localhost:3000/rails/mailers/user_mailer/account_activation
+  def account_activation
+    user = User.first
+    user.activation_token = User.new_token
+    UserMailer.account_activation(user)
+  end
+
+  # Preview this email at
+  # http://localhost:3000/rails/mailers/user_mailer/password_reset
+  def password_reset
+    UserMailer.password_reset
+  end
+end
+```
+
+위 Preview 코드를 구현하면, 지정된 URL 로 account 유효화 메일을 미리볼 수 있게 됩니다.(클라우드 IDE의 경우에는 `localhost:3000` 부분을 베이스 URL로 바꾸어주세요.) HTML 메일과 텍스트 메일의 미리보기는 아래와 같습니다.
+
+![](../image/Chapter11/account_activation_html_preview_4th_ed.png)
+
+![](../image/Chapter11/account_activation_text_preview_4th_ed.png)
+
+##### 연습
+
+1. Rails의 Preview 기능을 사용하여, 브라우저로부터 앞서 메일을 표시해보세요. "Date" 란에는 어떠한 내용이 표시되나요?
+
+### 11.2.3 발신 메일의 테스트
+
+마지막으로, 이 메일 Preview의 테스트 코드도 작성하여, Preview를 더블체크할 수 있도록 해봅시다. 편리한 테스트 예시가 Rails에 의해서 자동생성되어지므로, 이것을 이용하면 테스트 생성은 의외로 간단합니다.
+
+```ruby
+# test/mailers/user_mailer_test.rb
+require 'test_helper'
+
+class UserMailerTest < ActionMailer::TestCase
+
+  test "account_activation" do
+    mail = UserMailer.account_activation
+    assert_equal "Account activation", mail.subject
+    assert_equal ["to@example.org"], mail.to
+    assert_equal ["from@example.com"], mail.from
+    assert_match "Hi", mail.body.encoded
+  end
+
+  test "password_reset" do
+    mail = UserMailer.password_reset
+    assert_equal "Password reset", mail.subject
+    assert_equal ["to@example.org"], mail.to
+    assert_equal ["from@example.com"], mail.from
+    assert_match "Hi", mail.body.encoded
+  end
+end
+```
+
+위 테스트에서는 `assert_match` 라고 하는 매우 강력한 메소드가 사용되고 있습니다. 이것을 사용한다면, 정규표현으로 문자열을 테스트할 수도 있습니다.
+
+```
+assert_match 'foo', 'foobar'      # true
+assert_match 'baz', 'foobar'      # false
+assert_match /\w+/, 'foobar'      # true
+assert_match /\w+/, '$#!*+@'      # false
+```
+
+아래의 테스트 코드에서는, `assert_match` 메소드를 사용하여 이름, 유효화 토큰, escape가 되어있는 메일주소가 메일 본문에 포함되어 있는지를 테스트합니다. 마지막으로 기술 한 가지 더 알려드리겠습니다.
+
+`CGI.escape(user.email)`
+
+[11.2.1](#1121- 발신-메일의-템플릿) 의 연습문제에서 소개한 위 메소드를 사용하면, 테스트용 유저의 메일주소를 escape할 수 있습니다.
+
+```ruby
+require 'test_helper'
+
+class UserMailerTest < ActionMailer::TestCase
+
+  test "account_activation" do
+    user = users(:michael)
+    user.activation_token = User.new_token
+    mail = UserMailer.account_activation(user)
+    assert_equal "Account activation", mail.subject
+    assert_equal [user.email], mail.to
+    assert_equal ["noreply@example.com"], mail.from
+    assert_match user.name,               mail.body.encoded
+    assert_match user.activation_token,   mail.body.encoded
+    assert_match CGI.escape(user.email),  mail.body.encoded
+  end
+end
+```
+
+위 테스트 코드에서는 fixture 유저에게 유효화 토큰을 추가하고 있는 점을 주목해주세요. 추가하지 않는 경우에는 공백이 들어가게 됩니다. 또한 위에서 생성된 패스워드 설정 테스트 코드는 삭제했습니다만,  추후 12.2.2에서 원래대로 돌려서 테스트해볼 것 입니다.
+
+
+
+이 테스트가 통과하기 위해선, 테스트파일 내의 도메인 이름을 올바르게 설정할 필요가 있습니다.
+
+```ruby
+# config/environments/test.rb
+Rails.application.configure do
+  .
+  .
+  .
+  config.action_mailer.delivery_method = :test
+  config.action_mailer.default_url_options = { host: 'example.com' } #추가
+  .
+  .
+  .
+end
+```
+
+위 코드를 사용하면 테스트는 통과할 것 입니다.
+
+`$ rails test:mailers`
+
+##### 연습
+
+1. 이 시점에서 전 테스트 코드(Test Suite) 가 통과하는 것을 확인해봅시다.
+2. 테스트 코드에서 사용한 `CGI.escape` 의 부분을 삭제하면, 테스트가 실패하는 것을 확인해봅시다.
+
+### 11.2.4 유저의 Create 액션의 수정
+
+이 다음은, 유저 등록을 실행하는 `create` 액션에 몇 줄 추가하는 것으로 메일러를 어플리케이션에서 실제로 사용해볼 수 있습니다. 아래 코드에서는 등록 시의 리다이렉트의 거통이 수정되어있는 점을 주목해주세요. 변경 전에는 유저의 프로필 페이지로 리다이렉트 하고 있었습니다만, Account 유효화를 구현하고 나서는 무의미한 동작이므로, 리다이렉트 URL 을 변경하고 있습니다.
+
+```ruby
+# app/controllers/users_controller.rb
+class UsersController < ApplicationController
+  .
+  .
+  .
+  def create
+    @user = User.new(user_params)
+    if @user.save
+      # 수정
+      UserMailer.account_activation(@user).deliver_now
+      flash[:info] = "Please check your email to activate your account."
+      redirect_to root_url
+      # 수정
+    else
+      render 'new'
+    end
+  end
+  .
+  .
+  .
+end
+```
+
+위 코드에서는 리다이렉트 URL을 프로필 페이지로부터 루트 URL로 변경하고, 또한 유저는 이전과 같이 로그인하지 않게 되어있습니다. 따라서 어플리케이션의 동작이 설령 올바르더라도 현재 테스트 코드는 실패할 것 입니다. 실패가 발생하는 테스트 코드를 일단 코멘트아웃 해놓습니다. 코멘트아웃 한 부분은 11.3.3 account 유효화의 테스트를 통과시키도록 할 때 원래대로 되돌려 놓습니다.
+
+```ruby
+# test/integration/users_signup_test.rb
+require 'test_helper'
+
+class UsersSignupTest < ActionDispatch::IntegrationTest
+
+  test "invalid signup information" do
+    get signup_path
+    assert_no_difference 'User.count' do
+      post users_path, params: { user: { name:  "",
+                                         email: "user@invalid",
+                                         password:              "foo",
+                                         password_confirmation: "bar" } }
+    end
+    assert_template 'users/new'
+    assert_select 'div#error_explanation'
+    assert_select 'div.field_with_errors'
+  end
+
+  test "valid signup information" do
+    get signup_path
+    assert_difference 'User.count', 1 do
+      post users_path, params: { user: { name:  "Example User",
+                                         email: "user@example.com",
+                                         password:              "password",
+                                         password_confirmation: "password" } }
+    end
+    follow_redirect!
+    # assert_template 'users/show'
+    # assert is_logged_in?
+  end
+end
+```
+
+이 ㅇ사태에서 실제로 신규 유저를 등록해보면, 리다이렉트되어져 홈으로 돌아가고, 아래와 같은 메일이 생성됩니다. 단 실제로 메일이 생성되어지는 것은 아니기 때문에 주의해주세요. 여기서 인용한 것은 서버 로그에 출력된 메일입니다. (메일을 확인하려면 다소 스크롤을 해야합니다.) production 환경에서도 실제로 메일 전송이 되는 방법은 11.4 에서 설명합니다.
+
+```
+UserMailer#account_activation: processed outbound mail in 292.4ms
+Sent mail to michael@michaelhartl.com (47.3ms)
+Date: Mon, 06 Jun 2016 20:17:41 +0000
+From: noreply@example.com
+To: michael@michaelhartl.com
+Message-ID: <f2c9222494c7178e@mhartl-rails-tutorial-3045526.mail>
+Subject: Account activation
+Mime-Version: 1.0
+Content-Type: multipart/alternative;
+ boundary="--==_mimepart_5755da6513e89_f2c9222494c71639";
+ charset=UTF-8
+Content-Transfer-Encoding: 7bit
+
+
+----==_mimepart_5755da6513e89_f2c9222494c71639
+Content-Type: text/plain;
+ charset=UTF-8
+Content-Transfer-Encoding: 7bit
+
+Hi Michael Hartl,
+
+Welcome to the Sample App! Click on the link below to activate your account:
+
+https://rails-tutorial-mhartl.c9users.io/account_activations/
+-L9kBsbIjmrqpJGB0TUKcA/edit?email=michael%40michaelhartl.com
+
+----==_mimepart_5755da6513e89_f2c9222494c71639
+Content-Type: text/html;
+ charset=UTF-8
+Content-Transfer-Encoding: 7bit
+
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <style>
+      /* Email styles need to be inline */
+    </style>
+  </head>
+
+  <body>
+    <h1>Sample App</h1>
+
+<p>Hi Michael Hartl,</p>
+
+<p>
+Welcome to the Sample App! Click on the link below to activate your account:
+</p>
+
+<a href="https://rails-tutorial-mhartl.c9users.io/account_activations/
+-L9kBsbIjmrqpJGB0TUKcA/edit?email=michael%40michaelhartl.com">Activate</a>
+  </body>
+</html>
+
+----==_mimepart_5755da6513e89_f2c9222494c71639--
+```
+
+![](../image/Chapter11/redirected_not_activated.png)
+
+##### 연습
+
+1. 새로운 유저를 등록했을 때, 리다이렉트 URL이 적절하게 바뀐 것을 확인해봅시다. 그 후 Rails서버의 로그로부터 발신 메일의 내용을 확인해봅시다. 유효화 토큰의 값은 어떻게 되어있습니까?
+2. 콘솔을 실행하고, 데이터베이스 상의 유저가 작성되어진 것을 확인해봅시다. 또한 이 유저는 데이터베이스 상에 있습니다만, 유효화 스테이터스가  `false` 의 상태인 것을 확인해주세요.
+
