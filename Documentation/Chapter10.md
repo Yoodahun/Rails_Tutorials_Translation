@@ -1890,7 +1890,7 @@ $ heroku restart
 
 ![](../image/Chapter10/heroku_sample_users.png)
 
-### 10.5.1 10장의 마무리
+### 10.5.1 10장의 정리
 
 - 유저는, 유저 정보 Form으로부터 PATCH 리퀘스트를 `update` 액션에 대해 송신하여 정보를 갱신한다.
 
