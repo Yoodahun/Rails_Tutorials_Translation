@@ -212,28 +212,28 @@ Rails Tutorial은, 실제 Web Application의 개발에서 공개까지, 실제�
 			- [ ] [9.3.2 「Remember me」 를 테스트해보자](Documentation/Chapter9.md#932-remember-me-를-테스트해보자)
 		- [x] [9.4 마지막으로](Documentation/Chapter9.md#94-마지막으로)
 			- [ ] [9.4.1 9장의 정리](Documentation/Chapter9.md#941-9장의-정리)
-	- [ ] 제 10장 유저의 업데이트, 출력, 삭제
-		- [ ] 10.1 유저를 업데이트해보자.
-			- [ ] 10.1.1 Update Form
-			- [ ] 10.1.2 Update의 실패
-			- [ ] 10.1.3 Update에 실패했을 때의 테스트
-			- [ ] 10.1.4 TDD로 편집을 성공시켜보자
-		- [ ] 10.2 허가
-			- [ ] 10.2.1 유저에게 로그인을 요구해보자 
-			- [ ] 10.2.2 올바른 유저로 로그인을 요구해보자
-			- [ ] 10.2.3 Friendly Forwarding
-		- [ ] 10.3 모든 유저를 표시해보자
-			- [ ] 10.3.1 유저 리스트를 표시해보자
-			- [ ] 10.3.2 Sample User
-			- [ ] 10.3.3 Pagination
-			- [ ] 10.3.4 유저 리스트의 테스트
-			- [ ] 10.3.5 Partial Refactoring
-		- [ ] 10.4 유저를 삭제해보자
-			- [ ] 10.4.1 관리자
-			- [ ] 10.4.2 Destroy Action
-			- [ ] 10.4.3 유저 삭제 테스트
-		- [ ] 10.5 마지막으로
-			- [ ] 10.5.1 10장의 정리
+	- [ ] [제 10장 유저의 업데이트, 출력, 삭제](Documentation/Chapter10.md)
+		- [ ] [10.1 유저를 Update해보자.](Documentation/Chapter10.md#101-유저를-update해보자)
+			- [ ] [10.1.1 유저 정보 수정 Form](Documentation/Chapter10.md#1011-유저-정보-수정-form)
+			- [ ] [10.1.2 유저 정보 수정의 실패](Documentation/Chapter10.md#1012-유저-정보-수정의-실패)
+			- [ ] [10.1.3 Update에 실패했을 때의 테스트](Documentation/Chapter10.md#1013-update에-실패했을-때의-테스트)
+			- [ ] [10.1.4 TDD로 정보 수정을 성공시켜보자](Documentation/Chapter10.md#1014-tdd로-정보-수정을-성공시켜보자)
+		- [ ] [10.2 권한 부여 (Authorization)](Documentation/Chapter10.md#102-권한-부여-authorization)
+			- [ ] [10.2.1 유저에게 로그인을 요청해보자](Documentation/Chapter10.md#1021-유저에게-로그인을-요청해보자)
+			- [ ] [10.2.2 올바른 유저를 요청해보자](Documentation/Chapter10.md#1022-올바른-유저를-요청해보자)
+			- [ ] [10.2.3 Friendly Forwarding](Documentation/Chapter10.md#1023-friendly-forwarding)
+		- [ ] [10.3 모든 유저를 표시해보자](Documentation/Chapter10.md#103-모든-유저를-표시해보자)
+			- [ ] [10.3.1 유저 리스트를 표시해보자](Documentation/Chapter10.md#1031-유저-리스트를-표시해보자)
+			- [ ] [10.3.2 Sample User](Documentation/Chapter10.md#1032-sample-user)
+			- [ ] [10.3.3 Pagination](Documentation/Chapter10.md#1033-pagination)
+			- [ ] [10.3.4 유저 리스트의 테스트](Documentation/Chapter10.md#1034-유저-리스트의-테스트)
+			- [ ] [10.3.5 Partial Refactoring](Documentation/Chapter10.md#1035-partial-refactoring)
+		- [ ] [10.4 유저를 삭제해보자](Documentation/Chapter10.md#104-유저를-삭제해보자)
+			- [ ] [10.4.1 관리자](Documentation/Chapter10.md#1041-관리자)
+			- [ ] [10.4.2 Destroy 액션](Documentation/Chapter10.md#1042-destroy-액션)
+			- [ ] [10.4.3 유저 삭제 테스트](Documentation/Chapter10.md#1043-유저-삭제-테스트)
+		- [ ] [10.5 마지막으로](Documentation/Chapter10.md#105-마지막으로)
+			- [ ] [10.5.1 10장의 정리](Documentation/Chapter10.md#1051-10장의-정리)
 	- [ ] 제 11장 Account의 유효화
 		- [ ] 11.1 AccountActivations 리소스
 			- [ ] 11.1.1 AccountActivations Controller
