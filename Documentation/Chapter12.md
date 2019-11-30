@@ -488,6 +488,275 @@ end
 
 `https://example.com/password_resets/3BdBrXeQZSWqFIDRN8cxHA/edit?email=fu%40bar.com`
 
+이 링크를 동작하게 하기 위해서는, 패스워드 재설정 Form을 표시할 뷰가 필요합니다. 이 뷰는 유저의 정보 수정 Form과 비슷합니다만, 이번에는 패스워드 입력 필드와 확인용 필드만 있으면 충분합니다.
+
+
+
+단, 이번 작업은 조금 귀찮은 부분이 있습니다. 왜냐하면 메일주소를 Key로하여 유저를 검색하기 위해서는, `edit` 와 `update` 액션 양쪽에 메일주소가 필요하기 때문입니다. 위 예시와 같은 메일주소가 들어있는 링크 덕분에, `edit` 액션에서 메일주소를 얻는 것은 문제가 없ㅅ브니다. 그러나 Form의 정보를 한 번 송신해버리면, 이 정보는 삭제되어버리고 맙니다. 해당 값을 어디에 저장해야 좋을까요? 이번에는 이 메일 주소를 저장하기 위해 `hidden field` 를 사용하여 페이지 내부에 저장하는 방법을 사용합니다. 이것으로 Form으로 부터 정보가 송신되었을 때, 다른 정보와 같이 메일주소가 송신되도록 해볼 것 입니다. 실제 코드는 아래와 같습니다.
+
+```erb
+<!-- app/views/password_resets/edit.html.erb -->
+<% provide(:title, 'Reset password') %>
+<h1>Reset password</h1>
+
+<div class="row">
+  <div class="col-md-6 col-md-offset-3">
+    <%= form_for(@user, url: password_reset_path(params[:id])) do |f| %>
+      <%= render 'shared/error_messages' %>
+
+      <%= hidden_field_tag :email, @user.email %>
+
+      <%= f.label :password %>
+      <%= f.password_field :password, class: 'form-control' %>
+
+      <%= f.label :password_confirmation, "Confirmation" %>
+      <%= f.password_field :password_confirmation, class: 'form-control' %>
+
+      <%= f.submit "Update password", class: "btn btn-primary" %>
+    <% end %>
+  </div>
+</div>
+```
+
+위 코드에서 Form 태그 헬퍼를 사용하고 있는 점을 주의해주세요.
+
+`hidden_field_tag :email, @user.email`
+
+지금까지는 다음과 같은 코드를 작성했습니다만, 이번에는 코드가 조금 다릅니다.
+
+`f.hidden_field :email, @user.email`
+
+이것은 재설정용 링크를 클릭하면, 전자 (`hidden_field_tag`) 에서는 메일주소가 `params[:email]` 이 저장되지만, 후자는 `params[:user][:email]` 이 저장되기 때문입니다.
+
+
+
+이번에는 이 Form을 표시하기 위해 PasswordResets 컨트롤러의 `edit` 액션 내부의  `@user` 인스턴스 변수를 정의해보겠습니다. Account 유효화의 경우와 마찬가지로, `params[:email]` 의 메일주소에 대응하는 유저를 해당 변수에 저장합니다. 이어서 `params[:id]` 의 재설정용 토큰과,  이전 11장에서 추상화시킨 `authenticated?` 메소드를 사용하여, 이 유저가 정당한 유저인지 (유저가 존재하고, 유효화 되어있고, 인증이 끝난) 확인합니다. `edit` 액션과 `update` 액션 어느쪽이던 정당한 `@user` 가 존재할 필요가 있기 때문에, 몇개의 before 필터를 사용하여 `@user` 의 검색과 validation을 진행합니다.
+
+```ruby
+# app/controllers/password_resets_controller.rb
+class PasswordResetsController < ApplicationController
+  before_action :get_user,   only: [:edit, :update]
+  before_action :valid_user, only: [:edit, :update]
+  .
+  .
+  .
+  def edit
+  end
+
+  private
+
+    def get_user
+      @user = User.find_by(email: params[:email])
+    end
+
+    # 올바른 유저인지 확인한다.
+    def valid_user
+      unless (@user && @user.activated? &&
+              @user.authenticated?(:reset, params[:id]))
+        redirect_to root_url
+      end
+    end
+end
+```
+
+여기서는 다음 코드를 사용하고 있습니다.
+
+`authenticated?(:reset, params[:id])`
+
+위 코드를 아래 코드와 비교해봅시다.
+
+`authenticated?(:remember, cookies[:remember_token])`
+
+11장에서 쓰인 코드는 아래와 같습니다.
+
+`authenticated?(:activation, params[:id])`
+
+위 코드가 인증 메소드이며, 이번에 추가한 코드에서 모든 구현이 끝난 것을 의미하기도 합니다.
+
+
+
+이것으로 메일의 링크를 클릭하면 패스워드 재설정의 Form이 출력되게 됩니다. 결과는 아래와 같습니다.
+
+![](../image/Chapter12/password_reset_form.png)
+
+##### 연습
+
+1. [12.2.1](#1221-패스워드-재설정의-메일과-템플릿) 의 연습문제에서의 순서를 따라서, Rails의 서버의 로그로부터 발신 메일을 찾아내고, 로그에 기재되어있는 링크를 확인해주세요. 링크를 브라우저에서 열어 확인하면, 위 화면이 출력되는지 확인해봅시다.
+2. 앞서 표시한 페이지에서, 실제로 새로운 패스워드를입력해봅시다. 어떻게 되나요?
+
+### 12.3.2 패스워드를 수정해보자.
+
+AccountActivation 컨트롤러의 `edit` 액션에서는 유저의 유효화 상태를 `false` 에서 `true` 로 변경하였습니다. 이번경우에는 Form에서 새로운 패스워드를 입력받아야합니다. 따라서 Form에서 전송되는 정보를 받아들일 `update` 액션이 필요합니다. 이 `update` 액션에서는 다음 4개의 케이스를 고려할 필요가 있습니다.
+
+1. 패스워드 재설정의 유효기간이 남아있는가
+2. 무효한 패스워드라면 실패해야한다. (실패하는 이유도 출력)
+3. 새로운 패스워드가 빈 문자열인가 (유저 정보 수정에서는 OK이었습니다.)
+4. 올바른 패스워드라면 갱신한다.
+
+1과 2와 4는 지금까지의 지식이라면 할만합니다만, 3은 어떻게 대응하면 좋을지 좋은 수가 떠오르지 않습니다. 일단 위 케이스를 하나씩 대응해보도록 합시다.
+
+
+
+1에 대해서는 `edit` 와 `update` 액션에 다음과 같은 메소드와 before 필터를 입력하는 것으로 대응할 수 있을 것 같습니다.
+
+`before_action :check_expiration, only: [:edit, :update]    # 1번의 대응책`
+
+이 `check_expiration` 메소드는 유효기한을 체크하는 Private 메소드로서 정의합니다.
+
+```ruby
+#  유효기한이 다 되었는지 확인한다.
+def check_expiration
+  if @user.password_reset_expired?
+    flash[:danger] = "Password reset has expired."
+    redirect_to new_password_reset_url
+  end
+end
+```
+
+위  `check_expiration` 메소드에서는 유효기간의 상태를 확인하는 인스턴스 메소드 `password_reset_expired?` 를 사용하고 있습니다. 이 새로운 메소드에 대해서는 나중에 설명하도록 하겠습니다. 지금은 위 4가지 케이스에 대해서 우선적으로 생각해봅시다.( 실행결과는 추후 확인합니다.)
+
+
+
+우선, 위 before필터에서 보호하고 있는 `update` 액션을 사용하는 것으로 2번과 4번 케이스에 대응할 수 있을 것 같습니다. 예를 들어 2번에 대해서는 패스워드 업데이트에 실패했을 때에, `edit` 뷰가 다시 표시되고, 파셜에 에러메세지를 표시하도록 하게하면 해결될 것 입니다. 4번에 대해서는, 패스워드 업데이트에 성공했을 때, 패스워드를 재설정하고, 그 이후는 로그인에 성공했을 때와 똑같은 처리를 하게하면 문제는 없을 것 같습니다.
+
+
+
+지금 조금 어려운 문제점으로는, 패스워드가 빈 문자일 때의 처리입니다. 이전 User모델을 만들 때에, 패스워드가 비어있어도 좋다(10장에서의 `allow_nil`) 는 구현을 했기 때문입니다. 따라서 이 케이스에 대해서는 명시적으로 캐치하는 코드를 추가할 필요가 있습니다. 이것이 앞서 말한 고려해야할 점의 3번에 해당합니다. 이것을 해결하는 방법으로는, 이번에는 `@user` 오브젝트에 에러메세지를 추가하는 방법을 해보겠습니다. 구체적으로는 다음과 같이 `errors.add` 를 사용하여 에러메세지를 추가해보겠습니다.
+
+`@user.errors.add(:password, :blank)`
+
+이렇게 작성하면, 패스워드가 빈 문자열일 때, 빈 문자열에 대하는 디폴트 메세지를 출력하게 될 것 입니다.
+
+
+
+위 결과를 정리하면, 1번의 `password_reset_expired?` 의 구현을 제외하면, 모든 케이스에 대응하는 `update` 액션이 완성됩니다.
+
+```ruby
+# app/controllers/password_resets_controller.rb
+class PasswordResetsController < ApplicationController
+  before_action :get_user,         only: [:edit, :update]
+  before_action :valid_user,       only: [:edit, :update]
+  before_action :check_expiration, only: [:edit, :update]    # 문제 1의 대응
+
+  def new
+  end
+
+  def create
+    @user = User.find_by(email: params[:password_reset][:email].downcase)
+    if @user
+      @user.create_reset_digest
+      @user.send_password_reset_email
+      flash[:info] = "Email sent with password reset instructions"
+      redirect_to root_url
+    else
+      flash.now[:danger] = "Email address not found"
+      render 'new'
+    end
+  end
+
+  def edit
+  end
+
+  def update
+    if params[:user][:password].empty?                  # 문제 3의 대응
+      @user.errors.add(:password, :blank)
+      render 'edit'
+    elsif @user.update_attributes(user_params)          # 문제 4의 대응
+      log_in @user
+      flash[:success] = "Password has been reset."
+      redirect_to @user
+    else
+      render 'edit'                                     # 문제 2의 대응
+    end
+  end
+
+  private
+
+    def user_params
+      params.require(:user).permit(:password, :password_confirmation)
+    end
+
+    # before 필터
+
+    def get_user
+      @user = User.find_by(email: params[:email])
+    end
+
+    # 유효한 유저인지 확인한다.
+    def valid_user
+      unless (@user && @user.activated? &&
+              @user.authenticated?(:reset, params[:id]))
+        redirect_to root_url
+      end
+    end
+  
+    # 토큰이 유효기한 확인
+    def check_expiration
+      if @user.password_reset_expired?
+        flash[:danger] = "Password reset has expired."
+        redirect_to new_password_reset_url
+      end
+    end
+end
+```
+
+(위 코드는 [7.3.2](Chapter7.md#732-strong-parameter) 를 구현할 떄와 마찬가지로, `user_params`메소드를 사용하여 `password` 와 `password_confirmaion` 속성을 확인하고 있습니다.
+
+
+
+이 다음으로는, 위 코드의 남아있는 부분을 구현하면 됩니다. 이번에는 User 모델에다가 코드를 작성하는 것을 전제로하고 다음 코드를 작성해봅시다.
+
+`@user.password_reset_expired?`
+
+위 코드를 동작시키게 하기 위해서는 `password_reset_expired?` 메소드를  User 모델에서 정의해봅시다. [12.2.1](#1221-패스워드-재설정의-메일과-템플릿) 을 참고하여, 이 메소드에서는 패스워드 재설정의 기한을 설정하고, 2시간 이상 패스워드가 재설정되지 않은 경우에는 유효기한이 지났다고 판단하는 처리를 구현해봅시다. 이것을 Ruby로 표현하면 다음과 같이 됩니다.
+
+```
+reset_sent_at < 2.hours.ago
+```
+
+위 기호를 "~보다 작은" 이라고 읽어버리면, "패스워드 재설정 메일 발신시로부터 경과한 시간이, 2시간보다 작은 경우" 가 되어버려 곤란해질지도 모릅니다. 여기서의 처리는 "직은" 이 아닌 "빠른, 이른" 이라고 이해해야합니다. 즉, `<` 기호를 "~보다 빠른 시간" 이라고 이해해주세요. 이렇게하면 "패스워드 재설정 메일의 발신시간이, 현재 시간보다 2시간 이상 전" 이 됩니다. 이렇게하면 *기대 했던 대로의 조건* 이 됩니다. 따라서 이 조건을 만족하는지 어떤지를 확인하는 `password_reset_expired?` 메소드는 아래와 같이 됩니다. ( 이 비교는 12.6에 부록으로 추가해놓았습니다.)
+
+```ruby
+# app/models/user.rb
+class User < ApplicationRecord
+  .
+  .
+  .
+  #  패스워드 재설정의 유효기한을 확인하여, 유효기한이 지나있으면 true를 리턴.
+  def password_reset_expired?
+    reset_sent_at < 2.hours.ago
+  end
+
+  private
+    .
+    .
+    .
+end
+```
+
+ 위 코드를 사용하면, `update` 액션이 동작하게됩니다. 발신이 무효한 경우와 유효한 경우의 화면은 각각 아래 캡쳐와 같습니다. (확인을 위해 2시간을 기다릴 순 없으니, 테스트는 한 가지 더 분기를 추가해봅니다만, 이것은 12.3.3의 연습문제로 돌립니다.)
+
+![](../image/Chapter12/password_reset_failure_4th_ed.png)
+
+![](../image/Chapter12/password_reset_success_4th_ed.png)
+
+##### 연습
+
+1. [12.2.1](#1221-패스워드-재설정의-메일과-템플릿) 에서 얻은 링크(Rails 서버의 로그에서 확인한) 를 브라우저에서 표시하고,  password와 confirmation의 문자열을 일부러 다르게 해봅시다. 어떠한 에러 메세지가 표시됩니까?
+2. 콘솔을 기동시킵니다. 패스워드 재설정 정보를 발신한 유저 오브젝트를 확인해주세요. 확인했다면 해당 오브젝트의 `password_digest` 의 값을 확인해봅시다. 그 다음으로 패스워드 재설정 Form으로부터 유효한 패스워드를 입력해봅시다. 패스워드 재설정이 성공한다면, 다시  `password_digest` 의 값을 확인하고 값이 다르게 변했는지 확인해봅시다. *Hint* : `user.reload`를 이용하여 확인해봅시다.
+
+### 12.3.3 패스워드 재설정을 테스트해보자
+
+
+
+
+
+
+
+
+
+
+
 
 
 
