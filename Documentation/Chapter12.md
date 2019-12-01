@@ -747,21 +747,207 @@ end
 
 ### 12.3.3 패스워드 재설정을 테스트해보자
 
+이번 섹션에서는, `password_resets_controller.rb` 의 2가지 (혹은 3가지)의 분기, 즉 발신에 성공했을 때와 실패했을 떄의 결합테스트 코트를 작성해볼 것 입니다. (앞서 말씀드린대로, 3번째 분기에 대해서는 연습문제로 내겠습니다.) 우선 패스워드 재설정의 테스트파일을 생성해보겠습니다.
 
+```
+$ rails generate integration_test password_resets
+      invoke  test_unit
+      create    test/integration/password_resets_test.rb
+```
 
+패스워드 재설정을 테스트해보는 순서는, account 유효화의 테스트와 많은 공통사항이 있습니다만 테스트 첫 시작부분에는 다음과 같은 차이점이 있습니다. 맨 처음에, "forgot password" Form 을 표시하여 무효한 메일 주소를 입력하고, 그 다음으로는 해당 Form에서 유효한 메일 주소를 입력합니다. 후자에서는 패스워드 재설정용 토큰이 생성되고, 재설정용 메일이 발신됩니다. 이어서 메일의 링크를 열어서 무효한 정보를 송신하고, 그 다음으로 해당 링크에서 유효한 정보를 송신하여 각각이 기대했던 대로 동작하는 지를 확인합니다. 작성한 테스트 코드는 아래와 같습니다. 이 테스트는 코드리딩의 좋은 예시가 될 것입니다. 잘 읽어주세요.
 
+```ruby
+# test/integration/password_resets_test.rb
+require 'test_helper'
 
+class PasswordResetsTest < ActionDispatch::IntegrationTest
 
+  def setup
+    ActionMailer::Base.deliveries.clear
+    @user = users(:michael)
+  end
 
+  test "password resets" do
+    get new_password_reset_path
+    assert_template 'password_resets/new'
+    # 무효한 메일 주소
+    post password_resets_path, params: { password_reset: { email: "" } }
+    assert_not flash.empty?
+    assert_template 'password_resets/new'
+    # 유효한 메일 주소
+    post password_resets_path,
+         params: { password_reset: { email: @user.email } }
+    assert_not_equal @user.reset_digest, @user.reload.reset_digest
+    assert_equal 1, ActionMailer::Base.deliveries.size
+    assert_not flash.empty?
+    assert_redirected_to root_url
+    # 패스워드 재설정용 Form 테스트
+    user = assigns(:user)
+    # 무효한 메일 주소
+    get edit_password_reset_path(user.reset_token, email: "")
+    assert_redirected_to root_url
+    # 무효한 유저
+    user.toggle!(:activated)
+    get edit_password_reset_path(user.reset_token, email: user.email)
+    assert_redirected_to root_url
+    user.toggle!(:activated)
+    # 메일주소는 유효하지만, 토큰이 무효한 경우
+    get edit_password_reset_path('wrong token', email: user.email)
+    assert_redirected_to root_url
+    # 메일주소도 토큰도 유효한 경우
+    get edit_password_reset_path(user.reset_token, email: user.email)
+    assert_template 'password_resets/edit'
+    assert_select "input[name=email][type=hidden][value=?]", user.email
+    # 무효한 패스워드와 패스워드 확인 
+    patch password_reset_path(user.reset_token),
+          params: { email: user.email,
+                    user: { password:              "foobaz",
+                            password_confirmation: "barquux" } }
+    assert_select 'div#error_explanation'
+    # 패스워드가 비어있는 상태일때 
+    patch password_reset_path(user.reset_token),
+          params: { email: user.email,
+                    user: { password:              "",
+                            password_confirmation: "" } }
+    assert_select 'div#error_explanation'
+    # 유효한 패스워드와 패스워드 확인
+    patch password_reset_path(user.reset_token),
+          params: { email: user.email,
+                    user: { password:              "foobaz",
+                            password_confirmation: "foobaz" } }
+    assert is_logged_in?
+    assert_not flash.empty?
+    assert_redirected_to user
+  end
+end
+```
 
+위 코드를 사용하는 아이디어의 대부분은, 본 튜토리얼에서 이미 나왔던 적이 있습니다. 새로운 요소로는 `input` 요소 정도입니다.
 
+```
+assert_select "input[name=email][type=hidden][value=?]", user.email
+```
 
+위 코드는 `input` 태그의 올바른 이름, type="hidden", 메일주소가 있는지 없는지를 확인합니다.
 
+```html
+<input id="email" name="email" type="hidden" value="michael@example.com" />
+```
 
+테스트는 통과할 것 입니다.
 
+`$ rails test`
 
+##### 연습
 
+1. `create_reset_digest` 메소드는  `update_attribute` 를 2번 호출하고 있습니다만, 이것은 각각의 라인에서 한 번씩 데이터베이스로 조회를 하고 있습니다. 아래 첫 번째 코드를 사용하여 `update_attribute` 의 호출을 1번의 `update_columns` 호출로 바꾸어보세요. (이것으로 데이터베이스로의 조회가 한 번으로 줄어들 것 입니다.) 또한 변경 후에 테스트를 실행하여 테스트 통과가되는 것을 확인해주세요. 여담으로, 아래 첫 번째 코드는 11장의 연습문제의 해답도 포함되어 있습니다.
+2. 아래 두 번째 코드의 빈칸을 메꾸어서 유효기간이 초과된 패스워드 재설정 처리에서 발생하는 분기를 결합테스트에서 확인해봅시다. (아래 두 번째 코드에 있는 `response.body` 는 해당 페이지의  HTML 본문을 모두 리턴하는 메소드입니다.) 유효기간이 지난 것을 테스트하는 방법은 몇가지가 있습니다만, 두 번째 코드에서 추천하는 방법을 사용해보면, response의 본문에 "expired" 라고 하는 단어가 있는지 없는지를 체크하는 것 입니다. (또한, 대소문자는 구별하지 않습니다.)
+3. 2시간이 지나면 패스워드를 재설정하지 못하게 하는 방침은, 보안상으로는 매우 바람직할 것 입니다. 그러나 좀 더 좋게하는 방법은 따로 있습니다. 예를들어 공유된 컴퓨터에서 패스워드 재설정을 한 경우를 생각해보세요. 로그아웃하고 자리를 떠났다고 하더라도, 2시간 이내라면 해당 컴퓨터의 이력으로부터 패스워드 재설정용 Form을 표시시킬 수 있고, 패스워드를 갱신할 수도 있습니다. (게다가 그대로 로그인 기능까지 돌파해버립니다.) 이 문제를 해결하기 위해, 아래 세 번째 코드를 추가하고, 패스워드의 재설정에 성공하면 digest를 `nil` 로 변경하는 변경을 해봅시다.
+4. 위 테스트코드에 한 줄을 추가하여, 연습문제에 대한 테스트를 작성해봅시다. *Hint* : `assert_nil` 메소드와 `user.reload` 메소드를 조합하여, `reset_digest` 속성을 직접 테스트해봅시다.
 
+```ruby
+# app/models/user.rb
+class User < ApplicationRecord
+  attr_accessor :remember_token, :activation_token, :reset_token
+  before_save   :downcase_email
+  before_create :create_activation_digest
+  .
+  .
+  .
+  # account를 유효하게 한다. 
+  def activate
+    update_columns(activated: true, activated_at: Time.zone.now)
+  end
+
+  # 유효화용의 메일을 발신한다.
+  def send_activation_email
+    UserMailer.account_activation(self).deliver_now
+  end
+
+  # 패스워드 재설정 속성을 설정한다.
+  def create_reset_digest
+    self.reset_token = User.new_token
+    update_columns(reset_digest:  FILL_IN, reset_sent_at: FILL_IN)
+  end
+
+  # 패스워드 재설정용 메일을 발신한다.
+  def send_password_reset_email
+    UserMailer.password_reset(self).deliver_now
+  end
+
+  private
+
+    # 메일주소를 모두 소문자로 한다.
+    def downcase_email
+      self.email = email.downcase
+    end
+
+    # 유효화용 토큰과 Digest를 생성하고 대입한다. 
+    def create_activation_digest
+      self.activation_token  = User.new_token
+      self.activation_digest = User.digest(activation_token)
+    end
+end
+```
+
+```ruby
+# test/integration/password_resets_test.rb
+require 'test_helper'
+
+class PasswordResetsTest < ActionDispatch::IntegrationTest
+
+  def setup
+    ActionMailer::Base.deliveries.clear
+    @user = users(:michael)
+  end
+  .
+  .
+  .
+  test "expired token" do
+    get new_password_reset_path
+    post password_resets_path,
+         params: { password_reset: { email: @user.email } }
+
+    @user = assigns(:user)
+    @user.update_attribute(:reset_sent_at, 3.hours.ago)
+    patch password_reset_path(@user.reset_token),
+          params: { email: @user.email,
+                    user: { password:              "foobar",
+                            password_confirmation: "foobar" } }
+    assert_response :redirect
+    follow_redirect!
+    assert_match /FILL_IN/i, response.body
+  end
+end
+```
+
+```ruby
+# app/controllers/password_resets_controller.rb
+class PasswordResetsController < ApplicationController
+  .
+  .
+  .
+  def update
+    if params[:user][:password].empty?
+      @user.errors.add(:password, :blank)
+      render 'edit'
+    elsif @user.update_attributes(user_params)
+      log_in @user
+      @user.update_attribute(:reset_digest, nil)
+      flash[:success] = "Password has been reset."
+      redirect_to @user
+    else
+      render 'edit'
+    end
+  end
+  .
+  .
+  .
+end
+```
+
+## 12.4 실제 배포환경에서의 메일 발신
 
 
 
