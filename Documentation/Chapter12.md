@@ -947,9 +947,98 @@ class PasswordResetsController < ApplicationController
 end
 ```
 
+
+
 ## 12.4 실제 배포환경에서의 메일 발신
 
+이 것으로 패스워드 재설정의 구현도 끝냈습니다. 이 다음으로는 앞선 챕터와 마찬가지로, development 환경만 아니라, production 환경에서도 동작하게 하는 것 뿐입니다. 셋업의 순서는 Account 유효화와 완전 똑같습니다. 따라서 이미 이전 챕터에서 셋업을 끝낸 분은, ([11.4](Chapter11.md#114-실제-배포환경에서의-메일-발신)) 이번 섹션의 첫 번째 코드 (production.rb) 를 수정하는 부분까지 스킵하셔도 됩니다.
 
+
+
+실제 배포 환경에서 메일 발신하기 위해서, "SendGrid" 라고 하는 Heroku 애드온을 이용하여 account을 검증합니다. (이 애드온을 이용하기 위해서는 Heroku 계정의 신용카드를 설정할 필요가 있으나, 계정 검증할 때에는 요금은 발생하지 않습니다.) 본 튜토리얼에서는 "starter tier" 라는 서비스를 사용해보겠습니다. 이것은 1일 메일 수가 최대 400통까지라는 제한은 있습니다만, 무료로 이용할 수 있습니다. 애드온을 어플리케이션에 추가하기 위해서는 다음 커맨드를 실행합니다.
+
+`$ heroku addons:create sendgrid:starter`
+
+*주의* : heroku 커맨드의 버전이 오래된 버전이라면, 여기서 실패할 수도 있습니다. 그 경우에는 [Heroku Toolbelt](https://toolbelt.heroku.com/) 를 사용하여 최신판으로 업데이트하던지, 조금 옛날 커맨드를 사용해주세요.
+
+`$ heroku addons:add sendgrid:starter`
+
+어플리케이션에서 SendGrid 애드온을 사용하기 위해서는 production 환경의 [SMTP](https://ja.wikipedia.org/wiki/Simple_Mail_Transfer_Protocol) 에 정보를 기입할 필요가 있습니다. 아래와 같이, 실제 배포 Web 사이트의 주소를 `host` 변수에 정의할 필요도 있습니다.
+
+```ruby
+# config/environments/production.rb
+Rails.application.configure do
+  .
+  .
+  .
+  config.action_mailer.raise_delivery_errors = true
+  config.action_mailer.delivery_method = :smtp
+  host = '<your heroku app>.herokuapp.com'
+  config.action_mailer.default_url_options = { host: host }
+  ActionMailer::Base.smtp_settings = {
+    :address        => 'smtp.sendgrid.net',
+    :port           => '587',
+    :authentication => :plain,
+    :user_name      => ENV['SENDGRID_USERNAME'],
+    :password       => ENV['SENDGRID_PASSWORD'],
+    :domain         => 'heroku.com',
+    :enable_starttls_auto => true
+  }
+  .
+  .
+  .
+end
+```
+
+이전 11장에서의 메일 설정에서는 SendGrid Account의 `user_name` 와 `password` 설정을 기입하는 줄도 있습니다만, 거기에는 기입하지 말고, 반드시 환경변수 "`ENV`" 에 설정하도록 주의해주세요. 실제 배포환경에서 운용하는 어플리케이션에서는 암호화되어있지 않은 ID나 패스워드와 같이 중요한 보안정보는 "절대로" 소스코드에 직접 작성하지 말아주세요. 그러한 정보는 환경변수에 저장하고, 환경변수로부터 어플리케이션으로 읽어들이게할 필요가 있습니다. 이번 경우에는 그러한 변수는 SendGrid 애드온이 자동적으로 설정해줍니다만,  추후 13.4.4에서는 자신이 직접 환경변수를 설정해야할 필요가 있습니다.
+
+
+
+이 시점에서 Git의 토픽브랜치를 master에 Merge해봅시다.
+
+```
+$ rails test
+$ git add -A
+$ git commit -m "Add password reset"
+$ git checkout master
+$ git merge password-reset
+```
+
+이어서 리모트 레포지토리에 푸시하여 Heroku에 Deploy해봅시다.
+
+```
+$ rails test
+$ git push
+$ git push heroku
+$ heroku run rails db:migrate
+```
+
+Heroku에 Deploy가 끝나면, 로그인 페이지의 [forgot password] 링크를 클릭하여, production 환경에서 패스워드의 재설정을 해봅시다. Form에서부터 데이터를 송신하면, 아래 스크린샷처럼 메일이 올 것 입니다. 기재되어져있는 링크를 클릭하여 무효한 패스워드와 유효환 패스워드를 각각 시험해봅시다. 여기서 구현이 제대로 되어있다면, 테스팅에서 확인해보았던 화면처럼 될 것 입니다.
+
+![](../image/Chapter12/reset_email_production_4th_ed.png)
+
+##### 연습
+
+1. production환경에서 유저 등록을 해봅시다. 유저 등록시에 입력한 메일주소로 메일이 왔습니까?
+2. 메일을 받았다면, 실제로 메일을 클릭하여 Account를 유효화해봅시다. 또한 Heroku 상의 로그를 알아보고, 유효화에 관한 로그는 어떤지 알아보세요. *Hint* : 터미널에서 `heroku logs` 커맨드를 실행해봅시다.
+3. Account가 유효화에 성공했다면, 이번에는 패스워드를 재설정해봅시다. 올바르게 패스워드가 재설정되었습니까?
+
+
+
+## 12.5 마지막으로
+
+패스워드 재설정의 구현이 끝났으므로,  Sample 어플리케이션의 유저 등록, 로그인, 로그아웃의 처리는 실제 어플리케이션과 매우 비슷한 레벨까지 구현해보았습니다. *Rails Tutorial* 의 남은 챕터에서는 Twitter와 같은 micropost 기능(제13장) 과, 팔로우 중의 유저의 투고를 표시하는 스테이터스 피드기능 (제14장) 을 구현해볼 것 입니다. 이 챕터에서는 Rails의 강력한 기능 (이미지 업로드, 커스터마이즈한 데이터베이스로의 조회기능, `has_many`, `has_many :through` 등을 사용한 고도의 데이터베이스 모델링)을 다수 소개해볼 예정입니다.
+
+### 12.5.1 12장의 마무리
+
+- 패스워드의 재설정은 Active Record 오브젝트는 아니지만, 세션이나 Account 유효화의 경우와 마찬가지로, 리소스로 모델화할 수 있다.
+- Rails에서는 메일 발신에서 다루는 Action Mailer 의 액션과 뷰를 생성할 수 있다.
+- Action Mailer 에서는 텍스트 메일과과 HTML 메일 양 쪽 다 사용할 수 있다.
+- 메일러 액션에서 정의한 인스턴스 변수는, 다른 액션이나 뷰와 마찬가지로, 메일러의 뷰에서 참조할 수 있다.
+- 패스워드를 재설정하기 위해서 생성한 토큰을 사용하여 유일한 URL을 생성한다.
+- 보다 더 안전한 패스워드 재설정을 위해 해시화한 토큰(Digest) 를 사용한다.
+- 메일러의 테스트와 결합테스트는 양쪽 다 User 메일러의 동작을 확인하는데에 유용하다.
+- SendGrid 를 사용하면 Production 환경에서 메일을 송신할 수 있다.
 
 
 
