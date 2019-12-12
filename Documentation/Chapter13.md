@@ -77,4 +77,58 @@ end
 
 3. 앞서 만든 `micropost` 오브젝트를 데이터베이스에 저장해봅시다. 이 시점에서 한 번 더 매직컬럼의 내용을 확인해봅시다. 이번에는 어떠한 값이 들어있나요?
 
-   
+
+
+
+### 13.1.2 Micropost 의 Validation
+
+기본적인 모델은 작성했ㅅ브니다. 다음으로는 요구되는 제한사항을 구현하기 위해서, Validation을 추가해봅시다. Micropost 모델을 생성했을 때, micropost는 작성한 유저의 id(`user_id`) 를 데이터로 가지고 있게끔 하였습니다. 이것을 사용하여 관슴적으로 올바른 Active Record와의 *관계맺기* 를 구현해볼 것 입니다. 우선 `Micropost` 모델 만을 (테스트 주도 개발로) 동작해보도록 합시다.
+
+
+
+Micropost 의 초기 테스트는 User모델의 초기 테스트와 비슷합니다. 우선은 `setup` 단계에서, fixture의  sample 유저와 관련있는 새로운 micropost를 생성하고 있습니다. 다음으로 작성한 마이크로포스트가 유효한지 아닌지를 체크합니다. 마지막으로 모든 micropost는 유저의 id를 가지고 있어야만 하기 때문에 `user_id` 의 존재성의 validation에 대한 테스트를 추가합니다. 이것들을 하나로 묶으면 아래와 같은 코드가 될 것 입니다.
+
+```ruby
+# test/models/micropost_test.rb
+require 'test_helper'
+
+class MicropostTest < ActiveSupport::TestCase
+
+  def setup
+    @user = users(:michael)
+    # 이 코드는 관습적으로 올바른 코드가 아닙니다.
+    @micropost = Micropost.new(content: "Lorem ipsum", user_id: @user.id)
+  end
+
+  test "should be valid" do
+    assert @micropost.valid?
+  end
+
+  test "user id should be present" do
+    @micropost.user_id = nil
+    assert_not @micropost.valid?
+  end
+end
+```
+
+`setup` 메소드의 내부의 코멘트처럼, micropost를 생성하는 코드는 동작합니다만 관습적으로는 올바르지 않은 코드입니다. (13.1.3에서 수정합니다.)
+
+
+
+원래부터 존재하는 User 모델의 테스트와 마찬가지로, 위 첫 번째 테스트에서는 *정상적인 상태인지 아닌지를 테스트 (Sanity Test)* 를 하고 있습니다. 두 번째  테스트에서는 `user_id` 가 존재하는지를 (`nil` 은 아닌지) 를 테스트하고 있습니다. 이 테스트를 통과시키기 위해서는 아래와 같이, 존재성의 validation을 추가해봅시다.
+
+```ruby
+# app/models/micropost.rb
+class Micropost < ActiveRecord::Base
+  belongs_to :user
+  validates :user_id, presence: true
+end
+```
+
+여담으로, Rails 5에서는 위 validation을 추가하지 않아도 테스트는 통과할 것 입니다. 그러나 이것은 관습적인 의미에서 올바르지 않은 코드를 작성할 경우에만 발생합니다. 이 부분을 "관습적으로 올바른" 코드로 작성하면, `user_id` 에 대한 존재성의 validation이 기대했던 대로 동작할 것 입니다. 이 부분을 설명하고 싶었기 때문에 앞서 코드에 코멘트를 남겨놓은 것 입니다.
+
+
+
+이상으로 위 테스트는 통과할 것 입니다. 확인해봅시다.
+
+`$ rails test:models`
