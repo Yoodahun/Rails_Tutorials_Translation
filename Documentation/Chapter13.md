@@ -243,3 +243,74 @@ user.microposts.build
 @micropost = @user.microposts.build(content: "Lorem ipsum")
 ```
 
+(`new` 메소드와 마찬가지로, `build` 메소드는 오브젝트를 리턴하는데, 데이터베이스에는 반영하지 않습니다.) 한 번에 올바른 관계를 정의해 놓는다면, `@micropost` 변수의 `user_id` 는 관계를 맺고있는 유저의 id가 자동적으로 설정됩니다.
+
+| 메소드                           | **용도**                                                    |
+| -------------------------------- | ----------------------------------------------------------- |
+| `micropost.user`                 | Micropost와 관계를 맺고 있는 User 오브젝트를 리턴한다.      |
+| `user.microposts`                | User의 Micropost 집합을 리턴한다.                           |
+| `user.microposts.create(arg)`    | `user` 관계맺은 micropost를 생성한다.                       |
+| `user.microposts.create!(arg)`   | `user`와 관계맺은 micropost를 생성한다. (실패 시 예외 발생) |
+| `user.microposts.build(arg)`     | `user` 와 관계맺은 새로운 Micropost 오브젝트를 리턴한다.    |
+| `user.microposts.find_by(id: 1)` | `user`와 관계를 맺고 있고 id가 1인 micropost를 검색합니다.  |
+
+`@user.micropost.build` 와 같은 코드를 사용하기 위해, User모델과 Micropost 모델을 각각 수정하고, 관계를 맺을 필요가 있습니다. Micropost 모델에서는 `belongs_to :user` 라고 하는 코드가 필요합니다만, 이것은 아래 코드의 migration에 의해 자동적으로 생성될 것 입니다. 한 편, User모델에서는  `has_many :microposts` 라고 추가할 필요가 있습니다. 여기는 자동적으로 생성되지 않기 때문에, 수동으로 추가해야할 필요가 있습니다.
+
+```ruby
+# app/models/micropost.rb
+class Micropost < ApplicationRecord
+  belongs_to :user # 수정
+  validates :user_id, presence: true
+  validates :content, presence: true, length: { maximum: 140 }
+end
+```
+
+```ruby
+# app/models/user.rb
+class User < ApplicationRecord
+  has_many :microposts
+  .
+  .
+  .
+end
+```
+
+올바르게 관계가 맺어졌다면, `setup` 메소드를 수정하고 관습적으로 올바른 micropost를 생성해봅시다.
+
+```ruby
+test/models/micropost_test.rb
+require 'test_helper'
+
+class MicropostTest < ActiveSupport::TestCase
+
+  def setup
+    @user = users(:michael)
+    @micropost = @user.microposts.build(content: "Lorem ipsum") #Update
+  end
+
+  test "should be valid" do
+    assert @micropost.valid?
+  end
+
+  test "user id should be present" do
+    @micropost.user_id = nil
+    assert_not @micropost.valid?
+  end
+  .
+  .
+  .
+end
+```
+
+물론 섬세한 리팩토링이기 때문에, 테스트는 아직 통과할 것 입니다.
+
+`$ rails test`
+
+##### 연습 
+
+1. 데이터베이스에 있는 제일 첫 번째 유저를 변수  `user` 에 대입해주세요. 해당 user 오브젝트를 사용하여 `micropost = user.microposts.create(content: "Lorem ipsum")` 을 실행하면 어떠한 결과를 얻을 수 있습니까?
+2. 앞서 연습문제에서, 데이터베이스 상에 새로운 micropost가 추가되었을 것 입니다. `user.microposts.find(micropost.id)` 를 실행하여, 정말로 추가되었는지를 확인해봅시다. 또한 앞서 실행한 `micropost.id` 의 부분을 `micropost` 로 바꾸면 어떠한 결과가 생기나요?
+3. `user == micro post.user` 를 실행한 결과는 어떻게 되나요? 또한 `user.microposts.first == micropost` 를 실행한 결과는 어떻게 되나요? 각각 확인해봅시다.
+
+### 13.1.4 Micropost를 개선해보자.
+
