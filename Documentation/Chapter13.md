@@ -876,3 +876,197 @@ end
 
 ### 13.3.1 Micropost의 접근제어
 
+Microposts 리소스의 개발에서는, Microposts 컨트롤러 내부의 접근제어부터 시작해봅시다. 관련된 유저들을 통하여 micropost로 접근하기 때문에, `create` 액션이나 `destory` 액션을 이용하는 유저는 이미 로그인되어있는 상태이지 않으면 안됩니다.
+
+
+
+로그인되어있는지 아닌지 확인하는 테스트에서는 Users 컨트롤러용의 테스트를 그대로 사용할 수 있습니다. 즉, 올바른 Request를 각 액션으로 실행시켜, Micropost의 수에 변화가 있는지 없는지를 확인하고, Redirect되는지를 확인하면 될 것 같습니다.
+
+```ruby
+# test/controllers/microposts_controller_test.rb
+require 'test_helper'
+
+class MicropostsControllerTest < ActionDispatch::IntegrationTest
+
+  def setup
+    @micropost = microposts(:orange)
+  end
+
+  test "should redirect create when not logged in" do
+    assert_no_difference 'Micropost.count' do
+      post microposts_path, params: { micropost: { content: "Lorem ipsum" } }
+    end
+    assert_redirected_to login_url
+  end
+
+  test "should redirect destroy when not logged in" do
+    assert_no_difference 'Micropost.count' do
+      delete micropost_path(@micropost)
+    end
+    assert_redirected_to login_url
+  end
+end
+```
+
+위 테스트 코드에서 테스트에 통과하기 위한 코드를 작성하기 위해서는, 약간의 application에서의 코드를 Refactoring해야할 필요가 있습니다. [10.2.1](Chapter10.md#1021-유저에게-로그인을-요청해보자) 에서는 before 필터의 `logged_in_user` 메소드를 사용하여, 로그인을 요청했던 것을 떠올려주세요. 그 때에는 Users 컨트롤러 내부의 이 메소드가 존재하였기 때문에, before 필터로 지정하였습니다만, 이 메소드는 microposts 컨트롤러에서도 필요합니다. 때문에 각 컨트롤러가 계승하는 Application 컨트롤러의 내부에 이 메소드를 옮겨봅시다. 작성한 코드는 아래와 같습니다.
+
+```ruby
+# app/controllers/application_controller.rb
+class ApplicationController < ActionController::Base
+  protect_from_forgery with: :exception
+  include SessionsHelper
+
+  private
+
+    # 유저의 로그인을 확인합니다.
+    def logged_in_user
+      unless logged_in?
+        store_location
+        flash[:danger] = "Please log in."
+        redirect_to login_url
+      end
+    end
+end
+```
+
+코드가 중복하지 않도록, Users컨트롤러부터 `logged_in_user` 를 삭제합시다.
+
+```ruby
+# app/controllers/users_controller.rb
+class UsersController < ApplicationController
+  before_action :logged_in_user, only: [:index, :edit, :update, :destroy]
+  .
+  .
+  .
+  private
+
+    def user_params
+      params.require(:user).permit(:name, :email, :password,
+                                   :password_confirmation)
+    end
+
+    # before filter
+
+    # 올바른 유저인지 확인합니다.
+    def correct_user
+      @user = User.find(params[:id])
+      redirect_to(root_url) unless current_user?(@user)
+    end
+
+    # 관리자인지 확인합니다.
+    def admin_user
+      redirect_to(root_url) unless current_user.admin?
+    end
+end
+```
+
+`application_controller.rb` 의 코드에 따라서는, Microposts 컨트롤러로부터도 `logged_in_user` 메소드를 호출할 수 있게 되었습니다. 이것으로 `create` 액션이나 `destroy` 액션에 대한 접근제어를, before 필터로 간단하게 구현할 수 있게 되었습니다.
+
+```ruby
+# app/controllers/microposts_controller.rb
+class MicropostsController < ApplicationController
+  before_action :logged_in_user, only: [:create, :destroy]
+
+  def create
+  end
+
+  def destroy
+  end
+end
+```
+
+이 것으로 테스트는 통과할 것 입니다.
+
+`$ rails test`
+
+##### 연습
+
+1. 어째서 Users 컨트롤러 내부에 있는 `logged_in_user` 필터를 남겨둔다면 좋지 않은 것일까요? 생각해봅시다.
+
+### 13.3.2 Micropost를 작성해보자.
+
+[제 7장](Chapter7.md) 에서는 HTTP POST Request를 Users 컨트롤러의 `create` 액션으로 발행하는 HTML form을 생성하여 유저의 sign up 을 구현해보았습니다. Micropost 생성의 구현도 비슷합니다. 주된 차이점은 다른 micro post / new 페이지를 사용하는 대신에, Home 화면 (즉, Root path) 에 Form을 설치한다는 것입니다. 아래의 목업을 확인해주세요.
+
+![](../image/Chapter13/home_page_with_micropost_form_mockup_bootstrap.png)
+
+마지막으로 Home 화면을 구현하였을 때, (5장) [Sign up now !] 버튼이 중아에 있었습니다. Micropost 생성 form은, 로그인되어있는 특정 유저만이 사용할 수 있는 기능이기 때문에, 이 섹션에서의 목표중 하나로는, 유저의 로그인 기능에 대하여 Home 화면에 표시를 변경하는 것입니다. 이것에 대해서는 아래 두 번째 코드에서 구현해봅니다.
+
+
+
+다음으로 Micropost의 `create` 액션을 생성해봅시다. 이 액션도 이전 7장에서 구현한 유저용의 액션과 비슷합니다. 차이점으로는 새로운 micropost를 `build` 하기 위해 User/Micropost 관계를 사용하고 있는 것입니다.  `micropost_params` 에서 Strong Parameters 를 사용함으로 인하여, micropost의 `content` 속성만이 Web 경유로 변경가능하게 된 점을 주목해주세요.
+
+```ruby
+# app/controllers/microposts_controller.rb
+class MicropostsController < ApplicationController
+  before_action :logged_in_user, only: [:create, :destroy]
+
+  def create
+    @micropost = current_user.microposts.build(micropost_params)
+    if @micropost.save
+      flash[:success] = "Micropost created!"
+      redirect_to root_url
+    else
+      render 'static_pages/home'
+    end
+  end
+
+  def destroy
+  end
+
+  private
+
+    def micropost_params
+      params.require(:micropost).permit(:content)
+    end
+end
+```
+
+ Micropost 생성 Form을 구축하기 위해, 사이트 방문자가 로그인하고 있는지에 따라 변하는 HTML을 제공하는 코드를 사용해봅시다.
+
+```erb
+<!-- app/views/static_pages/home.html.erb -->
+<!-- new -->
+<% if logged_in? %>
+  <div class="row">
+    <aside class="col-md-4">
+      <section class="user_info">
+        <%= render 'shared/user_info' %>
+      </section>
+      <section class="micropost_form">
+        <%= render 'shared/micropost_form' %>
+      </section>
+    </aside>
+  </div>
+<% else %>
+<!-- new -->
+  <div class="center jumbotron">
+    <h1>Welcome to the Sample App</h1>
+
+    <h2>
+      This is the home page for the
+      <a href="https://railstutorial.jp/">Ruby on Rails Tutorial</a>
+      sample application.
+    </h2>
+
+    <%= link_to "Sign up now!", signup_path, class: "btn btn-lg btn-primary" %>
+  </div>
+
+  <%= link_to image_tag("rails.png", alt: "Rails logo"),
+              'http://rubyonrails.org/' %>
+<% end %>
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
