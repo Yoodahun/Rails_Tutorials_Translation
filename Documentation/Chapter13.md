@@ -1053,8 +1053,392 @@ end
 
   <%= link_to image_tag("rails.png", alt: "Rails logo"),
               'http://rubyonrails.org/' %>
+<% end %> <!-- new -->
+```
+
+`if-else` 문의 분기에서 코드를 나누고 있는 점이 조금은 번거롭긴 하지만, 이 코드의 Refactoring은 연습문제로 내기로 해봅시다.
+
+
+
+위 코드를 동작하게 하기 위해서는 몇가지의 Partial을 생성할 필요가 있습니다. 우선 Home 페이지의 새로운 사이드바부터입니다. 다음 코드와 같습니다.
+
+```erb
+<!-- app/views/shared/_user_info.html.erb -->
+<%= link_to gravatar_for(current_user, size: 50), current_user %>
+<h1><%= current_user.name %></h1>
+<span><%= link_to "view my profile", current_user %></span>
+<span><%= pluralize(current_user.microposts.count, "micropost") %></span>
+```
+
+프로필 사이드바와 마찬가지로, 위 코드의 유저 정보에도 해당 유저가 투고한 micropost의 총 갯수를 표시하고 있는 것에 대해 주목해주세요. 단, 조금 표시하는 방법이 달라집니다. 프로필 사이드바에서는 "Micropost" 을 라벨로 표시하고,  "Micropost(1)" 로 표시하는 것은 문제가 없습니다. 그러나 이번 처럼 "1 micropost" 라고 표시해버리면 영어의 문법상 오류가 발생합니다. 여기서 [7.3.3](Chapter7.md#733-에러-메세지) 소개한 `pluralize` 메소드를 사용하여 "1 micropost" 나 "2 micrposts" 라고 표시할 수 있도록 조정합니다.
+
+
+
+다음으로는 micropost생성 form을 정의해보겠습니다. 이것은 유저 등록 form과 비슷합니다. (7장)
+
+```erb
+<!-- app/views/shared/_micropost_form.html.erb -->
+<%= form_for(@micropost) do |f| %>
+  <%= render 'shared/error_messages', object: f.object %>
+  <div class="field">
+    <%= f.text_area :content, placeholder: "Compose new micropost..." %>
+  </div>
+  <%= f.submit "Post", class: "btn btn-primary" %>
 <% end %>
 ```
+
+위 코드에서의 form이 동작하게 하기 위해서는, 2가지의 변경이 필요합니다. 하나는 (이전과 마찬가지로) 관계맺기를 이용하여 다음과 같이 `@micropost` 를 정의합니다.
+
+`@micropost = current_user.microposts.build`
+
+생성한 코드는 아래와 같습니다.
+
+```ruby
+# app/controllers/static_pages_controller.rb 
+# home 액션에 micropost를 인스턴스변수를 추가한다.
+
+class StaticPagesController < ApplicationController
+
+  def home
+    @micropost = current_user.microposts.build if logged_in?
+  end
+
+  def help
+  end
+
+  def about
+  end
+
+  def contact
+  end
+end
+```
+
+물론 `current_user`  메소드는 유저가 로그인하고 있을때만 쓸 수 있습니다. 따라서 `@micropost` 변수도 로그인하고 있을때만 정의될 수 있도록 합니다.
+
+
+
+위 두번째 코드를 동작하게 하기 위한 다른 하나의 변경점은, 에러 메세지의 partial을 재정의하는 것입니다. 그렇지 않는다면 위 두번째 코드는 동작하지 않을 것 입니다.
+
+`<%= render 'shared/error_messages, object: f.object %>`
+
+7장에서는 에러 메세지 partial이 `@user` 변수를 직접 참조하고 있던 것을 떠올려주세요. 이번에는 그 대신에, `@micropost` 변수를 사용할 필요가 있습니다. 그러한 케이스들을 정리해보면, form 변수 `f` 를, `f.object` 로 선언하는 것으로, 관계맺어져있는 오브젝트에 액세스할 수 있습니다. 따라서,
+
+`form_for(@user) do |f|`
+
+위와 같이 `f.object` 가 `@user` 가 되는 경우와,
+
+`form_for(@micropost) do |f|`
+
+위와 같이 `f.object` 가 `@micropost` 가 되는 경우가 있습니다.
+
+
+
+Partial에 오브젝트를 넘기기 위해서, 값이 Object이면서 Key를 Partial에서의 변수명과 같은 해시를 이용합니다. 이것으로 위 두 번째 코드의 2번째줄의 코드가 완성됩니다. 바꿔말하자면, `object: f.object` 와 `error_message` partial 안에서 `object` 라고 하는 변수명을 생성해놓는다면, 이 변수를 사용하여 에러 메세지를 갱신하면 되는 것 입니다.
+
+```erb
+<!-- app/views/shared/_error_messages.html.erb -->
+<% if object.errors.any? %>
+  <div id="error_explanation">
+    <div class="alert alert-danger">
+      The form contains <%= pluralize(object.errors.count, "error") %>.
+    </div>
+    <ul>
+    <% object.errors.full_messages.each do |msg| %>
+      <li><%= msg %></li>
+    <% end %>
+    </ul>
+  </div>
+<% end %>
+```
+
+이 시점에서 테스트를 실행시키면 테스트는 아직 실패일 것 입니다.
+
+`$ rails test`
+
+어째서 실패하고 있는 것일까요? 힌트는 `error_message` Partial의 다른 사용장소가 문제입니다. 이 partial은 다른 코드에서도 호출되고 있기 때문에, 유저등록, 패스워드 재설정, 그리고 유저 편집의 각각의 view에서 수정을 해줄 필요가 있습니다. 각 view에서 수정한 결과는 아래와 같습니다.
+
+```erb
+<!-- app/views/users/new.html.erb -->
+<% provide(:title, 'Sign up') %>
+<h1>Sign up</h1>
+
+<div class="row">
+  <div class="col-md-6 col-md-offset-3">
+    <%= form_for(@user) do |f| %>
+      <%= render 'shared/error_messages', object: f.object %> <!-- update -->
+      <%= f.label :name %>
+      <%= f.text_field :name, class: 'form-control' %>
+
+      <%= f.label :email %>
+      <%= f.email_field :email, class: 'form-control' %>
+
+      <%= f.label :password %>
+      <%= f.password_field :password, class: 'form-control' %>
+
+      <%= f.label :password_confirmation, "Confirmation" %>
+      <%= f.password_field :password_confirmation, class: 'form-control' %>
+
+      <%= f.submit "Create my account", class: "btn btn-primary" %>
+    <% end %>
+  </div>
+</div>
+```
+
+```erb
+<!-- app/views/users/edit.html.erb -->
+<% provide(:title, "Edit user") %>
+<h1>Update your profile</h1>
+
+<div class="row">
+  <div class="col-md-6 col-md-offset-3">
+    <%= form_for(@user) do |f| %>
+      <%= render 'shared/error_messages', object: f.object %><!-- update -->
+
+      <%= f.label :name %>
+      <%= f.text_field :name, class: 'form-control' %>
+
+      <%= f.label :email %>
+      <%= f.email_field :email, class: 'form-control' %>
+
+      <%= f.label :password %>
+      <%= f.password_field :password, class: 'form-control' %>
+
+      <%= f.label :password_confirmation, "Confirmation" %>
+      <%= f.password_field :password_confirmation, class: 'form-control' %>
+
+      <%= f.submit "Save changes", class: "btn btn-primary" %>
+    <% end %>
+
+    <div class="gravatar_edit">
+      <%= gravatar_for @user %>
+      <a href="http://gravatar.com/emails">change</a>
+    </div>
+  </div>
+</div>
+```
+
+```erb
+<!-- app/views/password_resets/edit.html.erb -->
+<% provide(:title, 'Reset password') %>
+<h1>Password reset</h1>
+
+<div class="row">
+  <div class="col-md-6 col-md-offset-3">
+    <%= form_for(@user, url: password_reset_path(params[:id])) do |f| %>
+      <%= render 'shared/error_messages', object: f.object %> <!-- update -->
+
+      <%= hidden_field_tag :email, @user.email %>
+
+      <%= f.label :password %>
+      <%= f.password_field :password, class: 'form-control' %>
+
+      <%= f.label :password_confirmation, "Confirmation" %>
+      <%= f.password_field :password_confirmation, class: 'form-control' %>
+
+      <%= f.submit "Update password", class: "btn btn-primary" %>
+    <% end %>
+  </div>
+</div>
+```
+
+이것으로 모든 테스트가 통과할 것 입니다.
+
+`$ rails test`
+
+게다가 이번 챕터에서 생성한 모든 HTML이 적절하게 표시될 것 입니다. 최종적 form은 아래와 첫 번째 스크린샷 처럼, 작성 에러가 표시된 form은 아래 두 번째 스크린샷처럼 될 것 입니다.
+
+![](../image/Chapter13/home_with_form_3rd_edition.png)
+
+![](../image/Chapter13/home_form_errors_3rd_edition.png)
+
+##### 연습
+
+1. Home페이지를 Refactoring 하여 `if-else` 문의 분기를 각각 Partial로 생성해봅시다.
+
+### 13.3.3 Feed의 원형
+
+micropost 작성 form이 동작할 수 있도록 되었습니다만, 지금 단계에서는 작성한 내용을 바로 볼 수는 없습니다. 아직 Home 페이지에 micropost 를 표시하는 부분이 아직 구현되지 않았기 때문입니다.
+
+
+
+micropost 작성 form이 제대로 동작하는지 확인하고 싶은 경우, 올바른 형태로 작성한 후, 프로필 페이지로 이동하여 post가 제대로 표시되면 그걸로 다행입니다만, 이 것은 조금 귀찮은 작업이기도 합니다. 아래 목업처럼, 유저 자신의의 post를 포함한, micropost의 feed가 없으면 불편합니다. (제 14장에서는 피드를 범용화하여여 _follow_ 하고 있는 유저들의 micropost도 feed에 표시할 예정입니다.)
+
+![](../image/Chapter13/proto_feed_mockup_3rd_edition.png)
+
+모든 유저가 feed를 가지고 있기에, `feed` 메소드는 User 모델에서 생성하는 것이 자연스럽습니다. Feed의 원형은, 우선 현재 로그인하고 있는 유저의 micropost를 전부 조회합니다. 또한 다음 챕터에서 완전한 feed를 구현하기 때문에, 이번에는 [11.3.3](Chapter11.md#1133-유효화와-테스트의-Refactoring) 에서 소개한 `where` 메소드에서 이것을 구현해볼 것 입니다. `Micropost` 모델에 변경점을 더한 결과는 아래와 같습니다.
+
+```ruby
+# app/models/user.rb
+class User < ApplicationRecord
+  .
+  .
+  .
+  # 
+  # 완전한 구현은 다음장의 "유저를 follow해보자" 를 참조해주세요.
+  def feed
+    Micropost.where("user_id = ?", id)
+  end
+
+    private
+    .
+    .
+    .
+end
+```
+
+다음 코드에서 사용되고 있는 물음표는, 보안상 중요한 역할을 해줍니다.
+
+`Microposts.where("user_id = ?", id)` 
+
+위 물음표가 있는 것으로 인하여, SQL Query에 대입하기 전에 `id`  가 Escape되어지기 때문에, [*SQL인젝션 (SQL Injection)*](https://ja.wikipedia.org/wiki/SQLインジェクション) 이라 불리는 심각한 보안상 문제를 회피할 수 있습니다. 이 경우의 `id` 속성은 단순한 정수 (즉, `self.id` 는 유저의 id) 이 때문에 위험하진 않습니다만, SQL 문에 변수를 대입하는 경우에는 _항상_ Escape하는 습관을 몸에 익혀주시길 바랍니다.
+
+
+
+세심한 독자들은 위 코드에서 본질적으로 다음 코드와 같은 것을 알아채렸을 수도 있을 것 같습니다.
+
+```ruby
+def feed
+  microposts
+end
+```
+
+위 코드를 사용하지 않고, 일부러 위 2번째 코드를 사용한 것은, 제 14장에서 필요하게되는 완전한 Status feed에서 응용을 해볼 수 있기 때문입니다.
+
+
+
+Sample application에 feed기능을 도입하기 위해, 로그인 유저의 feed용으로 인스턴스 변수 `@feed_items` 를 추가하고, Home 페이지에서는 feed용의 Partial을 추가합니다. Home 페이지에 변경을 더한 결과는 아래 세 번째 *app/views/static_pages/home.html.erb* 코드를 확인해주세요. 이 때, 유저가 로그인해있는지 어떤지 확인한 후 if문이 변화하고 있는 점을 주목해주세요. 즉, 아래 코드
+
+```
+@micropost = current_user.microposts.build if logged_in?
+```
+
+가 다음과 같이 변합니다.
+
+```ruby
+ if logged_in?
+    @micropost  = current_user.microposts.build
+    @feed_items = current_user.feed.paginate(page: params[:page])
+  end
+```
+
+```ruby
+# app/controllers/static_pages_controller.rb
+# home 액션에 feed의 인스턴스변수를 추가한다.
+class StaticPagesController < ApplicationController
+
+  def home
+    if logged_in?
+      @micropost  = current_user.microposts.build
+      @feed_items = current_user.feed.paginate(page: params[:page])
+    end
+  end
+
+  def help
+  end
+
+  def about
+  end
+
+  def contact
+  end
+end
+```
+
+```erb
+<!-- app/views/shared/_feed.html.erb -->
+<!-- statusfeed의 partial -->
+<% if @feed_items.any? %>
+  <ol class="microposts">
+    <%= render @feed_items %>
+  </ol>
+  <%= will_paginate @feed_items %>
+<% end %>
+```
+
+Status Feed의 Partial은 Micropost의 partial과는 다른 점에 주목해주세요.
+
+`<%= render @feed_items %>`
+
+이 때, `@feed_item` 의 각 요소가 `Micropost` 클래스를 가지고 있기 때문에, Rails는 Micropost의 Partial을 호출할 수 있습니다. 이렇게 Rails는 대응하는 이름의 Partial을 넘겨진 리소스의 디렉토리 내부로부터 찾아낼 수 있습니다.
+
+```
+app/views/microposts/_micropost.html.erb
+```
+
+남은 것은, 언제나처럼 feed partial을 표시하면 Home페이지에 feed를 추가할 수 있습니다. 이 결과는 Home페이지의 Feed로써 표시됩니다.
+
+```erb
+<!-- app/views/static_pages/home.html.erb -->
+<% if logged_in? %>
+  <div class="row">
+    <aside class="col-md-4">
+      <section class="user_info">
+        <%= render 'shared/user_info' %>
+      </section>
+      <section class="micropost_form">
+        <%= render 'shared/micropost_form' %>
+      </section>
+    </aside>
+    <div class="col-md-8">
+      <h3>Micropost Feed</h3>
+      <%= render 'shared/feed' %>
+    </div>
+  </div>
+<% else %>
+  .
+  .
+  .
+<% end %>
+```
+
+![](../image/Chapter13/home_with_proto_feed_3rd_edition.png)
+
+현 시점에서는 새로운 micropost의 작성은 기대했던 대로 동작합니다. 그러나 조금 별거 아닐 수도 있습니다만, micropost의 투고가 _실패_ 하면, Home 페이지는 `@Feed_items` 인스턴스 변수를 기다리고 있기 때문에 현상에서는 Exception을 일으키게 되버리고 말 것 입니다. 제일 간단한 해결방법은 아래 코드와 같이 빈 배열을 넘겨두는 것 입니다. 아쉽게도 이 방법으로는 Page가 분할된 feed를 다시 보고싶어도 제대로 동작하지 않습니다. 움직이지 않는 이유를 알아보고 싶으신 분은, 실제로 구현하여 Pagination의 링크를 클릭해보세요.
+
+![](../image/Chapter13/micropost_created_3rd_edition.png)
+
+```ruby
+# app/controllers/microposts_controller.rb
+class MicropostsController < ApplicationController
+  before_action :logged_in_user, only: [:create, :destroy]
+
+  def create
+    @micropost = current_user.microposts.build(micropost_params)
+    if @micropost.save
+      flash[:success] = "Micropost created!"
+      redirect_to root_url
+    else
+      @feed_items = [] #빈 배열
+      render 'static_pages/home'
+    end
+  end
+
+  def destroy
+  end
+
+  private
+
+    def micropost_params
+      params.require(:micropost).permit(:content)
+    end
+end
+```
+
+##### 연습
+
+1. 새롭게 구현한 micropost의 생성 form을 사용하여 실제로 micropost를 투고해봅시다. Rails 서버의 로그 내부에 있는 `INSERT` 문은 어떠한 내용을 데이터베이스로 보내고 있습니까? 확인해봅시다.
+2. 콘솔을 실행시키고, `user` 변수에 데이터베이스 상의 제일 첫 번째 유저를 대입시켜봅시다. 그 다음, `Micropost.where("user_id = ?", user.id)` 와 `user.microposts` 그리고 `user.feed` 를 각각 실행시켜보고, 실행결과가 모두 같은 것을 확인해봅시다. _Hint_ : `==` 로 비교하면 결과가 같은지 아닌지를 간단하게 판단할 수 있습니다.
+
+   
+
+
+
+
+
+
+
+
 
 
 
