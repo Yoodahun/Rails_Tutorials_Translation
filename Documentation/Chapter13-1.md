@@ -232,5 +232,125 @@ end
    end
    ```
 
+
+
 ## 13.4 Micropost의 image 첨부
+
+여기까지 micropost에 관한 기본적인 조작은 모두 구현해보았습니다. 이번 섹션에서는 응용편으로써, 이미지를 첨부한 micropost를 작성할 수 있도록 해보겠습니다. 순서로는 일단 개발환경용의 베타판을 구현하고, 그 후 몇가지의 개선을 거쳐 실제 배포환경용의 완성판을 구현해보겠습니다.
+
+
+
+임지ㅣ 업로드 기능을 추가하기 위해서는 2개의 시각적인 요소가 필요합니다. 하나는 이미지를 업로드하기 위한 form, 또 다른 하나는 작성한 이미지 그 자체입니다. [Upload image] 버튼과 이미지가 첨부되어있는 micropost의 목업은 아래와 같습니다.
+
+![](../image/Chapter13/micropost_image_mockup.png)
+
+
+
+### 13.4.1 기본적인 Image Upload
+
+업로드한 이미지를 다루거나 해당 이미지를 micropost 모델과 관계맺기를 하기 위해서, 이번에는 [CarrierWave](https://github.com/carrierwaveuploader/carrierwave) 라고 하는 Image Uploader를 사용해보겠습니다. 우선 _carrierwave gem_ 을 `Gemfile` 에 추가해봅시다. 이 때, 아래 코드에서는 _mini_magick gem_ 과 _fog gems_ 도 같이 포함되어있는 점을 주목해주세요. 이 gem들은 Resize하거나(13.4.3) 실제 배포환경에서 이미지를 업로드하기 위해 사용될 것 입니다. (13.4.4)
+
+```ruby
+gem 'rails',                   '5.1.6'
+gem 'bcrypt',                  '3.1.12'
+gem 'faker',                   '1.7.3'
+gem 'carrierwave',             '1.2.2' #new
+gem 'mini_magick',             '4.7.0' #new
+gem 'will_paginate',           '3.1.5'
+gem 'bootstrap-will_paginate', '1.0.0'
+.
+.
+.
+group :production do
+  gem 'pg',  '0.20.0'
+  gem 'fog', '1.42' #new
+  end
+.
+.
+.
+```
+
+다음으로는 언제나처럼 `bundle install` 을 실행해봅니다.
+
+` $ bundle install`
+
+CarrierWave를 도입하면, Rails의 제네레이터로 이미지 업로더를 생성할 수 있게 됩니다. 다음 커맨드를 실행해봅시다. (이미지를 image라고 하는 것은 너무 평범하기 때문에, `picture` 라고 하겠습니다.)
+
+`$ rails generate uploader Picture`
+
+ CarrierWave로 업로드된 이미지는, Active Record 모델의 속성과 관계를 맺어야할 것 입니다. 관계맺어진 속성에는 이미지의 파일명이 저장되기 때문에 String형으로 해놓습니다. 확장된 micropost의 데이터 모델은 아래와 같습니다.
+
+![](../image/Chapter13/micropost_model_picture.png)
+
+필요한 `picture` 속성을 Micropost모델에 추가하기 위해, migration 파일을 생성하고, 개발환경의 데이터베이스에 적용합니다.
+
+```
+$ rails generate migration add_picture_to_microposts picture:string
+$ rails db:migrate
+```
+
+CarrierWave에 이미지와 관계지어놓은 모델을 입력하기 위해선, `mount_uploader` 라고 하는 메소드를 사용합니다. 이 메소드는 파라미터에 속성명의 심볼과 생성되어진 업로더의 클래스이름을 취합니다.
+
+`mount_uploader :picture, PictureUploader`
+
+(`picture_uploader.rb` 라고 하는 파일에 `PictureUploader` 클래스가 정의되어 있습니다. 13.4.2에서 수정합니다만, 지금은 디폴트인 상태로도 상관없습니다. ) Micropost 모델에 업로더를 추가한 결과는 아래와 같습니다.
+
+```ruby
+# app/models/micropost.rb
+# micropost모델에 이미지를 추가한다.
+class Micropost < ApplicationRecord
+  belongs_to :user
+  default_scope -> { order(created_at: :desc) }
+  mount_uploader :picture, PictureUploader #new
+  validates :user_id, presence: true
+  validates :content, presence: true, length: { maximum: 140 }
+end
+```
+
+시스템에 따라서는 여기서 일단 Rails 서버를 재기동할 필요가 있습니다. 재기동되면 테스트코드를 실행시켜주세요. 일단 통과할 것 입니다. (단, [3.6.2](Chapter3.md#362-guard에-의한-테스트-자동화) 에서 설명한 Guard를 사용한 경우는, 재기동하는 것만으로는 제대로 동작하지 않을 수도 있습니다. 일단 그 경우라면 Terminal에서 일단 종료하고, 새로운  Terminal에서 Guard를 재실행해주세요.)
+
+
+
+Home 페이지에 업로더를 추가하기 위해서는 micropost의 form에 `file_field` 태그를 포함할 필요가 있습니다.
+
+```erb
+<!-- app/views/shared/_micropost_form.html.erb -->
+<%= form_for(@micropost) do |f| %>
+  <%= render 'shared/error_messages', object: f.object %>
+  <div class="field">
+    <%= f.text_area :content, placeholder: "Compose new micropost..." %>
+  </div>
+  <%= f.submit "Post", class: "btn btn-primary" %>
+  <span class="picture">
+    <%= f.file_field :picture %> <!-- new -->
+  </span>
+<% end %>
+```
+
+마지막으로는 Web으로부터 추가할 수 있는 허가 리스트에 `picture` 속성을 추가해놓습니다. 추가해놓으면 `micropost_params` 메소드는 아래와 같이 됩니다.
+
+```ruby
+# app/controllers/microposts_controller.rb
+class MicropostsController < ApplicationController
+  before_action :logged_in_user, only: [:create, :destroy]
+  before_action :correct_user,   only: :destroy
+  .
+  .
+  .
+  private
+
+    def micropost_params
+      params.require(:micropost).permit(:content, :picture) # new
+    end
+
+    def correct_user
+      @micropost = current_user.microposts.find_by(id: params[:id])
+      redirect_to root_url if @micropost.nil?
+    end
+end
+```
+
+
+
+
 
