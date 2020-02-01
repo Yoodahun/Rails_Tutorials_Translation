@@ -535,3 +535,188 @@ jQuery는 본 튜토리얼의 주제가 아니기 때문에 상세한 설명은 
 1. 5MB이상의 이미지 파일을 등록하고자 하는 경우에는 어떻게 됩니까?
 2. 무효한 확장자의 파일을 등록하고자하는 경우에는 어떻게 됩니까?
 
+### 13.4.3 Image의 Resize
+
+파일사이즈에 대한 Validation ([13.4.2](#1342-image의-검증)) 은 제대로 구현되었습니다. 그러나 이미지 사이즈 (가로세로의 길이)에 대한 제한은 아니기 때문에, 큰 이미지 사이즈가 업로드 되어지면 아래 캡쳐와같이 레이아웃이 깨져버리게 됩니다. 그렇다고는 해도, 유저에게 유저가 가진 이미지의 사이즈를 수정하도록 하는 것은 불편합니다. 그렇기 때문에 이미지를 표시하기 전에 사이즈를 변경하는 (Resize) 처리를 구현해봅시다.
+
+![](../image/Chapter13/large_uploaded_image_4th_ed.png)
+
+이미지를 리사이즈하기 위해서는 이미지를 조작하는 프로그램이 필요합니다. 이번에는 [ImageMagick](http://www.imagemagick.org/) 라고 하는 프로그램을 사용하기 때문에, 이것을 개발환경에 설치해보겠습니다. (13.4.4에서도 설명합니다만, 실제 배포환경이 Heroku라면, 이미 배포환경에 ImageMagick을 쓸 수 있도록 준비되어져 있습니다.) Cloud IDE의 경우, 다음 커맨드로 이 프로그램을 설치할 수 있습니다.
+
+```
+sudo yum install -y ImageMagick
+```
+
+(혹여나 로컬환경에서 개발하고 있는 경우에는, 각각의 환경에 맞추어 ImageMagick를 설치하는 순서가 다릅니다. 예를 들어 Mac이라면, Homebrew를 도입하여 `brew install imagemagick` 커맨드를 사용하여 설치할 수 있습니다. 만약 설치가 제대로 안된다면, 컬럼1.1를 참고해주세요.)
+
+
+
+다음으로, [MiniMagick](https://github.com/minimagick/minimagick) 이라고 하는, ImageMagick과 Ruby를 이어주는 gem을 사용하여 이미지를 리사이즈해봅시다. [MiniMagick의 Document](http://www.rdoc.info/github/jnicklas/carrierwave/CarrierWave/MiniMagick) 를 확인하면, 여러가지 방법으로 리사이즈할 수 있는 것을 알 수 있습니다만, 이번에는 `resize_to_limit: [400, 400]` 라고 하는 방법을 사용해봅니다. 이 것은 가로세로 어느쪽이던 400px를 초과할 경우, 적절한 사이즈로 축소하는 옵션입니다. (단, 작은 이미지라고 해도 확대하진 않습니다.) 여담으로, [CarrierWave의 MiniMagick 항목](https://github.com/carrierwaveuploader/carrierwave#using-minimagick) 을 확인해보면, 너무나도 작은 이미지를 _억지로 늘리는_ 방법도 있는 것 같습니다만, 이번에는 사용하지 않겠습니다. 따라서 최종적인 코드는 아래와 같이 됩니다. 이것으로 커다란 이미지 사이즈라도 적절하게 리사이즈될 것 입니다.
+
+```ruby
+# app/uploaders/picture_uploader.rb
+class PictureUploader < CarrierWave::Uploader::Base
+  include CarrierWave::MiniMagick #new
+  process resize_to_limit: [400, 400] #new
+
+  storage :file
+
+  # アップロードファイルの保存先ディレクトリは上書き可能
+  # 下記はデフォルトの保存先  
+  def store_dir
+    "uploads/#{model.class.to_s.underscore}/#{mounted_as}/#{model.id}"
+  end
+
+  # アップロード可能な拡張子のリスト
+  def extension_whitelist
+    %w(jpg jpeg gif png)
+  end
+end
+```
+
+![](../image/Chapter13/resized_image_4th_ed.png)
+
+##### 연습
+
+1. 해상도가 높은 이미지를 업로드하고, 리사이즈 되어지는지를 확인해봅시다. 이미지가 직사각형 일 경우, 리사이즈는 제대로 잘 됩니까?
+2. 이미 이전에 이미지 사이즈에 대해 테스트를 추가한 경우, 이 시점에서 테스트를 실행하면 에러메세지가 표시될 것 입니다. 이 에러를 없애봅시다. _Hint_ : 아래 설정 파일을 수정하여 테스트 시에는 CarrierWave에 이미지의 리사이즈를 실행시키지 않도록 해봅시다.
+
+```ruby
+# config/initializers/skip_image_resizing.rb
+if Rails.env.test?
+  CarrierWave.configure do |config|
+    config.enable_processing = false
+  end
+end
+```
+
+### 13.4.4 실제 배포환경에서의 Image Upload
+
+(이 섹션은 Skip 하여도 됩니다. 제대로 되지않는다면 Skip해도 문제없습니다.)
+
+
+
+[13.4.3](#1343-image의-resize) 에서 구현한 이미지 업로더는 개발환경에서 동작시키기에는 문제없습니다만, 실제 배포환경에는 적절하지 않습니다. 이 것은 `picture_uploader.rb`의 `storage :file` 이라고하는 코드에 의해서, 로컬 파일시스템에 이미지를 저장하도록 되어있기 때문입니다. 실제 배포환경에서는 파일 시스템이 아닌 Cloud Storage 서비스에 이미지를 저장하도록 해봅시다.
+
+
+
+실제 배포환경에서 cloud storage에 저장하게 하기 위해서는, 아래 코드처럼 `fog` gem 을 사용하면 간단하게 할 수 있습니다.
+
+```ruby
+# app/uploaders/picture_uploader.rb
+class PictureUploader < CarrierWave::Uploader::Base
+  include CarrierWave::MiniMagick
+  process resize_to_limit: [400, 400]
+
+  # new
+  if Rails.env.production?
+    storage :fog
+  else
+    storage :file
+  end
+
+  # 업로드 파일의 저장 디렉토리는 덮어쓰기 가능
+  # 아래는 기본 저장 디렉토리
+  def store_dir
+    "uploads/#{model.class.to_s.underscore}/#{mounted_as}/#{model.id}"
+  end
+
+  # 업로드 가능한 확장자의 리스트 
+  def extension_whitelist
+    %w(jpg jpeg gif png)
+  end
+end
+```
+
+위 코드에서 `production?` 이라고 하는 논리값을 리턴하는 메소드를 사용하고 있습니다. 이 메소드는 컬럼 7.1에서도 소개했스빈다만, 이것을 사용하면 환경별로 저장 디렉토리를 바꿀 수 있습니다.
+
+```ruby
+if Rails.env.production?
+  storage :fog
+else
+  storage :file
+end
+```
+
+요즘 시대에는 많은 cloud storage 서비스가 있습니다만, 이번에는 유명하고 신뢰성이 높은 Amazon의 [Simple Storage Service (S3)](http://aws.amazon.com/s3/) 를 사용해보겠습니다. 설치 순서는 다음과 같습니다.
+
+1.  [Amazon Web Services](http://aws.amazon.com/) 의 계정을 생성한다.
+2. [WS Identity and Access Management (IAM)](http://aws.amazon.com/iam/) 에서 유저를 생성하고, Access key 와 Secret key를 생성하고 메모해놓는다.
+3. [AWS Console](https://console.aws.amazon.com/s3) 에서 S3 bucket을 생성하고, ( bucket 이름은 아무거나 상관 없습니다. ) 2에서 생성한 유저에게 Read권한과 Write 권한을 부여한다.
+
+(S3의 설치는 꽤나 어렵습니다. 컬럼1.1를 참고하여 알아봅시다.)
+
+
+
+좀 더 자세하게 알고 싶은 경우에는 [S3의 Document](http://aws.amazon.com/documentation/s3/) 를 읽어보거나, Google이나 Stack Overflow에서 검색해봅시다.
+
+
+
+S3 Account의 생성과 설정이 끝났다면, CarrierWave의 설정파일을 다음 아래 코드와 같이 수정해봅시다.
+
+```ruby
+# config/initializers/carrier_wave.rb
+if Rails.env.production?
+  CarrierWave.configure do |config|
+    config.fog_credentials = {
+      # Amazon S3의 설정
+      :provider              => 'AWS',
+      :region                => ENV['S3_REGION'],     # 例: 'ap-northeast-1'
+      :aws_access_key_id     => ENV['S3_ACCESS_KEY'],
+      :aws_secret_access_key => ENV['S3_SECRET_KEY']
+    }
+    config.fog_directory     =  ENV['S3_BUCKET']
+  end
+end
+```
+
+실제 배포환경의 메일설정과 마찬가지로, 위 코드에서는 Heroku의 환경변수 `ENV` 를 사용하여 기밀정보가 누설되지 않도록 하고 있습니다. 11.4나 12.4에서는 SendGrid의 AddOn이 이러한 환경변수를 자동적으로 설정해주었으나, 이번에는 수동으로 설정할 필요가 있습니다. `heroku config:set` 커맨드를 사용하여 다음과 같이 Heroku 상의 환경변수를 설정해주세요.
+
+```
+$ heroku config:set S3_ACCESS_KEY="ココに先ほどメモしたAccessキーを入力"
+$ heroku config:set S3_SECRET_KEY="同様に、Secretキーを入力"
+$ heroku config:set S3_BUCKET="Bucketの名前を入力"
+$ heroku config:set S3_REGION="Regionの名前を入力"
+```
+
+설정이 무사히 끝났다면, 지금까지의 변경을 commit하고 Deploy할 준비가 되었습니다. 단 그전에, `.gitignore` 파일에 아래와 같이 내용을 추가해봅시다. 이것으로 이미지를 저장하는 디렉토리가 Git의 대상으로부터 제외되기 때문에, application과 관계없는 이미지 파일 등은 무시할 수있도록 됩니다.
+
+```
+// .gitignore
+
+# 업로드된 테스트 이미지를 무시한다.
+/public/upload
+```
+
+그렇다면 지금까지의 변경을 Topic branch에 commit 하고, master branch에 merge해봅시다.
+
+```
+$ rails test
+$ git add -A
+$ git commit -m "Add user microposts"
+$ git checkout master
+$ git merge user-microposts
+$ git push
+```
+
+다음으로, Heroku에 Deploy, Database의 Reset, sample data의 생성을 차례대로 실행해봅시다.
+
+```
+$ git push heroku
+$ heroku pg:reset DATABASE
+$ heroku run rails db:migrate
+$ heroku run rails db:seed
+```
+
+Heroku에는 이미 ImageMagick 이 설치되어있기 때문에, (설정이 제대로 되어있다면,) 이미지 리사이즈나 실제 배포환경에서의 이미지 업로드는 성공할 것 입니다.
+
+![](../image/Chapter13/image_upload_production_4th_ed.png)
+
+##### 연습
+
+1. 실제 배포환경에서 해상도가 높은 영상을 업로드하고, 적절하게 리사이즈되는지를 확인해봅시다. 직사각형의 이미지여도 적절하게 리사이즈됩니까?
+
+
+
+## 13.5 마지막으로
+
