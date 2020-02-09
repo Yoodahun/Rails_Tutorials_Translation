@@ -1,6 +1,6 @@
 # 제 13장 유저의 Micropost
 
-sample 어플리케이션의 코어 부분을 개발하기 위해, 지금까지 유저, 세션, Account 유효화, 패스워드 리셋 등 4개의 리소스에 대해 학습했습니다. 그리고 이것 들 중, "유저" 라고 하는 리소스만이 Active Record에 의해 데이터베이스 상의 테이블과 이어져있습니다. 모든 준비를 마친 지금, 유저가 짧은 메세지를 투고할 수 있도록 하기 위해 리소스 "*Micropost*" 를 추가해보겠습니다. [제 2장](Chapter2.md) 에서 간이적인 micropost 등록 form을 핸들링해보았습니다만, 이번 챕터에서는 [2.3](Chapter2.md#23-microposts-리소스) 에서 학습한 Micropost 데이터 모델을 생성하고, User 모델과 `has_many` , `belongs_to` 메소드를 사용하여 관련짓기를 해볼 것 입니다. 게다가 결과를 처리하고 표시하기 위해 필요한 Form과 해당 부품을 작성해보겠습니다. (13.4에서 이미지의 업로드도 구현해볼 것 입니다.) 제 14장에서는 micropost의 피드를 받기 위해 유저를 팔로우하는 개념을 도입하고, Twitter의 미니클론 버전을 완성시켜보겠습니다.
+sample 어플리케이션의 코어 부분을 개발하기 위해, 지금까지 유저, 세션, Account 유효화, 패스워드 리셋 등 4개의 리소스에 대해 학습했습니다. 그리고 이것 들 중, "유저" 라고 하는 리소스만이 Active Record에 의해 데이터베이스 상의 테이블과 이어져있습니다. 모든 준비를 마친 지금, 유저가 짧은 메세지를 투고할 수 있도록 하기 위해 리소스 "*Micropost*" 를 추가해보겠습니다. [제 2장](Chapter2.md) 에서 간이적인 micropost 등록 form을 핸들링해보았습니다만, 이번 챕터에서는 [2.3](Chapter2.md#23-microposts-리소스) 에서 학습한 Micropost 데이터 모델을 생성하고, User 모델과 `has_many` , `belongs_to` 메소드를 사용하여 관련짓기를 해볼 것 입니다. 게다가 결과를 처리하고 표시하기 위해 필요한 Form과 해당 부품을 작성해보겠습니다. ([13.4](#134-micropost의-image-첨부)에서 이미지의 업로드도 구현해볼 것 입니다.) 제 14장에서는 micropost의 피드를 받기 위해 유저를 팔로우하는 개념을 도입하고, Twitter의 미니클론 버전을 완성시켜보겠습니다.
 
 
 
@@ -20,11 +20,11 @@ Micropost 모델은 micropost의 내용을 저장할 `content` 속성과 특정 
 
 ![](../image/Chapter13/micropost_model_3rd_edition.png)
 
-위 모델에서는 micropost의 메세지 형태를 `String`이 아닌 `Text` 형태로 사용하고 있는 점을 주목해주세요. 이것은 어느정도의 양의 텍스트를 저장할 때 사용하는 형태입니다. `String` 형태로도 255문자까지는 저장할 수 있기 때문에, `String` 형으로도 13.1.2에서 구현하는 140문자 제한을 충족시킬 수는 있으나, `Text` 형이 좀 더 많은 내용의 micropost를 작성할 수 있습니다. 예를 들어 13.3.2 에서는 작성 form에서 String 용 텍스트 필드가 아닌, Text용 텍스트 에리어를 사용하고 있기 때문에, 보다 더 자연스러운 작성 Form을 표현할 수 있습니다. 또한 `Text` 형이 유연성을 가지고 있습니다. 예를들어 나중에 국제화로 인한 번역을 할 때, 언어별로 작성내용의 길이를 조절할 수도 있습니다. 게다가 `Text` 형을 사용하여도 실제 배포환경에서 [퍼포먼스의 차이는 없습니다.](http://www.postgresql.org/docs/9.1/static/datatype-character.html) 이러한 이유들로 단점보다는 장점이 많기 때문에, 이번에는 `Text` 형을 채용하겠습니다.
+위 모델에서는 micropost의 메세지 형태를 `String`이 아닌 `Text` 형태로 사용하고 있는 점을 주목해주세요. 이것은 어느정도의 양의 텍스트를 저장할 때 사용하는 형태입니다. `String` 형태로도 255문자까지는 저장할 수 있기 때문에, `String` 형으로도 [13.1.2](#1312-micropost의-validation)에서 구현하는 140문자 제한을 충족시킬 수는 있으나, `Text` 형이 좀 더 많은 내용의 micropost를 작성할 수 있습니다. 예를 들어 [13.3.2](#1332-micropost를-작성해보자) 에서는 작성 form에서 String 용 텍스트 필드가 아닌, Text용 텍스트 에리어를 사용하고 있기 때문에, 보다 더 자연스러운 작성 Form을 표현할 수 있습니다. 또한 `Text` 형이 유연성을 가지고 있습니다. 예를들어 나중에 국제화로 인한 번역을 할 때, 언어별로 작성내용의 길이를 조절할 수도 있습니다. 게다가 `Text` 형을 사용하여도 실제 배포환경에서 [퍼포먼스의 차이는 없습니다.](http://www.postgresql.org/docs/9.1/static/datatype-character.html) 이러한 이유들로 단점보다는 장점이 많기 때문에, 이번에는 `Text` 형을 채용하겠습니다.
 
 
 
-제 6장에서 User 모델을 생성했던 것과 마찬가지로, Rails의 `generate model` 커맨드를 사용하여 Micropost 모델을 생성해보겠습니다.
+[제 6장](Chapter6.md)에서 User 모델을 생성했던 것과 마찬가지로, Rails의 `generate model` 커맨드를 사용하여 Micropost 모델을 생성해보겠습니다.
 
 `$ rails generate model Micropost content:text user:references `
 
@@ -42,7 +42,7 @@ end
 
 
 
-User모델과의 제일 큰 차이점은 `references` 형을 이용하고 있다는 점 입니다. 이것을 이용하면, 자동적으로 인덱스와 외부 Key 참조를 하는 `user_id` 컬럼이 생성되어 User와 Microepost을 관련짓는 밑작업을 자동으로 해줍니다. User 모델과 마찬가지로, Micropost 모델의 마이그레이션 파일에도 `t.timestamp` 라고 하는 행 (매직컬럼)이 자동적으로 생성됩니다. 이것으로 [6.1.1](Chapter6.md#611-database) 에서 설명했듯이 `created_at` 과 `updated_at` 이라고하는 컬럼이 추가됩니다. 또한 `created_at` 컬럼은 13.1.4의 구현을 진행해나가면서 필요한 컬럼이기도 합니다.
+User모델과의 제일 큰 차이점은 `references` 형을 이용하고 있다는 점 입니다. 이것을 이용하면, 자동적으로 인덱스와 외부 Key 참조를 하는 `user_id` 컬럼이 생성되어 User와 Microepost을 관련짓는 밑작업을 자동으로 해줍니다. User 모델과 마찬가지로, Micropost 모델의 마이그레이션 파일에도 `t.timestamp` 라고 하는 행 (매직컬럼)이 자동적으로 생성됩니다. 이것으로 [6.1.1](Chapter6.md#611-database) 에서 설명했듯이 `created_at` 과 `updated_at` 이라고하는 컬럼이 추가됩니다. 또한 `created_at` 컬럼은 [13.1.4](#1314-micropost를-개선해보자)의 구현을 진행해나가면서 필요한 컬럼이기도 합니다.
 
 ```ruby
 # db/migrate/[timestamp]_create_microposts.rb
@@ -82,7 +82,7 @@ end
 
 ### 13.1.2 Micropost 의 Validation
 
-기본적인 모델은 작성했ㅅ브니다. 다음으로는 요구되는 제한사항을 구현하기 위해서, Validation을 추가해봅시다. Micropost 모델을 생성했을 때, micropost는 작성한 유저의 id(`user_id`) 를 데이터로 가지고 있게끔 하였습니다. 이것을 사용하여 관슴적으로 올바른 Active Record와의 *관계맺기* 를 구현해볼 것 입니다. 우선 `Micropost` 모델 만을 (테스트 주도 개발로) 동작해보도록 합시다.
+기본적인 모델은 작성했습니다. 다음으로는 요구되는 제한사항을 구현하기 위해서, Validation을 추가해봅시다. Micropost 모델을 생성했을 때, micropost는 작성한 유저의 id(`user_id`) 를 데이터로 가지고 있게끔 하였습니다. 이것을 사용하여 관습적으로 올바른 Active Record와의 *관계맺기* 를 구현해볼 것 입니다. 우선 `Micropost` 모델 만을 (테스트 주도 개발로) 동작해보도록 합시다.
 
 
 
@@ -111,7 +111,7 @@ class MicropostTest < ActiveSupport::TestCase
 end
 ```
 
-`setup` 메소드의 내부의 코멘트처럼, micropost를 생성하는 코드는 동작합니다만 관습적으로는 올바르지 않은 코드입니다. (13.1.3에서 수정합니다.)
+`setup` 메소드의 내부의 코멘트처럼, micropost를 생성하는 코드는 동작합니다만 관습적으로는 올바르지 않은 코드입니다. ([13.1.3](#1313-user-micropost의-관계맺기)에서 수정합니다.)
 
 
 
@@ -228,7 +228,7 @@ user.microposts.create!
 user.microposts.build
 ```
 
-이 메소드를 사용하면, 관계를 맺고 있는 유저를 *통해* micropost를 작성할 수 있습니다. (관습적으로 올바른 방법입니다.) 신규 micropost가 이 방법으로 생성되는 경우, `user_id` 는 자동적으로 올바른 값으로 설정됩니다. 이 방법을 사용하면, 예를 들어 아래와 같은
+이 메소드를 사용하면, 관계를 맺고 있는 유저를 *통해*  micropost를 작성할 수 있습니다. (관습적으로 올바른 방법입니다.) 신규 micropost가 이 방법으로 생성되는 경우, `user_id` 는 자동적으로 올바른 값으로 설정됩니다. 이 방법을 사용하면, 예를 들어 아래와 같은
 
 ```ruby
 @user = users(:michael)  
@@ -278,7 +278,7 @@ end
 올바르게 관계가 맺어졌다면, `setup` 메소드를 수정하고 관습적으로 올바른 micropost를 생성해봅시다.
 
 ```ruby
-test/models/micropost_test.rb
+# test/models/micropost_test.rb
 require 'test_helper'
 
 class MicropostTest < ActiveSupport::TestCase
@@ -310,7 +310,7 @@ end
 
 1. 데이터베이스에 있는 제일 첫 번째 유저를 변수  `user` 에 대입해주세요. 해당 user 오브젝트를 사용하여 `micropost = user.microposts.create(content: "Lorem ipsum")` 을 실행하면 어떠한 결과를 얻을 수 있습니까?
 2. 앞서 연습문제에서, 데이터베이스 상에 새로운 micropost가 추가되었을 것 입니다. `user.microposts.find(micropost.id)` 를 실행하여, 정말로 추가되었는지를 확인해봅시다. 또한 앞서 실행한 `micropost.id` 의 부분을 `micropost` 로 바꾸면 어떠한 결과가 생기나요?
-3. `user == micro post.user` 를 실행한 결과는 어떻게 되나요? 또한 `user.microposts.first == micropost` 를 실행한 결과는 어떻게 되나요? 각각 확인해봅시다.
+3. `user == micropost.user` 를 실행한 결과는 어떻게 되나요? 또한 `user.microposts.first == micropost` 를 실행한 결과는 어떻게 되나요? 각각 확인해봅시다.
 
 ### 13.1.4 Micropost를 개선해보자.
 
@@ -466,7 +466,7 @@ end
 
 ## 13.2 Micropost를 표시해보자
 
-Web 경유로 Micropost를 작성하는 방법은 현 시점에서는 없습니다만, (13.3.2에서부터 작성해봅니다.) Micropost를 표시하는 것과, 테스트하는 것은 가능합니다. 여기서는 Twitter와 같은 독립적인 micropost의 `index` 페이지를 만들지 않고, 아래와 같이 유저의  `show` 페이지에 직접 micropost를 표시시켜보겠습니다. 유저의 프로필에 micropost를 표시시키기 위해, 매우 간단한 ERB 템플렛을 처음으로 작성합니다. 그 다음으로는 [10.3.2](Chapter10.md#1032-sample-user) 의 sample 데이터 생성 태스크에 micropost의 sample을 추가하여 화면에 sample 데이터가 표시되는지를 확인해보겠습니다.
+Web 경유로 Micropost를 작성하는 방법은 현 시점에서는 없습니다만, ([13.3.2](#1332-micropost를-작성해보자)에서부터 작성해봅니다.) Micropost를 표시하는 것과, 테스트하는 것은 가능합니다. 여기서는 Twitter와 같은 독립적인 micropost의 `index` 페이지를 만들지 않고, 아래와 같이 유저의  `show` 페이지에 직접 micropost를 표시시켜보겠습니다. 유저의 프로필에 micropost를 표시시키기 위해, 매우 간단한 ERB 템플렛을 처음으로 작성합니다. 그 다음으로는 [10.3.2](Chapter10.md#1032-sample-user) 의 sample 데이터 생성 태스크에 micropost의 sample을 추가하여 화면에 sample 데이터가 표시되는지를 확인해보겠습니다.
 
 ![](../image/Chapter13/user_microposts_mockup_3rd_edition.png)
 
@@ -519,7 +519,7 @@ $ rails db:seed
 </li>
 ```
 
-여기서는 `time_ago_in_words` 라고 하는 헬퍼 메소드를 사용하고 있습니다. 이것은 메소드 이름이 나타내는 대로입니다만, "3분 전에 작성" 이라는 문자열을 출력합니다. 구체적인 효과에 대해서는 13.2.2에서 설명합니다. 또한 위 코드에서는 각 Micropost에 대하여 CSS의 id를 할당하고 있습니다.
+여기서는 `time_ago_in_words` 라고 하는 헬퍼 메소드를 사용하고 있습니다. 이것은 메소드 이름이 나타내는 대로입니다만, "3분 전에 작성" 이라는 문자열을 출력합니다. 구체적인 효과에 대해서는 [13.2.2](1322-micropost의-sample)에서 설명합니다. 또한 위 코드에서는 각 Micropost에 대하여 CSS의 id를 할당하고 있습니다.
 
 `<li id="micropost-<%= micropost.id %>">`
 
@@ -824,7 +824,7 @@ assert_match @user.microposts.count.to_s, response.body
 
 
 
-또한 `assert_select` 의 파라미터에는 ㄴ스트한 문법을 사용하고 있다는 점을 주목해주세요.
+또한 `assert_select` 의 파라미터에는 좀 더 상세한 문법을 사용하고 있다는 점을 주목해주세요.
 
 `assert_select 'h1>img.gravatar'`
 
@@ -894,7 +894,7 @@ class MicropostsControllerTest < ActionDispatch::IntegrationTest
 
   test "should redirect create when not logged in" do
     assert_no_difference 'Micropost.count' do
-      post microposts_path, params: { micropost: { content: "Lorem ipsum" } }
+      post micropost_path, params: { micropost: { content: "Lorem ipsum" } }
     end
     assert_redirected_to login_url
   end
@@ -985,11 +985,11 @@ end
 
 ### 13.3.2 Micropost를 작성해보자.
 
-[제 7장](Chapter7.md) 에서는 HTTP POST Request를 Users 컨트롤러의 `create` 액션으로 발행하는 HTML form을 생성하여 유저의 sign up 을 구현해보았습니다. Micropost 생성의 구현도 비슷합니다. 주된 차이점은 다른 micro post / new 페이지를 사용하는 대신에, Home 화면 (즉, Root path) 에 Form을 설치한다는 것입니다. 아래의 목업을 확인해주세요.
+[제 7장](Chapter7.md) 에서는 HTTP POST Request를 Users 컨트롤러의 `create` 액션으로 발행하는 HTML form을 생성하여 유저의 sign up 을 구현해보았습니다. Micropost 생성의 구현도 비슷합니다. 주된 차이점은 다른 micropost / new 페이지를 사용하는 대신에, Home 화면 (즉, Root path) 에 Form을 설치한다는 것입니다. 아래의 목업을 확인해주세요.
 
 ![](../image/Chapter13/home_page_with_micropost_form_mockup_bootstrap.png)
 
-마지막으로 Home 화면을 구현하였을 때, (5장) [Sign up now !] 버튼이 중아에 있었습니다. Micropost 생성 form은, 로그인되어있는 특정 유저만이 사용할 수 있는 기능이기 때문에, 이 섹션에서의 목표중 하나로는, 유저의 로그인 기능에 대하여 Home 화면에 표시를 변경하는 것입니다. 이것에 대해서는 아래 두 번째 코드에서 구현해봅니다.
+마지막으로 Home 화면을 구현하였을 때, (5장) [Sign up now !] 버튼이 중앙에 있었습니다. Micropost 생성 form은, 로그인되어있는 특정 유저만이 사용할 수 있는 기능이기 때문에, 이 섹션에서의 목표중 하나로는, 유저의 로그인 기능에 대하여 Home 화면에 표시를 변경하는 것입니다. 이것에 대해서는 아래 두 번째 코드에서 구현해봅니다.
 
 
 
@@ -1380,11 +1380,14 @@ app/views/microposts/_micropost.html.erb
         <%= render 'shared/micropost_form' %>
       </section>
     </aside>
+    <!-- new -->
     <div class="col-md-8">
       <h3>Micropost Feed</h3>
       <%= render 'shared/feed' %>
     </div>
+    <!-- new -->
   </div>
+
 <% else %>
   .
   .
@@ -1394,7 +1397,7 @@ app/views/microposts/_micropost.html.erb
 
 ![](../image/Chapter13/home_with_proto_feed_3rd_edition.png)
 
-현 시점에서는 새로운 micropost의 작성은 기대했던 대로 동작합니다. 그러나 조금 별거 아닐 수도 있습니다만, micropost의 투고가 _실패_ 하면, Home 페이지는 `@Feed_items` 인스턴스 변수를 기다리고 있기 때문에 현상에서는 Exception을 일으키게 되버리고 말 것 입니다. 제일 간단한 해결방법은 아래 코드와 같이 빈 배열을 넘겨두는 것 입니다. 아쉽게도 이 방법으로는 Page가 분할된 feed를 다시 보고싶어도 제대로 동작하지 않습니다. 움직이지 않는 이유를 알아보고 싶으신 분은, 실제로 구현하여 Pagination의 링크를 클릭해보세요.
+현 시점에서는 새로운 micropost의 작성은 기대했던 대로 동작합니다. 그러나 조금 별거 아닐 수도 있습니다만, micropost의 투고가 _실패_ 하면, Home 페이지는 `@feed_items` 인스턴스 변수를 기다리고 있기 때문에 현재 단계에서는 Exception을 일으키게 되버리고 말 것 입니다. 제일 간단한 해결방법은 아래 코드와 같이 빈 배열을 넘겨두는 것 입니다. 아쉽게도 이 방법으로는 Page가 분할된 feed를 다시 보고싶어도 제대로 동작하지 않습니다. 움직이지 않는 이유를 알아보고 싶으신 분은, 실제로 구현하여 Pagination의 링크를 클릭해보세요.
 
 ![](../image/Chapter13/micropost_created_3rd_edition.png)
 
@@ -1673,7 +1676,7 @@ end
 
 
 
-임지ㅣ 업로드 기능을 추가하기 위해서는 2개의 시각적인 요소가 필요합니다. 하나는 이미지를 업로드하기 위한 form, 또 다른 하나는 작성한 이미지 그 자체입니다. [Upload image] 버튼과 이미지가 첨부되어있는 micropost의 목업은 아래와 같습니다.
+이미지 업로드 기능을 추가하기 위해서는 2개의 시각적인 요소가 필요합니다. 하나는 이미지를 업로드하기 위한 form, 또 다른 하나는 작성한 이미지 그 자체입니다. [Upload image] 버튼과 이미지가 첨부되어있는 micropost의 목업은 아래와 같습니다.
 
 ![](../image/Chapter13/micropost_image_mockup.png)
 
@@ -1681,7 +1684,7 @@ end
 
 ### 13.4.1 기본적인 Image Upload
 
-업로드한 이미지를 다루거나 해당 이미지를 micropost 모델과 관계맺기를 하기 위해서, 이번에는 [CarrierWave](https://github.com/carrierwaveuploader/carrierwave) 라고 하는 Image Uploader를 사용해보겠습니다. 우선 _carrierwave gem_ 을 `Gemfile` 에 추가해봅시다. 이 때, 아래 코드에서는 _mini_magick gem_ 과 _fog gems_ 도 같이 포함되어있는 점을 주목해주세요. 이 gem들은 Resize하거나(13.4.3) 실제 배포환경에서 이미지를 업로드하기 위해 사용될 것 입니다. (13.4.4)
+업로드한 이미지를 다루거나 해당 이미지를 micropost 모델과 관계맺기를 하기 위해서, 이번에는 [CarrierWave](https://github.com/carrierwaveuploader/carrierwave) 라고 하는 Image Uploader를 사용해보겠습니다. 우선 _carrierwave gem_ 을 `Gemfile` 에 추가해봅시다. 이 때, 아래 코드에서는 _mini_magick gem_ 과 _fog gems_ 도 같이 포함되어있는 점을 주목해주세요. 이 gem들은 Resize하거나([13.4.3](#1343-image의-resize)) 실제 배포환경에서 이미지를 업로드하기 위해 사용될 것 입니다. ([13.4.4](#1344-실제-배포환경에서의-image-upload))
 
 ```ruby
 gem 'rails',                   '5.1.6'
@@ -1809,8 +1812,8 @@ end
 
 ##### 연습
 
-1. 이미지가 있는 micropost를 작성해봅시다. 혹시나 너무나도 큰 이미지를 첨부해버리진 않으셨나요? (걱정하지마세요. 이 문제는 다음 13.4.3에서 대응해봅니다.)
-2. 아래 코드의 템플릿을 참고하여, [13.4](#134-micropost의-image-첨부) 에서 구현한 이미지 업로더를 테스트해보세요. 테스트의 준비로서, 먼저 sample 이미지를 fixture를 추가해보세요. (커맨드 : `cp app/assets/images/rails.png test/fixtures/`) 아래 코드에서 추가한 테스트에서는, Home 페이지에 있는 파일 업로드와, 작성에 성공했을 때 임지ㅣ가 표시되는지를 체크합니다. 또한 테스트 내부에 있는 `fixture_file_upload` 라고 하는 메소드는, fixture에서 정의된 파일을 업로드하는 특별한 메소드입니다. _Hint_ : `picture` 속성이 유효한지 아닌지를 확인하기 위해서는, [11.3.3](Chapter11.md#1133-유효화와-테스트의-Refactoring) 에서 소개한 `assigns` 메소드를 사용해주세요. 이 메소드를 사용하면 작성 성공한 후, `create` 액션 내의 micropost에 액세스하게 됩니다.
+1. 이미지가 있는 micropost를 작성해봅시다. 혹시나 너무나도 큰 이미지를 첨부해버리진 않으셨나요? (걱정하지마세요. 이 문제는 다음 [13.4.3](#1343-image의- resize)에서 대응해봅니다.)
+2. 아래 코드의 템플릿을 참고하여, [13.4](#134-micropost의-image-첨부) 에서 구현한 이미지 업로더를 테스트해보세요. 테스트의 준비로서, 먼저 sample 이미지를 fixture를 추가해보세요. (커맨드 : `cp app/assets/images/rails.png test/fixtures/`) 아래 코드에서 추가한 테스트에서는, Home 페이지에 있는 파일 업로드와, 작성에 성공했을 때 이미지가 표시되는지를 체크합니다. 또한 테스트 내부에 있는 `fixture_file_upload` 라고 하는 메소드는, fixture에서 정의된 파일을 업로드하는 특별한 메소드입니다. _Hint_ : `picture` 속성이 유효한지 아닌지를 확인하기 위해서는, [11.3.3](Chapter11.md#1133-유효화와-테스트의-Refactoring) 에서 소개한 `assigns` 메소드를 사용해주세요. 이 메소드를 사용하면 작성 성공한 후, `create` 액션 내의 micropost에 액세스하게 됩니다.
 
 ```ruby
 # test/integration/microposts_interface_test.rb
@@ -1860,7 +1863,7 @@ end
 
 ### 13.4.2 Image의 검증
 
-[13.4.1](#1341-기본적인-image-upload) 의 업로더도 나쁘지는 않습니다만, 몇가지 눈에 띄는 결점이 있습니다. 예를 들어, 업로드된 임지ㅣ에 대한 제한이 없기 때문에, 만약 유저가 엄청 큰 파일을 업로드한다거나 무효한 파일을 업로드하면 문제가 발생하게 됩니다. 이런 결점을 보완하기 위해 이미지 용량이나 포맷에 대한 validation을 구현하고 서버용과 클라이언트 (브라우저) 용의 양쪽에 추가해봅시다.
+[13.4.1](#1341-기본적인-image-upload) 의 업로더도 나쁘지는 않습니다만, 몇가지 눈에 띄는 결점이 있습니다. 예를 들어, 업로드된 이미지에 대한 제한이 없기 때문에, 만약 유저가 엄청 큰 파일을 업로드한다거나 무효한 파일을 업로드하면 문제가 발생하게 됩니다. 이런 결점을 보완하기 위해 이미지 용량이나 포맷에 대한 validation을 구현하고 서버용과 클라이언트 (브라우저) 용의 양쪽에 추가해봅시다.
 
 
 
@@ -1974,7 +1977,7 @@ jQuery는 본 튜토리얼의 주제가 아니기 때문에 상세한 설명은 
 
 ![](../image/Chapter13/large_uploaded_image_4th_ed.png)
 
-이미지를 리사이즈하기 위해서는 이미지를 조작하는 프로그램이 필요합니다. 이번에는 [ImageMagick](http://www.imagemagick.org/) 라고 하는 프로그램을 사용하기 때문에, 이것을 개발환경에 설치해보겠습니다. (13.4.4에서도 설명합니다만, 실제 배포환경이 Heroku라면, 이미 배포환경에 ImageMagick을 쓸 수 있도록 준비되어져 있습니다.) Cloud IDE의 경우, 다음 커맨드로 이 프로그램을 설치할 수 있습니다.
+이미지를 리사이즈하기 위해서는 이미지를 조작하는 프로그램이 필요합니다. 이번에는 [ImageMagick](http://www.imagemagick.org/) 라고 하는 프로그램을 사용하기 때문에, 이것을 개발환경에 설치해보겠습니다. ([13.4.4](#1344-실제-배포환경에서의-image-upload)에서도 설명합니다만, 실제 배포환경이 Heroku라면, 이미 배포환경에 ImageMagick을 쓸 수 있도록 준비되어져 있습니다.) Cloud IDE의 경우, 다음 커맨드로 이 프로그램을 설치할 수 있습니다.
 
 ```
 sudo yum install -y ImageMagick
@@ -1994,13 +1997,13 @@ class PictureUploader < CarrierWave::Uploader::Base
 
   storage :file
 
-  # アップロードファイルの保存先ディレクトリは上書き可能
-  # 下記はデフォルトの保存先  
+  # 업로드파일의 저장폴더는 덮어쓰기 가능
+  # 아래는 기본 저장 폴더
   def store_dir
     "uploads/#{model.class.to_s.underscore}/#{mounted_as}/#{model.id}"
   end
 
-  # アップロード可能な拡張子のリスト
+  # 업로드가능한 확장자 리스트
   def extension_whitelist
     %w(jpg jpeg gif png)
   end
@@ -2061,7 +2064,7 @@ class PictureUploader < CarrierWave::Uploader::Base
 end
 ```
 
-위 코드에서 `production?` 이라고 하는 논리값을 리턴하는 메소드를 사용하고 있습니다. 이 메소드는 컬럼 7.1에서도 소개했스빈다만, 이것을 사용하면 환경별로 저장 디렉토리를 바꿀 수 있습니다.
+위 코드에서 `production?` 이라고 하는 논리값을 리턴하는 메소드를 사용하고 있습니다. 이 메소드는 컬럼 7.1에서도 소개했습니다만, 이것을 사용하면 환경별로 저장 디렉토리를 바꿀 수 있습니다.
 
 ```ruby
 if Rails.env.production?
@@ -2118,7 +2121,7 @@ $ heroku config:set S3_REGION="Regionの名前を入力"
 // .gitignore
 
 # 업로드된 테스트 이미지를 무시한다.
-/public/upload
+/public/uploads
 ```
 
 그렇다면 지금까지의 변경을 Topic branch에 commit 하고, master branch에 merge해봅시다.
