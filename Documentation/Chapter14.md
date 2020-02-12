@@ -188,11 +188,83 @@ end
 
 ### 14.1.3 Relationship의 Validation
 
+진행하기에 앞서, Relationship 모델의 검증을 추가하여 완전한 모델로 만들어놓겠습니다. 테스트 코드와 Application 코드는 생각보다 소박합니다. 단, User용의 Fixture 파일과 마찬가지로, 생성된 Relationship용의 fixture는 migration으로 제약이 걸려있는 unique 성질을 충족할 수 없습니다. 때문에 유저의 경우와 마찬가지로, 지금 시점에서는 생성된 Relationship용의 fixture 파일도 일단 비워놓읍시다.
 
 
 
+```ruby
+# Relationship 모델의 Validation을 테스트한다.
+# test/models/relationship_test.rb
+require 'test_helper'
 
+class RelationshipTest < ActiveSupport::TestCase
 
+  def setup
+    @relationship = Relationship.new(follower_id: users(:michael).id,
+                                     followed_id: users(:archer).id)
+  end
 
+  test "should be valid" do
+    assert @relationship.valid?
+  end
 
+  test "should require a follower_id" do
+    @relationship.follower_id = nil
+    assert_not @relationship.valid?
+  end
+
+  test "should require a followed_id" do
+    @relationship.followed_id = nil
+    assert_not @relationship.valid?
+  end
+end
+```
+
+```ruby
+# Relationship Model에 대해서 validation을 추가한다.
+# app/models/relationship.rb
+class Relationship < ApplicationRecord
+  belongs_to :follower, class_name: "User"
+  belongs_to :followed, class_name: "User"
+  validates :follower_id, presence: true
+  validates :followed_id, presence: true
+end
+```
+
+```
+# test/fixtures/relationships.yml
+
+# 빈 상태로 작성해놓습니다.
+```
+
+이 시점에서, 테스트는 통과할 것 입니다.
+
+`$ rails test`
+
+##### 연습
+
+1. 위 `relationship.rb` 의 코드의 validation을 코멘트아웃하여도 테스트가 성공하는지를 확인해봅시다. (이전의 Rails 버전에서는 이 validation이 필수였습니다만, Rails 5부터 필수가 아니게 되었습니다. 이번에는 follow기능의 구현을 우선적으로 합니다만, validation의 구현을 빼먹으실 수도 있으니, 유의하시고 꼭 구현해보세요.)
+
+### 14.1.4 Follow하고 있는 유저
+
+드디어 Relationship의 관계의 핵심인, `following` 과 `followers` 를 구현해보겠습니다. 이번에는 `has_many through` 를 사용합니다. 이전 모델링 Diagram과 마찬가지로, 1명의 유저에게는 여러가지의 "follow하는" 혹은 "following하는" 관계가 생깁니다. (이러한 관계성을 "다대다" 관계라고 부릅니다.) default의 `has_many through` 라고하는 관계에서는, Rails의 모델이름(단수명)에 대응하는 외부 키를 찾습니다. 즉 다음 코드에서는
+
+`has_many :followeds, through: :active_relationship`
+
+Rails은 "followeds" 라고 하는 심볼을 확인하고, 이것을 "followed" 라고하는 단수형으로 바꾸고 `relationship` 테이블의 `followed_id` 를 사용하여 대상 유저를 조회합니다. 그러나 [14.1.1](#1411-datamodel의-문제-및-해결책) 에서 지적한 바와 같이, `user.followeds` 라고 하는 이름은, 영어로서는 부적절합니다. 대신에 `user.following` 이라고 하는 이름을 사용합시다. 그러기 위해서는, Rails의 default기능을 덮어쓰기해야할 필요가 있습니다. 여기서는 `:source` 파라미터를 사용하여 "`following` 배열의 소스는 `followed_id` 의 집합이다" 라는 것을 명시적으로 Rails에서 선언합시다.
+
+``` ruby
+# app/models/user.rb
+class User < ApplicationRecord
+  has_many :microposts, dependent: :destroy
+  has_many :active_relationships, class_name:  "Relationship",
+                                  foreign_key: "follower_id",
+                                  dependent:   :destroy
+  has_many :following, through: :active_relationships, source: :followed
+  #new
+  .
+  .
+  .
+end
+```
 
