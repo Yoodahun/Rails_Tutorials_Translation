@@ -22,7 +22,7 @@
 
 
 
-## 14.1 Relationshop Model
+## 14.1 Relationship Model
 
 유저를 follow하는 기능을 구현하는 제일 첫 번째로는, Data modeling 을 구성하는 것 입니다. 단, 이것은 보기와는 달리 단순하진 않습니다. 간단하게 생각한다면 `has_many` (1대다) 의 관계를 이용하여 "1명의 유저가 여러명의 유저를 `has_many` 로 follow를 하고, 1명의 유저에게 여러명의 follower가 있는 것을 `has_many`  로 나타낸다" 라고 하는 방법도 구현가능할 것 같습니다. 그러나 방금 전 설명한 것과 같이 이 방법으로는 당장 뛰어넘기 어려운 벽과 마주하게 될 것 입니다. 이것을 해결하기 위해서 `has_many through` 에 대해서 나중에 설명해보겠습니다.
 
@@ -366,4 +366,202 @@ end
 2. 연습문제 1번의 각 커맨드 실행시의 결과를 확인하고, 실제로 어떠한 SQL이 실행되는지 확인해봅시다.
 
 ### 14.1.5 Follower
+
+Relationship이라는 퍼즐의 마지막 한 조각은, `user.followers` 메소드를 추가하는 것 입니다. 이것은 위의 `user.following` 메소드와는 반대되는 개념입니다. 이전 능동적관계를 이용하여 팔로우하고 있는 유저들을 조회할 때의 관계도를 보고 알아채신 분들도 있을 수 있습니다만, follower의 배열을 전개하기 위해 필요한 정보는, `relationships` 테이블에 이미 존재합니다. 즉, `active_relationships` 테이블을 재이용하는 것이 가능하다는 것입니다. 실제로 `follower_id` 와 `followed_id` 를 바꾸는 것만으로도 follower에 대해서도 follow하는 경우와 완전히 똑같은 방법으로 활용할 수 있습니다. 따라서 dataModel은 아래와 같이 됩니다.
+
+![](../image/Chapter14/user_has_many_followers_3rd_edition.png)
+
+위 모델링을 참고한 데이터 모델을 구현한 것은 아래와 같습니다. 이 구현은 이전, 능동적관계를 구현할 때의 코드와 매우 비슷합니다.
+
+ 受動的関係を使って`user.followers`を実装する`app/models/user.rb`
+
+```ruby
+# 수동적관계를 사용하여 user.followers 을 구현한다.
+# app/models/user.rb
+
+class User < ApplicationRecord
+  has_many :microposts, dependent: :destroy
+  has_many :active_relationships,  class_name:  "Relationship",
+                                   foreign_key: "follower_id",
+                                   dependent:   :destroy
+  #new
+  has_many :passive_relationships, class_name:  "Relationship",
+                                   foreign_key: "followed_id",
+                                   dependent:   :destroy
+  #new
+  has_many :following, through: :active_relationships,  source: :followed
+  has_many :followers, through: :passive_relationships, source: :follower   #new
+  .
+  .
+  .
+end
+```
+
+한 가지 위 코드에서 주의해야할 점으로는 다음과 같은 참조처 (`followers`) 를 지정하기 위해 `:source` key를 생략해도 된다는 점 입니다.
+
+`has_many :followers, through: :passive_relationships`
+
+이 것은 `:followers` 속성의 경우, Rails가 "followers" 를 단수형으로서 자동적으로 Foreign Key `follower_id` 를 찾아주기 때문입니다. 그럼에도 불구하고 `:source` key를 남겨놓은 이유는 `has_many :following` 과 비슷하다는 것을 강조하기 위해서입니다.
+
+다음으로 `followers.include?` 메소드를 사용하여 방금전 데이터모델을 테스트해봅시다. 테스트 코드는 아래와 같습니다. 여담으로, 아래 테스트 코드에서는 `following?` 과는 대조적인 `followed_by?` 메소드를 정의하여도 좋았습니다만, sample application에서 실제로 사용하는 경우는 없기 때문에 이 메소드는 생략하겠습니다.
+
+```ruby
+# followers에 대한 테스트.
+# test/models/user_test.rb
+require 'test_helper'
+
+class UserTest < ActiveSupport::TestCase
+  .
+  .
+  .
+  test "should follow and unfollow a user" do
+    michael  = users(:michael)
+    archer   = users(:archer)
+    assert_not michael.following?(archer)
+    michael.follow(archer)
+    assert michael.following?(archer)
+    assert archer.followers.include?(michael) #new
+    michael.unfollow(archer)
+    assert_not michael.following?(archer)
+  end
+end
+```
+
+위 코드에서는 이전 테스트코드에서 단 한줄을 추가해놓았습니다. 실제로는 많은 처리가 제대로 동작하지 않으면 통과할 수 없습니다. 즉, 위 `user.followers` 에 대한 테스트는, 구현내용에 영향을 받기 쉬운 테스트 코드라고 할 수 있겠습니다.
+
+이 시점에서 모든 테스트는 통과할 것 입니다.
+
+`$ rails test`
+
+##### 연습
+
+1. 콘솔을 실행시키고, 몇명정도의 유저가 제일 첫 번째 유저를 follow하는 상태를 만들어보세요. 제일 첫 유저를 `user` 라고 한다면, `user.followers.map(&:id)` 의 값은 어떻게 될까요?
+2. 위 1번 문제를 풀었다면, `user.followers.count` 의 실행결과가 방금전 follow한 유저의 수와 일치하는 것을 확인해봅시다.
+3. `user.followers.count` 를 실행한 결과, 출력되는 SQL문은 어떠한 내용인가요? 또한 `user.followers.to_a.count` 의 실행결과와 다른 부분은 있나요? _Hint_ : 만약, `user` 에 100만명의 follower가 있는 경우, 어떠한 차이가 있나요? 생각해봅시다.
+
+
+
+## 14.2 [Follow] 의 Web Interface
+
+[14.1](#141-relationship-model) 에서는, 조금 복잡한 DataModeling의 기술을 설명하였습니다. 이해하는데에 시간이 걸려도 괜찮습니다. 또한 지금까지 사용해왔던 여러 관계들을 이해하는데에 가장 좋은 방법으로는 실제로 Web Interface 에서 사용해보는 것 입니다.
+
+이번 챕터의 제일 처음에서는 Follow하고 있는 유저의 페이지표시의 flow에 대해 설명했었습니다. 이번 섹션에서는 목업으로 표현했던 것과 같이 Follow / Follow해제의 기본적인 Interface에 대해 구현합니다. 또한 follow하고 있는 유저와 follower에 대해 각각 표시용의 페이지를 생성합니다. 14.3에서는 유저의 Status Feed를 추가하여 sample application을 완성시켜봅니다.
+
+
+
+### 14.2.1 Follow의 Sample data
+
+13장과 마찬가지로, sample data를 자동생성하는 `rails db:seed` 를 사용하여 데이터베이스에 sample data를 등록할 수 있는 것은 역시나 편리합니다. 미리 sample data를 자동생성하도록 해놓는다면 Web페이지의 디자인에서부터 확인하는 것이 가능하여 backend기능의 구현은 나중으로 미룰 수도 있습니다.
+
+
+
+아래 코드에서는 Relationship의 sample data를 생성하기 위한 코드입니다. 여기서는 제일 첫 유저에게 유저 `3` 부터 유저 `51` 까지를 follow하도록 하고, 거기서 다시 유저 `4`부터 유저 `41` 까지 제일 첫 번째 유저를 follow하게 합니다. 코드를 보면 알 수 있듯, 이러한 설정을 자유롭게 할 수 있습니다. 이렇게 Relationship을 생성해놓는다면 application의 Interface를 개발하기에 충분합니다.
+
+```ruby
+# sample data에 following/follower 의 관계성을 추가한다. 
+# db/seeds.rb
+# User
+User.create!(name:  "Example User",
+             email: "example@railstutorial.org",
+             password:              "foobar",
+             password_confirmation: "foobar",
+             admin:     true,
+             activated: true,
+             activated_at: Time.zone.now)
+
+99.times do |n|
+  name  = Faker::Name.name
+  email = "example-#{n+1}@railstutorial.org"
+  password = "password"
+  User.create!(name:  name,
+               email: email,
+               password:              password,
+               password_confirmation: password,
+               activated: true,
+               activated_at: Time.zone.now)
+end
+
+# micropost
+users = User.order(:created_at).take(6)
+50.times do
+  content = Faker::Lorem.sentence(5)
+  users.each { |user| user.microposts.create!(content: content) }
+end
+
+# Relationship
+users = User.all
+user  = users.first
+following = users[2..50]
+followers = users[3..40]
+following.each { |followed| user.follow(followed) }
+followers.each { |follower| follower.follow(user) }
+```
+
+위 코드를 실행하여 데이터베이스 상의 sample data를 작성하기 위해, 언제나의 커맨드를 실행해봅시다.
+
+```
+$ rails db:migrate:reset
+$ rails db:seed
+```
+
+##### 연습
+
+1. 콘솔을 실행시키고 `user.first.followers.count` 의 결과가, `seed.rb` 에서의 기대하는 결과와 일치하는 지를 확인해봅시다.
+2. 위 연습문제와 마찬가지로, `user.first.follwing.count` 의 결과도 마찬가지인지 확인해봅시다.
+
+### 14.2.2 통계와 [Follow] Form
+
+이것으로  sample user에게 follow하고 있는 유저와, follower를 만들어주었습니다. 프로필 페이지와 home페이지를 갱신하여 이것을 반영해봅시다. 제일 처음으로는 프로필 페이지와 home 페이지에 follow하고있는 유저와 follower의 통계정보를 표시하기위한 partial을 생성해봅니다. 다음으로 follow용과 follow해제용의 form을 작성합니다. 그리고 follow하고 있는 유저의 리스트 ("following") 과 follower의 리스트("followers") 를 표시하는 전용 페이지를 만들어 볼 것 입니다.
+
+[14.1.1](#1411-datamodel의-문제-및-해결책) 에서 지적한 것 처럼, Twitter의 관섬에 따라 follow수의 단위에는 "following" 을 사용합니다. 예를 들어 "50 following" 과 같은 경우에 사용합니다. 이 단위는 목업 캡쳐의 일부에도 이미 사용되어있었습니다. 해당 부분을 확대하면 아래와 같이 표시됩니다.
+
+![](../image/Chapter14/stats_partial_mockup.png)
+
+위 통계정보에는 현재 유저가 follow하고 있는 사람수와 현재 follower의 사람수가 표시되고 있습니다. 각각의 표시는 link로 되어져 있으며 전용 표시페이지로 이동할 수 있습니다. [5장](Chapter5.md) 에서는 이러한 link는 더미 텍스트 `'#'` 를 사용하여 무효한 상태로 해놓았었습니다. 그러나 라우팅에 대해서 어느정도 지식이 늘었기 때문에 이번에는 구현해봅시다. 실제의 페이지 생성은 14.2.3까지 하진 않습니다만 라우팅은 지금 구현해볼 것 입니다. 이 코드에서는 `resources` _블록_ 의 안쪽에서 `:member` 메소드를 사용하고 있습니다. 이것은 처음 등장하는 메소드입니다만, 일단은 어떠한 동작을 하는 지 추측해보세요.
+
+
+
+```ruby
+# User컨트롤러에 following액션과 followers액션을 추가합니다.
+# config/routes.rb
+Rails.application.routes.draw do
+  root   'static_pages#home'
+  get    '/help',    to: 'static_pages#help'
+  get    '/about',   to: 'static_pages#about'
+  get    '/contact', to: 'static_pages#contact'
+  get    '/signup',  to: 'users#new'
+  get    '/login',   to: 'sessions#new'
+  post   '/login',   to: 'sessions#create'
+  delete '/logout',  to: 'sessions#destroy'
+  resources :users do #new
+    member do
+      get :following, :followers
+    end
+  end #new
+  resources :account_activations, only: [:edit]
+  resources :password_resets,     only: [:new, :create, :edit, :update]
+  resources :microposts,          only: [:create, :destroy]
+end
+```
+
+이 경우의 URL은 /user/1/following 이나 /users/1/followers 와 같이 되지 않을까하고 추측하고 계신분들도 있을것이라 생각합니다. 그리고 위 코드는 그야말로 그 추측대로 실행됩니다. 또한 어느쪽도 데이터를 _표시_ 하는 페이지이기 때문에, 적절한 HTTP 메소드는 GET 리퀘스트가 됩니다. 따라서 `get` 메소드를 사용하여 적절한 response를 리턴하도록 합니다. 여담으로, `member` 메소드를 사용하면 유저 id가 포함된 URL을 다룰 수 있도록 되빈다만, id를 지정하지 않고 모든 멤버를 표시하기 위해서는 다음과 같이 `collection ` 메소드를 사용합니다.
+
+```
+resources :users do
+  collection do
+    get :tigers
+  end
+end
+```
+
+이 코드에서는 /users/tigers 라고하는 URL에 반응합니다. (application에 있는 모든 tiger의 리스트를 표시합니다.)
+
+
+
+`routes.rb` 의 새로운 코드에 의해 생성되는 라우팅 테이블은 아래와 같습니다. 아래 표에서 나타내는 follow용과 follower용의 named root를 이후에 구현할 때 써보도록 합시다.
+
+| **HTTP Request** | **URL**            | **Action**  | **Named root**           |
+| ---------------- | ------------------ | ----------- | ------------------------ |
+| `GET`            | /users/1/following | `following` | `following_user_path(1)` |
+| `GET`            | /users/1/followers | `followers` | `followers_user_path(1)` |
 
