@@ -565,3 +565,290 @@ end
 | `GET`            | /users/1/following | `following` | `following_user_path(1)` |
 | `GET`            | /users/1/followers | `followers` | `followers_user_path(1)` |
 
+라우팅을 정의하였습니다. 통계정보의 partial을 구현할 준비가 되었습니다. 이 partial은 div태그 안에 2개의 링크를 포함하도록 합니다.
+
+```erb
+<!-- app/views/shared/_stats.html.erb -->
+<% @user ||= current_user %>
+<div class="stats">
+  <a href="<%= following_user_path(@user) %>">
+    <strong id="following" class="stat">
+      <%= @user.following.count %>
+    </strong>
+    following
+  </a>
+  <a href="<%= followers_user_path(@user) %>">
+    <strong id="followers" class="stat">
+      <%= @user.followers.count %>
+    </strong>
+    followers
+  </a>
+</div>
+```
+
+이 partial은 프로필페이지와 home 페이지의 양쪽다 표시되기 때문에 코드의 제일 첫 줄에서 현재의 유저를 조회합니다.
+
+```
+<% @user ||= current_user %>
+```
+
+이것은 컬럼8.1에서도 설명했듯, `@user` 가 `nil` 이 아닌 경우 (즉 프로필 페이지의 경우)에는 아무것도 하지 않고, `nil` 의 경우 (즉, home페이지의 경우)에는 `@user` 에 `current_user` 를 대입하는 코드입니다. 이 후 follow하고 있는 유저의 숫자를 다음과 같이 관계를 이용하여 계산합니다.
+
+`@user.following.count`
+
+이것은 follower에 대해서도 마찬가지입니다.
+
+`@user.followers.count`
+
+위 코드에서는, 13장에서 micropost의 게시글 수를 표시한 방법과 같습니다. 그때는 다음과 같이 작성하였습니다.
+
+`@user.microposts.count`
+
+또한 이번에도 이전과 마찬가지로 Rails는 고속화를 위해 데이터베이스 내부에서 합계를 계산하여 리턴합니다.
+
+그럼 일부 요소에 대해 다음과 같이 CSS id를 지정하고 있는 것을 확인해주세요.
+
+```html
+<strong id="following" class="stat">
+...
+</strong>
+```
+
+이렇게 해놓는다면 14.2.5에서 배울 Ajax를 구현할 때에 편리합니다. 거기서는 unique한 id를 지정하여 페이지 요소에 접근합니다.
+
+
+
+이것으로 통계정보 partial이 완성되었습니다. Home페이지에 이 통계정보를 표시하기 위해서는 아래처럼 해주면 간단합니다.
+
+```erb
+<!-- app/views/static_pages/home.html.erb -->
+<% if logged_in? %>
+  <div class="row">
+    <aside class="col-md-4">
+      <section class="user_info">
+        <%= render 'shared/user_info' %>
+      </section> <!-- new -->
+      <section class="stats">
+        <%= render 'shared/stats' %>
+      </section><!-- new -->
+      <section class="micropost_form">
+        <%= render 'shared/micropost_form' %>
+      </section>
+    </aside>
+    <div class="col-md-8">
+      <h3>Micropost Feed</h3>
+      <%= render 'shared/feed' %>
+    </div>
+  </div>
+<% else %>
+  .
+  .
+  .
+<% end %>
+```
+
+위 통계정보에 스타일을 부여하기 위해서는 아래와 같은 SCSS를 추가해봅시다. (또한, 이 SCSS에는 이번 챕터에서 사용하는 모든 스타일이 포함되어 있습니다.) 변경한 결과, Home페이지는 아래 캡쳐와 같이 됩니다.
+
+```scss
+app/assets/stylesheets/custom.scss
+.
+.
+.
+/* sidebar */
+.
+.
+.
+.gravatar {
+  float: left;
+  margin-right: 10px;
+}
+
+.gravatar_edit {
+  margin-top: 15px;
+}
+
+// new
+.stats {
+  overflow: auto;
+  margin-top: 0;
+  padding: 0;
+  a {
+    float: left;
+    padding: 0 10px;
+    border-left: 1px solid $gray-lighter;
+    color: gray;
+    &:first-child {
+      padding-left: 0;
+      border: 0;
+    }
+    &:hover {
+      text-decoration: none;
+      color: blue;
+    }
+  }
+  strong {
+    display: block;
+  }
+}
+// new
+.user_avatars {
+  overflow: auto;
+  margin-top: 10px;
+  .gravatar {
+    margin: 1px 1px;
+  }
+  a {
+    padding: 0;
+  }
+}
+
+.users.follow {
+  padding: 0;
+}
+
+/* forms */
+.
+.
+.
+```
+
+![](../image/Chapter14/home_page_follow_stats_3rd_edition.png)
+
+이 다음 바로 프로필 페이지에도 통계정보 partial을 출력해볼 것 입니다. 지금 당장 아래 코드와 같이 [Follow] / [Unfollow] 버튼용의 partial도 만들어 놓읍시다.
+
+```erb
+<!-- app/views/users/_follow_form.html.erb -->
+<% unless current_user?(@user) %>
+  <div id="follow_form">
+  <% if current_user.following?(@user) %>
+    <%= render 'unfollow' %>
+  <% else %>
+    <%= render 'follow' %>
+  <% end %>
+  </div>
+<% end %>
+```
+
+이 코드는 `follow` 와 `unfollow` 의 partial 입니다. partial에서는 Relationship 리소스용의 새로운 라우팅이 필요합니다. 이전 13장에서의 Microposts 리소스를 참고하여서 작성해봅시다.
+
+```ruby
+config/routes.rb
+Rails.application.routes.draw do
+  root                'static_pages#home'
+  get    'help'    => 'static_pages#help'
+  get    'about'   => 'static_pages#about'
+  get    'contact' => 'static_pages#contact'
+  get    'signup'  => 'users#new'
+  get    'login'   => 'sessions#new'
+  post   'login'   => 'sessions#create'
+  delete 'logout'  => 'sessions#destroy'
+  resources :users do
+    member do
+      get :following, :followers
+    end
+  end
+  resources :account_activations, only: [:edit]
+  resources :password_resets,     only: [:new, :create, :edit, :update]
+  resources :microposts,          only: [:create, :destroy]
+  resources :relationships,       only: [:create, :destroy] #new
+end
+```
+
+Follow와 Unfollow용의 partial 자체는 아래 코드와 같습니다.
+
+```erb
+<!-- 유저를 follow하는 form
+app/views/users/_follow.html.erb -->
+<%= form_for(current_user.active_relationships.build) do |f| %>
+  <div><%= hidden_field_tag :followed_id, @user.id %></div>
+  <%= f.submit "Follow", class: "btn btn-primary" %>
+<% end %>
+```
+
+```erb
+<!-- 유저를 Unfollow하는 form
+app/views/users/_unfollow.html.erb -->
+<%= form_for(current_user.active_relationships.find_by(followed_id: @user.id),
+             html: { method: :delete }) do |f| %>
+  <%= f.submit "Unfollow", class: "btn" %>
+<% end %>
+```
+
+이 두 개의 form에서는 양쪽 다 `form_for` 를 사용하여 Relationship 모델 오브젝트를 조작하고 있습니다. 이 2개의 form의 큰 차이점으로는, 위 첫 번째 코드에서는 _새로운_ Relationship을 생성하는 것에 반해, 위 두 번째 코드에서는 기존의 Relationship을 찾아내는 점입니다. 즉, 전자는 POST 리퀘스트를 Relationship 컨트롤러에 보내어 Relationship을 `create`(작성) 하고, 후자는 DELETE 리퀘스트를 송신하여 Relationship을 `destory` (삭제) 하는 점 입니다. (이 액션들은 14.2.4에서 구현해봅니다.) 마지막으로는 이 follow / unfollow form에는 버튼밖에 없는 것을 이해하셨으리라 생각합니다. 그러나 그렇다고하여도 이 form은 `followed_id` 를 컨트롤러에 송신할 필요가 있습니다. 이것에 대응하기 위해 위 첫 번째 코드에서의  `hidden_field_tag` 메소드를 사용합니다. 이 메소드는 다음의 form html을 생성합니다.
+
+```html
+<input id="followed_id" name="followed_id" type="hidden" value="3" />
+```
+
+[12.3](Chapter12.md#123-패스워드를-재설정해보자)에서 확인했듯이, 숨겨진 field의 input태그를 사용하는 것으로, 브라우저 상에서는 표시하지않고 적절한 정보를 포함시킬 수 있습니다.
+
+이 기술을 사용하여 follow용의 form을 partial로써 프로필 화면에 표시한 결과는 아래와 같습니다. 프로필 화면에 [Follow] 버튼와 [Unfollow] 버튼이 각각 표시되는 것을 확인해봅시다.
+
+```erb
+<!-- app/views/users/show.html.erb -->
+<% provide(:title, @user.name) %>
+<div class="row">
+  <aside class="col-md-4">
+    <section class="user_info">
+      <h1>
+        <%= gravatar_for @user %>
+        <%= @user.name %>
+      </h1>
+    </section> <!-- new -->
+    <section class="stats">
+      <%= render 'shared/stats' %>
+    </section> <!-- new -->
+  </aside>
+  <div class="col-md-8">
+    <%= render 'follow_form' if logged_in? %> <!-- new -->
+    <% if @user.microposts.any? %>
+      <h3>Microposts (<%= @user.microposts.count %>)</h3>
+      <ol class="microposts">
+        <%= render @microposts %>
+      </ol>
+      <%= will_paginate @microposts %>
+    <% end %>
+  </div>
+</div>
+```
+
+![](../image/Chapter14/profile_follow_button_3rd_edition.png)
+
+![](../image/Chapter14/profile_unfollow_button_3rd_edition.png)
+
+이 버튼은 바로 동작할 수 있도록 할 것 입니다. 사실은 이 버튼의 구현은 2가지 방법이 있습니다. 하나는 표준적인 방법 (14.2.4), 다른 하나는 Ajax를 이용한 방법(14.2.5) 입니다. 일단 그 전에 follow하고 있는 유저와 follower를 표시하는 페이지를 각각 작성하여 HTML Interface를 완성시켜봅시다.
+
+##### 연습
+
+1. 브라우저에서 /user/2에 접속하여, follow 버튼이 표시되고 있는 것을 확인해봅시다. 마찬가지로  /users/5 에서는 [Unfollow] 버튼이 표시되고 있을 것 입니다. 그럼 /users/1 에 접속해보면 어떠한 결과가 표시되나요?
+2. 브라우저에서 home페이지와 프로필 페이지를 표시하여보고 통계정보가 올바르게 표시되는지를 확인해봅시다.
+3. Home 페이지에 표시되는 통계정보에 대해 테스트를 작성해봅시다. *Hint* : 이전 13장에서 작성한 테스트 코드를에 추가해보세요. 마찬가지로  프로필페이지에도 테스트를 추가해보세요.
+
+```ruby
+# test/integration/users_profile_test.rb
+require 'test_helper'
+
+class UsersProfileTest < ActionDispatch::IntegrationTest
+  include ApplicationHelper
+
+  def setup
+    @user = users(:michael)
+  end
+
+  test "profile display" do
+    get user_path(@user)
+    assert_template 'users/show'
+    assert_select 'title', full_title(@user.name)
+    assert_select 'h1', text: @user.name
+    assert_select 'h1>img.gravatar'
+    assert_match @user.microposts.count.to_s, response.body
+    assert_select 'div.pagination'
+    @user.microposts.paginate(page: 1).each do |micropost|
+      assert_match micropost.content, response.body
+    end
+  end
+end
+```
+
+### 14.2.3 [Following] 과 [Unfollowing] 페이지
+
