@@ -852,3 +852,224 @@ end
 
 ### 14.2.3 [Following] 과 [Unfollowing] 페이지
 
+Follow하고 있는 유저를 푯하는 페이지와, Follwer를 표시하는 페이지는, 어느쪽이던 프로필 페이지와 유저 리스트 페이지 [10.3.1](Chapter10.md#1031-유저-리스트를-표시해보자) 를 합쳐놓은 것 같은 페이지라는 점에서, 해당 페이지들과 꽤나 닮아 있습니다. 어느쪽이던 follow의 통계정보 등의 유저 정보를 표시하는 사이드바와, 유저의 리스트가 있습니다. 게다가 사이드바에는 작은 유저 프로필 이미지의 링크를 추가할 예정입니다. 이 요구사항과 맞는 목업은 아래 그림과 같습니다. (Follow하고 있는 유저용, Follower 유저용)
+
+![](../image/Chapter14/following_mockup_bootstrap.png)
+
+![](../image/Chapter14/followers_mockup_bootstrap.png)
+
+여기서의 제일 첫 작업으로는, Follow하고있는 유저의 링크와 Follower 의 링크를 동작하도록 하는 것 입니다. Twitter를 흉내내어 어느쪽의 페이지에서라도 유저의 로그인을 요구하게끔 합니다. 거기서 이전 액세스 제어와 마찬가지로 우선은 테스트 코드부터 작성해봅시다. 이번에 사용하는 테스트 코드는 아래와 같습니다. 또한 아래 코드에서는 이전에 표로 보여드린 named root를 사용하고 있는 것을 주의해주세요.
+
+```ruby
+# test/controllers/users_controller_test.rb
+require 'test_helper'
+
+class UsersControllerTest < ActionDispatch::IntegrationTest
+
+  def setup
+    @user = users(:michael)
+    @other_user = users(:archer)
+  end
+  .
+  .
+  .
+  test "should redirect following when not logged in" do
+    get following_user_path(@user)
+    assert_redirected_to login_url
+  end
+
+  test "should redirect followers when not logged in" do
+    get followers_user_path(@user)
+    assert_redirected_to login_url
+  end
+end
+```
+
+이 구현에는 하나의 Tricky한 부분이 있습니다. User 컨트롤러에 2개의 새로운 액션을 추가할 필요가 있는 것 입니다. 이것은 이전에 `routes.rb` 에서 정의한 2개의 새로운 라우팅에 기반한 것이며 이것들은 각각 `following` 및 `followers` 라고 부를 필요가 있습니다. 각각의 액션에서는 title를 정의하고 유저를 검색하여 `@user.following` 혹은 `@user.followers` 로부터 데이터를 꺼내어 pagination을 구현하여페이지를 출력할 필요가 있습니다. 생성한 코드는 아래와 같습니다.
+
+```ruby
+# app/controllers/users_controller.rb
+class UsersController < ApplicationController
+  before_action :logged_in_user, only: [:index, :edit, :update, :destroy,
+                                        :following, :followers]
+  .
+  .
+  .
+  def following
+    @title = "Following"
+    @user  = User.find(params[:id])
+    @users = @user.following.paginate(page: params[:page])
+    render 'show_follow'
+  end
+
+  def followers
+    @title = "Followers"
+    @user  = User.find(params[:id])
+    @users = @user.followers.paginate(page: params[:page])
+    render 'show_follow'
+  end
+
+  private
+  .
+  .
+  .
+end
+```
+
+본 튜토리얼에서 많은 부분에서 보셨겠지만 Rails는 관습에 따라 액션에 대응하는 view를 암묵적으로 호출합니다. 예를 들어 `show` 액션의 마지막에 `show.html.erb` 를 호출하는, 그러한 구현입니다. 한 편, 위 코드에서의 어떠한 액션도 `render` 를 명시적으로 호출하여 `show_follow` 라고하는 같은 view를 호출하고 있습니다. 따라서 생성이 필요한 view는 이 것 하나 뿐입니다. render에서 호출하고 있는 view가 같은 이유는, 이 ERB는 어느쪽의 경우도 거의 같으며 아래 코드에서 양쪽의 경우를 모두 대응하고 있기 때문입니다.
+
+```erb
+<!-- app/views/users/show_follow.html.erb -->
+<!-- follow하고 있는 유저와 follower 유저 양쪽 다 표시하는 show_follow view file -->
+<% provide(:title, @title) %>
+<div class="row">
+  <aside class="col-md-4">
+    <section class="user_info">
+      <%= gravatar_for @user %>
+      <h1><%= @user.name %></h1>
+      <span><%= link_to "view my profile", @user %></span>
+      <span><b>Microposts:</b> <%= @user.microposts.count %></span>
+    </section>
+    <section class="stats">
+      <%= render 'shared/stats' %>
+      <% if @users.any? %>
+        <div class="user_avatars">
+          <% @users.each do |user| %>
+            <%= link_to gravatar_for(user, size: 30), user %>
+          <% end %>
+        </div>
+      <% end %>
+    </section>
+  </aside>
+  <div class="col-md-8">
+    <h3><%= @title %></h3>
+    <% if @users.any? %>
+      <ul class="users follow">
+        <%= render @users %>
+      </ul>
+      <%= will_paginate %>
+    <% end %>
+  </div>
+</div>
+```
+
+`users_controller.rb` 에서의 액션은 2개의 방법으로 위 view파일을 호출하고 있습니다. "following" 를 통하여 묘시한 view는 아래 첫 번째 캡쳐에, "followers" 를 통하여 묘사한 view는 아래 2번째 캡쳐입니다. 이 때 위 코드에서는 현재의 유저(currentUser)를 한 번도 사용하지 않는 점에 주목해주세요. 따라서 다른 유저의 follower 리스트 페이지도 제대로 동작합니다.
+
+![](../image/Chapter14/user_following_3rd_edition.png)
+
+![](../image/Chapter14/user_followers_3rd_edition.png)
+
+![](../image/Chapter14/diferent_user_followers_3rd_edition.png)
+
+`user_controller.rb` 에서 이미 before필터를 구현했기 때문에, 지금 시점에서 테스트는 통과할 것 입니다.
+
+`$ rails test`
+
+다음으로 `show_follow` 의 묘사결과를 확인하기 위해 통합테스트를 작성해보겠습니다. 단, 이번의 통합테스트는 기본적으로 테스트를 하는 것에만 의의를 두고, 망라적인 테스트는 하고있지 않습니다. 이것은 [5.3.4](Chapter5.md#534-링크의-테스트) 에서도 언급했던 것 처럼, HTML구조를 망라적으로 체크하는 테스트는 제대로 동작하지 않을 가능성이 높으며, 생산성이 거꾸로 떨어질 수도 있기 때문입니다. 따라서 이번에는 올바른 숫자가 표시되는지와, 올바른 URL 이 표시되는지 2가지의 테스트만 작성해보겠습니다.
+
+언제나 처럼 통합테스트를 생성해봅시다.
+
+```
+$ rails generate integration_test following
+      invoke  test_unit
+      create    test/integration/following_test.rb
+```
+
+이번에는 테스트 데이터를 몇가지 준비해봅시다. Relation용의 fixture에 데이터를 추가해봅시다. [13.2.3](Chapter13.md#1323-profile-화면이-micropost를-테스트해보자) 에서는 아래와 같이 작성하는 것으로
+
+```
+orange:
+  content: "I just ate an orange!"
+  created_at: <%= 10.minutes.ago %>
+  user: michael
+```
+
+유저와 micropost를 관계를 맺게할 수 있었던 것을 떠올려주세요. 위 코드에서는 유저 이름을 다음과 같이 작성하였습니다만,
+
+`user: michael`
+
+이것은 내부에서는 아래와 같은 코드로 자동적으로 변환이 됩니다.
+
+`user_id: 1`
+
+이 예를 참고하여 Relationship용의 fixture의 테스트데이터를 추가하면 아래와 같이 됩니다.
+
+```yml
+# test/fixtures/relationships.yml
+one:
+  follower: michael
+  followed: lana
+
+two:
+  follower: michael
+  followed: malory
+
+three:
+  follower: lana
+  followed: michael
+
+four:
+  follower: archer
+  followed: michael
+```
+
+위 fixture에서는 앞서 2개의 데이터에서는 Michael이 Lana와 Malory를 follow하고 있고, 뒤 2개의 데이터에서는 Lana와 Archer가 Michael을 follow하고 있습니다. 이제는 올바른 갯수인지를 확인하기 위해 `assert_match` 메소드를 사용하여 프로필 화면의 micropost 수를 테스트합니다. 게다가 올바른 URL인지 아닌지를 테스트하는 코드를 추가하면 아래와 같이 됩니다.
+
+```ruby
+# test/integration/following_test.rb
+require 'test_helper'
+
+class FollowingTest < ActionDispatch::IntegrationTest
+
+  def setup
+    @user = users(:michael)
+    log_in_as(@user)
+  end
+
+  test "following page" do
+    get following_user_path(@user)
+    assert_not @user.following.empty?
+    assert_match @user.following.count.to_s, response.body
+    @user.following.each do |user|
+      assert_select "a[href=?]", user_path(user)
+    end
+  end
+
+  test "followers page" do
+    get followers_user_path(@user)
+    assert_not @user.followers.empty?
+    assert_match @user.followers.count.to_s, response.body
+    @user.followers.each do |user|
+      assert_select "a[href=?]", user_path(user)
+    end
+  end
+end
+```
+
+또한, 위 코드에서는 아래와 같은 코드를 추가해있습니다.
+
+```
+assert_not @user.following.empty?
+```
+
+이 코드는 다음의 코드를 확인해보기 위한 코드로서,
+
+```
+@user.following.each do |user|
+  assert_select "a[href=?]", user_path(user)
+end
+```
+
+[무의미한 테스트](https://en.wikipedia.org/wiki/Vacuous_truth) 가 아니라는 점을 주의해주세요. (`followers` 에 대해서도 마찬가지입니다.) 즉, 만약 `@user.following.empty?` 의 결과가 true라면, `assert_select` 내부의 코드가 실행되지 않기 때문에, 그 경우에 있어서 테스트가 적절한 Security model을 확인할 수 없는 것을 방지하기 위함입니다.(존재여부를 확인하지 않고, 바로 링크를 확인하면 제대로 된 테스트라고 할 수 없기 때문.)
+
+위 변경을 추가한 테스트는 통과할 것 입니다.
+
+`$ rails test`
+
+##### 연습
+
+1. 브라우저에서 /users/1/followers 와 /users/1/following 으로 접속하여 각각 적절한 표시를 하는 지를 확인해봅시다. 사이드바에 있는 이미지는 링크로 제대로 기능하고 있습니까?
+2. 위 코드에서 `assesrt_select` 에 관련한 코드를 코멘트아웃하고 테스트가 제대로 실패하는지 확ㅇ니해봅시다.
+
+### 14.2.4 [Follow] 버튼 (기본편)
+
