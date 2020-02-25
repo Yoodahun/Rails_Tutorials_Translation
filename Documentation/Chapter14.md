@@ -1073,3 +1073,84 @@ end
 
 ### 14.2.4 [Follow] 버튼 (기본편)
 
+view가 어느정도 준비되었습니다. 드디어 [Follow] / [Unfollow] 버튼을 동작시켜봅시다. follow와 unfollow는 각각 Relationship의 생성과 삭제에 대응하고 있기 때문에 우선 Relationships 컨트롤러가 필요합니다. 늘 그랬듯, 컨트롤러를 생성해봅시다.
+
+```
+$ rails generate controller Relationships
+```
+
+추후 설명할 예정입니다만 Relationship 컨트롤러의 액션에서 액세스 제어를 하도록 하는 것은 어렵지는 않습니다. 그러나 이전에 액세스 제어때와의 마찬가지로 일단 테스트 코트를 작성하고, 그것을 통과할만한 구현을 하는 것으로 Security model의 확립을 한다고 할 수 있습니다. 이번에는 우선 컨트롤러의 액션에 액세스할 때, 로그인한 상태의 유저인지를 체크합니다. 만일 로그인해있지 않다면 로그인 페이지로 redirect하는 것으로 Relationship의 카운트가 변하지 않은 것을 확인해봅시다.
+
+```ruby
+# test/controllers/relationships_controller_test.rb
+require 'test_helper'
+
+class RelationshipsControllerTest < ActionDispatch::IntegrationTest
+
+  test "create should require logged-in user" do
+    assert_no_difference 'Relationship.count' do
+      post relationships_path
+    end
+    assert_redirected_to login_url
+  end
+
+  test "destroy should require logged-in user" do
+    assert_no_difference 'Relationship.count' do
+      delete relationship_path(relationships(:one))
+    end
+    assert_redirected_to login_url
+  end
+end
+```
+
+다음으로, 위 테스트 코드를 통과시키기 위해 `logged_in_user` 필터를 Relationship 컨트롤러의 액션에 대해 추가해봅시다.
+
+```ruby
+# app/controllers/relationships_controller.rb
+class RelationshipsController < ApplicationController
+  before_action :logged_in_user
+
+  def create
+  end
+
+  def destroy
+  end
+end
+```
+
+[Follow] / [Unfollow] 버튼을 동작시키기 위해서는 Form에서 송신되는 파라미터를 사용하여 `followed_id` 에 대응하는 유저를 찾을 필요가 있습니다. 그 후에 찾은 유저에 대하여 적절히 `follow` / `unfollow` 메소드를 사용합니다. 모든 구현결과는 아래와 같습니다.
+
+```ruby
+# app/controllers/relationships_controller.rb
+class RelationshipsController < ApplicationController
+  before_action :logged_in_user
+
+  def create
+    user = User.find(params[:followed_id])
+    current_user.follow(user)
+    redirect_to user
+  end
+
+  def destroy
+    user = Relationship.find(params[:id]).followed
+    current_user.unfollow(user)
+    redirect_to user
+  end
+end
+```
+
+위 코드를 보면, 앞서 Security 문제가 사실은 그리 큰 문제는 아니란 것을 이해할 수 있을 것이라 생각합니다. 만일 로그인하고 있지 않은 유저가 (`curl` 등의 CommandLine tool등을 사용하여) 위 액션에 직접 액세스하려고 한다면, `current_user` 는 `nil` 이 되고, 어느 쪽의 메소드라도 2번째 행에서 Exception을 발생시킬 것 입니다. 에러이긴 하지만 Application이나 데이터에는 영향이 생기지 않습니다. 이대로도 큰 문제는 없습니다만, 역시 이러한 Exception에 기대지 않는 것이 좋기에 위에서는 조금 번거롭지만 Security의 확인을 위한 Layer를 추가해놓은 것 입니다.
+
+이것으로 Follow / Unfollow의 기능이 완성되었스빈다. 어느 유저라도 다른 유저를 Follow하거나, Unfollow할 수 있습니다. 브라우저 상에서 버튼을 클릭하여 확인해보세요. 동작을 검증하는 통합테스트는 14.2.6에서 구현해볼 것 입니다. 일단 2번쨰의 유저를 Follow하기 전의 상태는 아래 첫 번째 캡쳐, Follow한 결과는 아래 두 번째 캡쳐입니다.
+
+![](../image/Chapter14/unfollowed_user.png)
+
+![](../image/Chapter14/followed_user.png)
+
+##### 연습
+
+1. 브라우저 상에서 /users/2 를 열고, [Follow] 와 [Unfollow] 를 실행시켜보세요. 제대로 동작하나요?
+2. 1번 문제를 끝냈다면, Rails Server log를 확인해봅시다. Follow / Unfollow 를 실행하였을 때, 각각 어떠한 Query가 동작하나요?
+
+### 14.2.5 [Follow] 버튼 (Ajax)
+
