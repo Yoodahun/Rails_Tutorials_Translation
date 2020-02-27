@@ -1154,3 +1154,143 @@ end
 
 ### 14.2.5 [Follow] 버튼 (Ajax)
 
+Follow 관련의 기능의 구현은 위와 같이 완료하였습니다만, Status feed를 구현하기 전에 한 가지 더 기능을 구현해보고자합니다. [14.2.4](#1424-follow-버튼-기본편) 에서는 Relationships 컨트롤러의 `create` 액션과 `destory` 액션을 단순히 원래의 프로필 페이지로 redirect시키기만 했습니다. 즉 유저는 프로필 페이지를 제일 처음에 표시하고, 거기서부터 유저를 follow하고, 그 다음 바로 원래의 페이지로 되돌아가는 흐름입니다. 유저를 follow한 다음, 정말로 해당 페이지로부터 이동하여 원래 페이지로 돌아가지 않으면 안되는 것일까요? 이 점에 대해 다시 한 번 생각하고자 합니다.
+
+이것은 _Ajax_ 라는 것을 사용하여 해결해봅니다. Ajax를 사용하면 Web페이지로부터 서버로 "비동기" 로, 페이지를 이동하지 않아도 Request를 송신할 수 있게 됩니다. Web form에 Ajax를 채용하는 것은 지금은 당연한 것이 되어가고 있기 때문에, Rails에서도 Ajax를 간단하게 구현할 수 있도록 되어있습니다. Follow용과 Unfollow용의 partial에 ajax를 적용해보는 것은 간단합니다. 다음과 같이 코드가 있다고 하면,
+
+`form_for`
+
+위 코드를 다음과 같이 작성해주면 됩니다.
+
+`form_for ..., remote: true`
+
+겨우 이것으로만으로도 Rails는 자동적으로 Ajax를 사용하게됩니다. 구체적인 수정결과는 아래 두 코드와 같습니다.
+
+```erb
+<!-- app/views/users/_follow.html.erb -->
+<%= form_for(current_user.active_relationships.build, remote: true) do |f| %>
+  <div><%= hidden_field_tag :followed_id, @user.id %></div>
+  <%= f.submit "Follow", class: "btn btn-primary" %>
+<% end %>
+```
+
+```erb
+<!-- app/views/users/_unfollow.html.erb -->
+<%= form_for(current_user.active_relationships.find_by(followed_id: @user.id),
+             html: { method: :delete },
+             remote: true) do |f| %>
+  <%= f.submit "Unfollow", class: "btn" %>
+<% end %>
+```
+
+ERB에 의해 실제로 생성되는 HTML은 그렇게 중요하진 않습니다만, 흥미가 있는 분들을 위해 다음과 같이 해당 핵심 부분을 보여드리겠습니다.
+
+```html
+<form action="/relationships/117" class="edit_relationship" data-remote="true"
+      id="edit_relationship_117" method="post">
+  .
+  .
+  .
+</form>
+```
+
+여기서는 form태그의 내부에 `data-remote="true"` 를 설정하고 있습니다. 이것은 JavaScript에 의한 Form조작을 허가하는 것을 Rails에게 알려주기 위한 것 입니다. Rails 2 이전에는 완전한 JavaScript코드를 삽입할 필요가 있었습니다. 그러나 앞서 보신 예시와 같이, 현재의 Rails에서는 HTML property를 이용하여 간단하게 Ajax를 다룰 수 있게 되었습니다. 이것은 [JavaScript를 전면에 표시하지 않는다](http://railscasts.com/episodes/205-unobtrusive-javascript) 는 철학에도 맞닿아있습니다.
+
+Form의 갱신이 끝났기 때문에, 이번에는 이것에 대응하는 Relationships 컨트롤러를 개조하여 Ajax Request에 응답할 수 있도록 해봅시다. 이러한 Request의 종류에 의해 응답을 나누는 경우에는  `respond_to` 메소드를 사용합니다.
+
+```
+respond_to do |format|
+  format.html { redirect_to user }
+  format.js
+end
+```
+
+이 문법은 조금 특출나있어 혼란을 야기할 가능성이 있습니다만, 위 코드에서 _어떠한 1행이라도 실행된다_ 라는 점이 중요합니다. (이 때문에 `respond_to` 메소드는 위에서부터 순서대로 실행되는 순차처리라고 하기보단, if문을 사용한 분기처리에 가까운 이미지입니다.)
+
+Relationships 컨트롤러에서 Ajax에 대응하기위해서는 `respond_to` 메소드를 `create` 액션과 `destroy` 액션에 각각 추가해봅시다. 변경 결과는 아래와 같습니다. 이 때, 유저의 로컬변수 (`user`) 를 인스턴스 변수 (`@user`) 로 변경하고 있는 점을 주목해주세요. 이전에는 인스턴스 변수가 필요없었습니다만 partial의 변경으로 인하여 인스턴스 변수가 필요하게 되었습니다.
+
+```ruby
+# app/controllers/relationships_controller.rb
+class RelationshipsController < ApplicationController
+  before_action :logged_in_user
+
+  def create
+    @user = User.find(params[:followed_id])
+    current_user.follow(@user)
+    respond_to do |format|
+      format.html { redirect_to @user }
+      format.js
+    end
+  end
+
+  def destroy
+    @user = Relationship.find(params[:id]).followed
+    current_user.unfollow(@user)
+    respond_to do |format|
+      format.html { redirect_to @user }
+      format.js
+    end
+  end
+end
+```
+
+위 코드에서 Ajax Request에 대응할 수 있게 되었습니다. 이번에는 브라우저 측에서 JavaScript가 무효하게 되어있는 경우 (AjaxRequest를 송신할 수 없는 경우) 라도 제대로 동작하도록 해봅시다.
+
+```ruby
+config/application.rb
+require File.expand_path('../boot', __FILE__)
+.
+.
+.
+module SampleApp
+  class Application < Rails::Application
+    .
+    .
+    .
+    # 인증 토큰을 remote form에 적용한다.
+    config.action_view.embed_authenticity_token_in_remote_forms = true
+  end
+end
+```
+
+한 편, JavaScript가 유효하게 되어있어도, 아직 충분히 대응되어있지 않은 부분이 있습니다. Ajax Request를 수신한 경우에는 Rails가 자동적으로 액션과 같은 이름을 가진 JavaScript용의 Embed Ruby(`.js.erb`) 파일 (`create.js.erb`, `destroy.js.erb` 등) 을 호출하기 때문입니다. 상상하시는대로, 이러한 파일에는 JavaScript와 ERB를 믹스하여 현재의 페이지에 대한 액션을 실행할 수 있게 됩니다. 유저를 Follow했을때나 Unfollow했을 때의 프로필 페이지를 갱신하기 위해, 여러분들이 지금부터 작성 및 편집하지 않으면 안되는 파일들은, 이러한 파일들 입니다.
+
+JS-ERB 파일의 내부에는 [DOM (Document Object Model)](http://www.w3.org/DOM/) 을 사용하여 페이지를 조작하기 때문에, Rails가 [jQuery](http://jquery.com/)  JavaScript Helper를 자동적으로 제공하고 있습니다. 이것으로 jQuery 라이브러리의 방대한 DOM조작용 메소드를 사용할 수 있게 됩니다만, [13.4.2](Chapter13.md#1342-image의-검증) 에서 본 것과 같이 이번에 사용하는 것은 겨우 2개뿐입니다. 하나씩 확인해봅시다. 우선 달러기호 ($) 와 CSS id를 사용하여 DOM 요소에 액세스하는 문법에 대해 알 필요가 있습니다. 예를 들어 `follow_form` 의 요소를 jQuery로 조작하여 다음과 같이 액세스합니다.
+
+```javascript
+$("#follow_form")
+```
+
+`app/views/users/_follow_form.html.erb` 에서는 이것이 Form을 감싸는 `div` 태그였으며, form 그 자체는 아니었다는 것을 확인해주세요. jQuery의 문법은 CSS의 기법으로부터 영향을 받았으며 `#` 심볼을 사용하여 CSS의 id를 지정하빈다. 상상하시는 대로 jQuery는 CSS와 마찬가지로 `.` 을 사용하여 CSS 클래스를 조작합니다.
+
+다음으로 필요한 메소드는 `html` 입니다. 이것은 파라미터의 안에 지정된 요소의 내부 HTML을 수정할 수 있습니다. 예를 들어 follow용 form전체를 `"foobar"` 라고하는 문자열로 바꾸고 싶은 경우에는 다음과 같은 코드가 됩니다.
+
+```
+$("#follow_form").html("foobar")
+```
+
+순수한 JavaScript와는 다르게, JS-ERB 파일에서는 Embed Ruby를 사용할 수 있습니다. `create.js.erb` 파일에서는 follow용의 form을 `unfollow` partial에서 갱신하고, follow의 카운트를 갱신하는데에 ERB를 사용하고 있습니다. (물론 이것은 follow에 성공한 경우의 조작입니다.) 변경의 결과는 아래와 같습니다. 이 코드에서는 `escape_javascript` 메소드를 사용하고 있는 점을 주목해주세요. 이 메소드는, JavaScript 파일 내의 HTML을 삽입할 때의 실행결과를 escape하기 위해 필요합니다.
+
+```js
+// app/views/relationships/create.js.erb
+$("#follow_form").html("<%= escape_javascript(render('users/unfollow')) %>");
+$("#followers").html('<%= @user.followers.count %>');
+```
+
+각 행의 말미에 세미콜론이 있는 것을 주목해주세요. 이것은 프로그래밍언어에서 자주 보이는 문법으로, 1950년대부터 개발된 ALGOL까지 거슬러 올라갑니다.
+
+`destroy.js.erb` 파일도 마찬가지로 구현해줍니다.
+
+```js
+// app/views/relationships/destroy.js.erb
+$("#follow_form").html("<%= escape_javascript(render('users/follow')) %>");
+$("#followers").html('<%= @user.followers.count %>');
+```
+
+이 것으로 프로필 페이지를 갱신하지 않아도 follow와 unfollow가 할 수 있게 되었습니다.
+
+##### 연습
+
+1. 브라우저로부터 /users/2에 접속하여 제대로 동작하는지 확인해봅시다.
+2. 1번 문제의 확인이 끝났다면 Rails 서버에서 로그를 확인하고 follow / unfollow를 실행했을 직후의 템플릿이 어떻게 되어있는지 확인해봅시다.
+
