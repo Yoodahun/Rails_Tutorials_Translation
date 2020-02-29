@@ -1294,3 +1294,270 @@ $("#followers").html('<%= @user.followers.count %>');
 1. 브라우저로부터 /users/2에 접속하여 제대로 동작하는지 확인해봅시다.
 2. 1번 문제의 확인이 끝났다면 Rails 서버에서 로그를 확인하고 follow / unfollow를 실행했을 직후의 템플릿이 어떻게 되어있는지 확인해봅시다.
 
+### 14.2.6 Follow를 테스트해보자.
+
+Follow 버튼이 동작하게끔 되었기 떄문에, 버그를 찾아내기 위한 간단한 테스트 코드를 작성해봅시다. 유저의 follow에 대한 테스트는 /relationships 에 대해 POST Request를 보내어 Follow돈 유저가 1명 늘어난 것을 체크해봅니다. 구체적인 코드는 다음과 같습니다.
+
+```ruby
+assert_difference '@user.following.count', 1 do
+  post relationships_path, params: { followed_id: @other.id }
+end
+```
+
+이 것은 표준적인 follow에 대한 테스트이긴 하지만, Ajax버전도 거의 비슷합니다. Ajax의 테스트는 `xhr :true` 옵션을 사용하는 것 뿐입니다.
+
+```ruby
+assert_difference '@user.following.count', 1 do
+  post relationships_path, params: { followed_id: @other.id }, xhr: true
+end
+```
+
+여기서 사용하고 있는 `xhr` (XmlHttpRequest) 라고하는 옵션을 `true` 로 설정하면, Ajax에서 Request를 발행하는 것으로 변합니다. 따라서 `app/controllers/relationships_controller.rb` 의 `respond_to` 에서는 JavaScript 에 대응한 코드가 실행되게 됩니다.
+
+또한 유저를 Unfollow할 때에도 구조는 거의 비슷하고, `post` 메소드를 `delete` 메소드로 바꿔놓고 테스트합니다. 즉 해당 유저의 id와 Relationship의 id를 사용하여 DELETE Request를 송신하고, Follow하고 있는 수가 1개 줄어드는 것을 확인합니다. 따라서 실제로 더해지는 테스트는,
+
+```ruby
+assert_difference '@user.following.count', -1 do
+  delete relationship_path(relationship)
+end
+```
+
+위의 평범한 테스트와 아래 Ajax용의 테스트 2개가 있습니다.
+
+```ruby
+assert_difference '@user.following.count', -1 do
+  delete relationship_path(relationship), xhr: true
+end
+```
+
+위 테스트를 정리한 결과는 아래와 같습니다.
+
+```ruby
+# test/integration/following_test.rb
+require 'test_helper'
+
+class FollowingTest < ActionDispatch::IntegrationTest
+
+  def setup
+    @user  = users(:michael)
+    @other = users(:archer)
+    log_in_as(@user)
+  end
+  .
+  .
+  .
+  test "should follow a user the standard way" do
+    assert_difference '@user.following.count', 1 do
+      post relationships_path, params: { followed_id: @other.id }
+    end
+  end
+
+  test "should follow a user with Ajax" do
+    assert_difference '@user.following.count', 1 do
+      post relationships_path, xhr: true, params: { followed_id: @other.id }
+    end
+  end
+
+  test "should unfollow a user the standard way" do
+    @user.follow(@other)
+    relationship = @user.active_relationships.find_by(followed_id: @other.id)
+    assert_difference '@user.following.count', -1 do
+      delete relationship_path(relationship)
+    end
+  end
+
+  test "should unfollow a user with Ajax" do
+    @user.follow(@other)
+    relationship = @user.active_relationships.find_by(followed_id: @other.id)
+    assert_difference '@user.following.count', -1 do
+      delete relationship_path(relationship), xhr: true
+    end
+  end
+end
+```
+
+테스트는 통과할 것 입니다.
+
+`$ rails test`
+
+##### 연습
+
+1. `app/controllers/relationships_controller.rb` 의 `respond_to` 의 블록내의 각 행을 순서대로 코멘트아웃해가며 테스트가 제대로 에러를 출력해내는지 확인해봅시다. 실제로 어느 테스트케이스가 실패하나요?
+2. `test/integration/following_test.rb` 코드의 `xhr: true` 가 있는 코드들 중, 한 쪽만 삭제하면 어떠한 결과가 되나요? 이 때 발생하는 문제의 원인과 어째서 앞서 연습문제에서 확인한 테스트에서 이 문제를 확인할 수 없었는지 생각해보세요.
+
+
+
+## 14.3 Status Feed
+
+드디어 Sample Application의 목표지점에 눈 앞에 있습니다! 마지막으로 어려운, Status feed의 구현을 해봅시다. 이번 섹션에서 다루는 내용은, 본 튜토리얼에서 제일 어려운 내용입니다. 완전한 status feed는 [13.3.3](Chapter13.md#1333-feed의-원형) 에서 다룬 프로토타입의 feed를 원형으로 하고 있습니다. 현재 유저에게 following 당하고 있는 유저의 micropost의 배열을 생성하고, 현재 유저 자신의 micropost와 포함시켜 표시해봅시다. 이 섹션을 통하여 난이도가 올라가는 Feed를 구현해봅니다. 이것을 구현하기 위해서는 Rails와 Ruby의 고도의 기능과 함게, SQL 프로그래밍의 기술도 필요합니다.
+
+어려운 문제의 도전하는 것이므로, 여기서 구현해야하는 내용은 신중하게 확인해야할 필요가 있습니다. 이전에 보여드린 status feed의 최종형태는 아래와 같습니다.
+
+![](../image/Chapter14/page_flow_home_page_feed_mockup_bootstrap.png)
+
+### 14.3.1 동기와 계획
+
+status feed의 기본적인 아이디어는 간단합니다. 아래 그림에 `microposts` 의 샘플데이터가 있는 데이터 모델과 그 결과를 표시하고 있습니다. 그림의 화살표로 나타내고 있듯이 이 목적인 현재 유저가 follow하고 있는 유저에 대응하는, 유저id를 가진 micropost를 찾아내고 동시에 현재 유저 자신의 micropost도 같이 검색해냅니다.
+
+![](../image/Chapter14/user_feed.png)
+
+어떻게 feed를 구현할지는 아직 명확하지는 않습니다만, 테스트에 대해서는 거의 명확한 것 같으니 ([컬럼3.3](Chapter3.md#컬럼33-결국-테스트는-언제-하는-것이-좋은가) 의 가이드라인에 따라) 우선 테스트 코드부터 작성해보도록 합시다. 이 테스트 코드에서 중요한 것은 feed에 필요한 3가지 조건을 만족하는 것입니다. 구체적으로는, 
+
+1. follow하고 있는 유저의 micropost가 feed에 포함되어있을 것.
+2. 자기 자신의 micropost도 feed에 포함되어 있을 것.
+3. _follow하고 있지 않은_ 유저의 micropost가 feed에 포함되어 있지 않을 것.
+
+이상의 3가지 입니다.
+
+구체적으로는 `test/fixtures/relationships.yml` 에서 확인하였습니다만, 우선 Michael이 Lana를 follow하고 있고, Archer를 follow하고 있지 않은 상황을 만들어봅시다. 이 상황의 Michael의 feed에는 Lana와 자기 자신의 투고만이 보이고, Archer의 투고는 보이지 않아야 합니다.(`test/fixtures/microposts.yml` 과 `test/fixtures/relationships.yml` 의 fixture 파일이 참고가 될 것 입니다.) 앞서 3개의 조건을 Assertion으로 변환하여 User 모델에  `feed` 메소드가 있는 것을 주의해나가면서, 수정한 User모델에 대한 테스트 코드를 생성해봅시다. 결과는 아래와 같습니다.
+
+```ruby
+# test/models/user_test.rb
+require 'test_helper'
+
+class UserTest < ActiveSupport::TestCase
+  .
+  .
+  .
+  test "feed should have the right posts" do
+    michael = users(:michael)
+    archer  = users(:archer)
+    lana    = users(:lana)
+    # follow하고 있는 유저의 포스트를 확인
+    lana.microposts.each do |post_following|
+      assert michael.feed.include?(post_following)
+    end
+    # 자기 자신의 포스트를 확인 
+    michael.microposts.each do |post_self|
+      assert michael.feed.include?(post_self)
+    end
+    # follow하고 있지 않은 유저의 포스트를 확인
+    archer.microposts.each do |post_unfollowed|
+      assert_not michael.feed.include?(post_unfollowed)
+    end
+  end
+end
+```
+
+물론, 아직 feed는 프로토타입이기 때문에 이 테스트는 통과하지 않을 것 입니다.
+
+`$ rails test`
+
+##### 연습
+
+1. micropost id가 제대로 나열되어있다고 가정하고 (즉, 순서가 빠른 id 포스트일 경우 오래되었다는 전제)로, `user.feed.map(&id)` 을 실행하면 어떠한 결과가 표시되나요? 생각해보세요. _Hint_ : [13.1.4](Chapter13.md#1314-micropost를-개선해보자) 에서 구현한 `default_scope` 를 떠올려보세요.
+
+### 14.3.2 Feed를 처음으로 구현해보자.
+
+Status Feed에 대한 요건정의는 `test/models/user_test.rb` 에서 명확하게 되었기 때문에 (즉, 이 테스트를 통과하면 OK) 바로 Feed의 구현에 착수해봅시다. 최종적인 Feed의 구현이 조금 포함되어있기 때문에, 세세한 부품들을 하나하나 확인해가며 구현해나가겠습니다. 제일 첫 번째로는 이 Feed에서 필요한 Query에 대해 생각해봅시다. 여기서 필요한 것은 `micropost` 테이블로부터 어느 유저 (즉 자기 자신)이 Follow하고 있는 유저에 대한 id를 가진 micropost를 모두 _선택(Select)_ 하는 것입니다. 이 Query를 대강 작성해본다면 아래와 같이 됩니다.
+
+```sql
+SELECT * FROM microposts
+WHERE user_id IN (<list of ids>) OR user_id = <user id>
+```
+
+위 코드를 작성할 때, SQL에 `IN` 이라고 하는 Keyword를 서포트하고 있다는 것을 전제로 합니다. (실제로 작성할 수 있으며, 대부분의 SQL데이터베이스에서 지원합니다.) 이 키워드를 사용하는 것으로 id의 집합의 내포 (_set inclusion_) 에 대해 테스트를 진행합니다.
+
+[13.3.3](Chapter13.md#1333-feed의-원형) 의 프로토 feed에서는 위와 같은 선택을 하기 위해 Active Record의 `where` 메소드를 사용하고 있는 것을 떠올려주세요.(`app/models/user.rb` 의 `feed` 메소드) 이 때, 선택해야할 대상은 간단하게 현재 유저에 대응하는 유저 id를 가진 micropost를 선택하기만 하면 되었습니다.
+
+`Micropost.where("user_id = ?", id)`
+
+이번에 필요한 선택은, 위 보다는 조금더 복잡합니다. 예를들면 다음과 같은 형태가 됩니다.
+
+`Micropost.where("user_id IN (?) OR user_id = ?". following_ids, id)`
+
+이러한 조건으로부터, Following하고 있는 유저에 대응하는 id의 배열이 필요한 것을 알게 되었습니다. 이것을 실행하는 방법 중 한 가지로는 Ruby의  `map` 메소드를 실행하는 것 입니다. 이 메소드는 모든 "_열거 가능(enumerable)_" 한 오브젝트 (배열이나 해시등, 요소의 집합으로 구성된 모든 오브젝트) 에서 사용할 수 있습니다. 또한 이 메소드는 [4.3.2](Chapter4.md#432-블록) 에서도 나왔었습니다. 다른 예제로 `map` 메소드를 사용하여 배열을 문자열로 변환하면 다음과 같이 됩니다.
+
+```ruby
+$ rails console
+>> [1, 2, 3, 4].map { |i| i.to_s }
+=> ["1", "2", "3", "4"]
+```
+
+위 상황에서는 각 요소들에 대해 같은 메소드가 실행되고 있습니다. 이것은 매우 자주 사용되는 방법이며, 다음과 같이 앰퍼샌드 (`&`) 와 메소드에 대응하는 심볼을 사용한 단축표기 ([4.3.2](Chapter4.md#432-블록)) 를 사용할 수 있습니다. 이 단축표기가 있다면 변수 `i` 를 선언하지 않아도 됩니다.
+
+```ruby
+>> [1, 2, 3, 4].map(&:to_s)
+=> ["1", "2", "3", "4"]
+```
+
+이 결과에 대해 `join` 메소드 ([4.3.1](Chapter4.md#431-배열과-범위연산자)) 를 사용하면, id의 집합을 컴마로 구분한 문자열로 이을 수 있습니다.
+
+```ruby
+>> [1, 2, 3, 4].map(&:to_s).join(', ')
+=> "1, 2, 3, 4"
+```
+
+위 코드를 사용하면 `user.following` 에 있는 각 요소의 `id` 를 읽어들여, Follow하고 있는 유저의 id를 배열로 다룰 수 있습니다. 예를 들어 데이터베이스의 제일 첫 번째 유저에 대해 실행하면 다음과 같은 결과가 됩니다.
+
+```ruby
+>> User.first.following.map(&:id)
+=> [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22,
+23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41,
+42, 43, 44, 45, 46, 47, 48, 49, 50, 51]
+```
+
+실제로 이 수법은 매우 편리하기 때문에, Active Record에서는 다음과 같은 메소드도 준비되어 있습니다.
+
+```ruby
+>> User.first.following_ids
+=> [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22,
+23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41,
+42, 43, 44, 45, 46, 47, 48, 49, 50, 51]
+```
+
+이 `following_ids` 메소드는 `has_many :following` 를 선언했을 때 Active Record가 자동생성해준 것 입니다. 이것으로 인하여, `user.following` 컬렉션에 대응하는 id를 얻기 위해서는 관계명칭의 말미에 `_ids` 를 이어주는 것만으로도 끝납니다. 결과적으로 follow하고 있는 유저의 id의 문자열은 다음과 같이 얻을 수 있습니다.
+
+```ruby
+>> User.first.following_ids.join(', ')
+=> "3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22,
+23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41,
+42, 43, 44, 45, 46, 47, 48, 49, 50, 51"
+```
+
+또한 지금까지는 설명을 하기 위한 코드이며, 실제로 SQL문자열을 삽입할 때는 이렇게 기술할 필요는 없습니다. 실제로  `?` 를 안에 기술하면 자동적으로 이것에 관해 핸들링이 됩니다. 게다가 데이터베이스에 의존하는 일부 비호환성까지 해결해줍니다. 즉 여기서는 `following_ids` 메소드를 그대로 사용하면 되는 것 입니다. 결과적으로 제일 처음에 상상했던 대로
+
+```ruby
+Micropost.where("user_id IN (?) OR user_id = ?", following_ids, id)
+```
+
+의 코드가 무사히 동작하였습니다. 생성한 코드는 아래와 같습니다.
+
+```ruby
+app/models/user.rb
+class User < ApplicationRecord
+  .
+  .
+  .
+  # 패스워드 재설정의 기한이 끝나있다면 True를 리턴한다. 
+  def password_reset_expired?
+    reset_sent_at < 2.hours.ago
+  end
+
+  # 유저의 status feed를 리턴한다. 
+  def feed
+    Micropost.where("user_id IN (?) OR user_id = ?", following_ids, id)
+  end
+
+  # 유저를 follow 한다.
+  def follow(other_user)
+    following << other_user
+  end
+  .
+  .
+  .
+end
+```
+
+이 것으로 테스트는 통과할 것 입니다.
+
+`$ rails test`
+
+몇몇 어플리케이션에 있어서는 이 초기 구만으로도 목적이 달성되었다고 충분히 생각할 수도 있습니다. 그러나 위 코드에는 아직 부족한 것들이 있습니다. 그것이 무엇인지 다음으로 진행하기 전에 생각해봅시다. (_Hint_ : follow하고 있는 유저가 5000명이나 된다면 어떻게 되나요?)
+
+##### 연습
+
+1. 위 코드에서 현재 유저 자신의 투고를 포함하지 않게하려면 어떻게 하면 좋을까요? 또한 그러한 변경사항을 추가한다면 테스트는 실패할까요?
+2. 위 코드에서 Follow하고 있는 유저의 포스트를 포함하지 않게 하려면 어떻게 하면 좋을까요? 또한 그러한 변경사항을 추가한다면 테스트는 실패할까요?
+3. 위 코드에서 Follow하고 있지 않은 유저의 포스트를 포함시키게 하기 위해선 어떻게하면 좋을까요? 그러한 변경사항을 추가한다면 테스트는 실패할까요? _Hint_ : 자기자신과 Follow하고 있는 유저, 그리고 그것 이외의 집합은 어떠한 집합으로 표현해야할지 생각해보세요.
+
