@@ -312,7 +312,7 @@ end
 2. 앞서 연습문제에서, 데이터베이스 상에 새로운 micropost가 추가되었을 것 입니다. `user.microposts.find(micropost.id)` 를 실행하여, 정말로 추가되었는지를 확인해봅시다. 또한 앞서 실행한 `micropost.id` 의 부분을 `micropost` 로 바꾸면 어떠한 결과가 생기나요?
 3. `user == micropost.user` 를 실행한 결과는 어떻게 되나요? 또한 `user.microposts.first == micropost` 를 실행한 결과는 어떻게 되나요? 각각 확인해봅시다.
 
-### 13.1.4 Micropost를 개선해보자.
+### 13.1.4 Micropost를 개선해보자
 
 이번 섹션에서는 User와 Micropost의 관계맺기를 개선해보겠습니다. 구체적으로는 유저의 micropost를 특정 순서로 조회할 수 있다거나, micropost를 유저에게 의존상태로 만들고 유저가 삭제되면 micropost도 자동적으로 삭제되도록 해보겠습니다.
 
@@ -714,7 +714,7 @@ span.picture {
 2. 방금 전 연습에서 사용한 `to_a` 메소드의 부분은 정말로 필요한 부분인가요? 확인해봅시다.
 3. Faker 는 _Lorem ipsum_ 이외에도 매우 다양한 사례에 대응하고 있습니다. [Faker의 문서](https://github.com/stympy/faker) 를 확인하면서 화면의 출력하는 방법을 배우고, 실제로 대학이름이나 전화번호 등을 화면에 출력해봅시다.
 
-### 13.2.3 Profile 화면의 Micropost 를 테스트해보자.
+### 13.2.3 Profile 화면의 Micropost를 테스트해보자.
 
 이제 막 account를 유효화한 유저는 프로필화면에 리다이렉트되기에, 해당 프로필화면이 제대로 표시되는지는 유닛 테스트를 통해 확인해보았습니다. 이번 섹션에서는 프로필 화면에 표시되는 micropost에 대해 통합 테스트를 작성해보겠습니다. 우선 프로필 화면용의 통합 테스트를 생성해봅시다.
 
@@ -983,7 +983,7 @@ end
 
 1. 어째서 Users 컨트롤러 내부에 있는 `logged_in_user` 필터를 남겨둔다면 좋지 않은 것일까요? 생각해봅시다.
 
-### 13.3.2 Micropost를 작성해보자.
+### 13.3.2 Micropost를 작성해보자
 
 [제 7장](Chapter7.md) 에서는 HTTP POST Request를 Users 컨트롤러의 `create` 액션으로 발행하는 HTML form을 생성하여 유저의 sign up 을 구현해보았습니다. Micropost 생성의 구현도 비슷합니다. 주된 차이점은 다른 micropost / new 페이지를 사용하는 대신에, Home 화면 (즉, Root path) 에 Form을 설치한다는 것입니다. 아래의 목업을 확인해주세요.
 

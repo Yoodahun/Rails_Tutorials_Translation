@@ -249,59 +249,45 @@ Rails Tutorial은, 실제 Web Application의 개발에서 공개까지, 실제�
   - [ ] [11.5 마지막으로](Documentation/Chapter11.md#115-마지막으로)
     - [ ] [11.5.1 11장의 정리](Documentation/Chapter11.md#1151-11장의-정리)
 
-[제 12장 패스워드의 재설정](Documentation/Chapter12.md)
+- [ ] [제 12장 패스워드의 재설정](Documentation/Chapter12.md)
+  - [ ] [12.1 PasswordResets Resource](Documentation/Chapter12.md#121-passwordresets-resource)
+    - [ ] [12.1.1 PasswordResets Controller](Documentation/Chapter12.md#1211-passwordresets-controller)
+    - [ ] [12.1.2 새로운 패스워드 설정](Documentation/Chapter12.md#1212-새로운-패스워드-설정)
+    - [ ] [12.1.3 create action에서의 패스워드 재설정](Documentation/Chapter12.md#1213-create-action에서의-패스워드-재설정)
+  - [ ] [12.2 패스워드 재설정 메일 발신](Documentation/Chapter12.md#122-패스워드-재설정의-메일-발신)
+    - [ ] [12.2.1 패스워드 재설정 메일과 Template](Documentation/Chapter12.md#1221-패스워드-재설정의-메일과-template)
+    - [ ] [12.2.2 발신 메일 테스트](Documentation/Chapter12.md#1222-발신-메일의-테스트)
+  - [ ] [12.3 패스워드를 재설정해보자](Documentation/Chapter12.md#123-패스워드를-재설정해보자)
+    - [ ] [12.3.1 edit action에서의 재설정](Documentation/Chapter12.md#1231-edit-action에서의-재설정)
+    - [ ] [12.3.2 패스워드를 수정해보자](Documentation/Chapter12.md#1232-패스워드를-수정해보자)
+    - [ ] [12.3.3 패스워드 재설정을 테스트해보자](Documentation/Chapter12.md#1233-패스워드-재설정을-테스트해보자)
+  - [ ] [12.4 실제 배포환경에서의 메일 발신](Documentation/Chapter12.md#124-실제-배포환경에서의-메일-발신)
+  - [ ] [12.5 마지막으로](Documentation/Chapter12.md#125-마지막으로)
+    - [ ] [12.5.1 12장의 정리](Documentation/Chapter12.md#1251-12장의-정리)
 
-[12.1 PasswordResets Resource](Documentation/Chapter12.md#121-passwordresets-resource)
-
-[12.1.1 PasswordResets Controller](Documentation/Chapter12.md#1211-passwordresets-controller)
-
-[12.1.2 새로운 패스워드 설정](Documentation/Chapter12.md#1212-새로운-패스워드-설정)
-
-[12.1.3 create action에서의 패스워드 재설정](Documentation/Chapter12.md#1213-create-action에서의-패스워드-재설정)
-
-[12.2 패스워드 재설정 메일 발신](Documentation/Chapter12.md#122-패스워드-재설정의-메일-발신)
-
-[12.2.1 패스워드 재설정 메일과 Template](Documentation/Chapter12.md#1221-패스워드-재설정의-메일과-template)
-
-[12.2.2 발신 메일 테스트](Documentation/Chapter12.md#1222-발신-메일의-테스트)
-
-[12.3 패스워드를 재설정해보자](Documentation/Chapter12.md#123-패스워드를-재설정해보자)
-
-[12.3.1 edit action에서의 재설정](Documentation/Chapter12.md#1231-edit-action에서의-재설정)
-
-[12.3.2 패스워드를 수정해보자](Documentation/Chapter12.md#1232-패스워드를-수정해보자)
-
-[12.3.3 패스워드 재설정을 테스트해보자](Documentation/Chapter12.md#1233-패스워드-재설정을-테스트해보자)
-
-[12.4 실제 배포환경에서의 메일 발신](Documentation/Chapter12.md#124-실제-배포환경에서의-메일-발신)
-
-[12.5 마지막으로](Documentation/Chapter12.md#125-마지막으로)
-
-[12.5.1 12장의 정리](Documentation/Chapter12.md#1251-12장의-정리)
-
-- [ ] 제 13장 유저의 Microposts
- - [ ] 13.1 Micropost model
-     - [ ] 13.1.1 기본적인 모델
-     	- [ ] 13.1.2 Micropost의 Validation
-     	- [ ] 13.1.3 User/Micropost의 관련짓기
-     	- [ ] 13.1.4 Microposts를 개선해보자
-     - [ ] 13.2 Microposts를 표시해보자
-     	- [ ] 13.2.1 Microposts의 표시
-     	- [ ] 13.2.2 Microposts의 sample
-     	- [ ] 13.2.3 프로필화면의 Microposts를 테스트해보자
-     - [ ] 13.3 Microposts를 조작해보자
-     	- [ ] 13.3.1 Microposts의 접근제어
-     	- [ ] 13.3.2 Microposts를 작성해보자
-     	- [ ] 13.3.3 피드의 원형
-     	- [ ] 13.3.4 Microposts를 삭제해보자
-     	- [ ] 13.3.5 피드화면의 Microposts를 테스트해보자
-     - [ ] 13.4 Microposts의 영상 업로드
-     	- [ ] 13.4.1 기본적인 영상 업로드
-     	- [ ] 13.4.2 영상의 검증
-     	- [ ] 13.4.3 영상 리사이즈
-     	- [ ] 13.4.4 실제 배포환경에서의 영상 업로드
-     - [ ] 13.5 마지막으로
-     	- [ ] 13.5.1 13장의 정리
+- [ ] [제 13장 유저의 Microposts](Documentation/Chapter13.md)
+   - [ ] [13.1 Micropost Model](Documentation/Chapter13.md#131-micropost-model)
+       - [ ] [13.1.1 기본적인 모델](Documentation/Chapter13.md#1311-기본적인-모델)
+       	- [ ] [13.1.2 Micropost의 Validation](Documentation/Chapter13.md#1312-micropost의-validation)
+       	- [ ] [13.1.3 User/Micropost의 관계맺기](Documentation/Chapter13.md#1313-user-micropost의-관계맺기)
+       	- [ ] [13.1.4 Microposts를 개선해보자](Documentation/Chapter13.md#1314-micropost를-개선해보자)
+  - [ ] [13.2 Microposts를 표시해보자](Documentation/Chapter13.md#132-microposts를-표시해보자)
+     - [ ] [13.2.1 Microposts의 표시](Documentation/Chapter13.md#1321-micropost의-표시)
+      - [ ] [13.2.2 Microposts의 Sample](Documentation/Chapter13.md#1322-micropost의-sample)
+      - [ ] [13.2.3 Profile화면의 Micropost를 테스트해보자](Documentation/Chapter13.md#1323-profile화면의-micropost를-테스트해보자)
+  - [ ] [13.3 Microposts를 조작해보자](Documentation/Chapter13.md#133-micropost를-조작해보자)
+     - [ ] [13.3.1 Micropost의 접근제어](Documentation/Chapter13.md#1331-micropost의-접근제어)
+    - [ ] [13.3.2 Microposts를 작성해보자](Documentation/Chapter13.md#1332-micropost를-작성해보자)
+    - [ ] [13.3.3 Feed의 원형](Documentation/Chapter13.md#1333-feed의-원형)
+    - [ ] [13.3.4 Micropost를 삭제해보자](Documentation/Chapter13.md#1334-micropost를-삭제해보자)
+    - [ ] [13.3.5 Feed화면의 Micropost를 테스트해보자](Documentation/Chapter13.md#1335-feed화면의-micropost를-테스트해보자)
+  - [ ] [13.4 Microposts의 Image 첨부](Documentation/Chapter13.md#134-micropost의-image-첨부)
+     - [ ] [13.4.1 기본적인 Image Upload](Documentation/Chapter13.md#1341-기본적인-image-upload)
+    - [ ] [13.4.2 Image의 검증](Documentation/Chapter13.md#1342-image의-검증)
+    - [ ] [13.4.3 Image의 Resize](Documentation/Chapter13.md#1343-image의-resize)
+    - [ ] [13.4.4 실제 배포환경에서의 Image Upload](Documentation/Chapter13.md#1344-실제-배포환경에서의-image-upload)
+  - [ ] [13.5 마지막으로](Documentation/Chapter13.md#135-마지막으로)
+     - [ ] [13.5.1 13장의 정리](Documentation/Chapter13.md#1351-13장의-정리)
 - [ ] 14장 유저를 Follow해보자 
  - [ ] 14.1 Relationship Model
      - [ ] 14.1.1 데이터 모델의 문제 ( 및 해결책)
