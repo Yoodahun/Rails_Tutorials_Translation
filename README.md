@@ -231,82 +231,99 @@ Rails Tutorial은, 실제 Web Application의 개발에서 공개까지, 실제�
 			- [ ] [10.4.3 유저 삭제 테스트](Documentation/Chapter10.md#1043-유저-삭제-테스트)
 		- [ ] [10.5 마지막으로](Documentation/Chapter10.md#105-마지막으로)
 			- [ ] [10.5.1 10장의 정리](Documentation/Chapter10.md#1051-10장의-정리)
-	- [ ] [제 11장 Account의 유효화](Documentation/Chapter11.md)
-	     	- [ ] [11.1 Account Activations Resource](Documentation/Chapter11.md#111-account-activations-resource)
-	     		- [ ] [11.1.1 Account Activations Controller](Documentation/Chapter11.md#1111-account-activations-controller)
-	     	 - [ ] [11.1.2 Account Activation DataModel](Documentation/Chapter11.md#1112-account-activation-datamodel)
-	     - [ ] [11.2 Account의 유효화와 메일 발신](Documentation/Chapter11.md#112-account의-유효화와-메일-발신)
-	           - [ ] [11.2.1 발신 메일의 Template](Documentation/Chapter11.md#1121-발신-메일의-template)
-	          - [ ] [11.2.2 발신 메일의 Preview](Documentation/Chapter11.md#1122-발신-메일의-preview)
-	          - [ ] [11.2.3 발신 메일의 테스트](Documentation/Chapter11.md#1123-발신-메일의-테스트)
-	          - [ ] [11.2.4 User의 Create action을 수정해보자](Documentation/Chapter11.md#1124-user의-create-action을-수정해보자)
-	     - [ ] [11.3 Account를 유효하게 해보자](Documentation/Chapter11.md#113-account를-유효하게-해보자)
-	           - [ ] [11.3.1 authenticated? Method의 추상화](Documentation/Chapter11.md#1131-authenticated-method의-추상화)
-	          - [ ] [11.3.2 Edit action에서의 유효화](Documentation/Chapter11.md#1132-edit-action에서의-유효화)
-	          - [ ] [11.3.3 유효화의 테스트와 Refactoring](Documentation/Chapter11.md#1133-유효화의-테스트와-refactoring)
-	     - [ ] [11.4 실제 배포환경에서의 메일 송신](Documentation/Chapter11.md#114-실제-배포환경에서의-메일-송신)
-	     - [ ] [11.5 마지막으로](Documentation/Chapter11.md#115-마지막으로)
-	           - [ ] [11.5.1 11장의 정리](Documentation/Chapter11.md#1151-11장의-정리)
-	- [ ] [제 12장 패스워드의 재설정](Documentation/Chapter12.md)
-	      - [ ] [12.1 PasswordResets Resource](Documentation/Chapter12.md#121-passwordresets-resource)
-	          - [ ] [12.1.1 PasswordResets Controller](Documentation/Chapter12.md#1211-passwordresets-controller)
-	      - [ ] [12.1.2 새로운 패스워드 설정](Documentation/Chapter12.md#1212-새로운-패스워드-설정)
-	       - [ ] [12.1.3 create action에서의 패스워드 재설정](Documentation/Chapter12.md#1213-create-action에서의-패스워드-재설정)
-	     - [ ] [12.2 패스워드 재설정 메일 발신](Documentation/Chapter12.md#122-패스워드-재설정의-메일-발신)
-	           - [ ] [12.2.1 패스워드 재설정 메일과 Template](Documentation/Chapter12.md#1221-패스워드-재설정의-메일과-template)
-	            - [ ] [12.2.2 발신 메일 테스트](Documentation/Chapter12.md#1222-발신-메일의-테스트)
-	     - [ ] [12.3 패스워드를 재설정해보자](Documentation/Chapter12.md#123-패스워드를-재설정해보자)
-	           - [ ] [12.3.1 edit action에서의 재설정](Documentation/Chapter12.md#1231-edit-action에서의-재설정)
-	          - [ ] [12.3.2 패스워드를 수정해보자](Documentation/Chapter12.md#1232-패스워드를-수정해보자)
-	          - [ ] [12.3.3 패스워드 재설정을 테스트해보자](Documentation/Chapter12.md#1233-패스워드-재설정을-테스트해보자)
-	     - [ ] [12.4 실제 배포환경에서의 메일 발신](Documentation/Chapter12.md#124-실제-배포환경에서의-메일-발신)
-	     - [ ] [12.5 마지막으로](Documentation/Chapter12.md#125-마지막으로)
-	           - [ ] [12.5.1 12장의 정리](Documentation/Chapter12.md#1251-12장의-정리)
-	- [ ] 제 13장 유저의 Microposts
-	 - [ ] 13.1 Micropost model
-	     - [ ] 13.1.1 기본적인 모델
-	     	- [ ] 13.1.2 Micropost의 Validation
-	     	- [ ] 13.1.3 User/Micropost의 관련짓기
-	     	- [ ] 13.1.4 Microposts를 개선해보자
-	     - [ ] 13.2 Microposts를 표시해보자
-	     	- [ ] 13.2.1 Microposts의 표시
-	     	- [ ] 13.2.2 Microposts의 sample
-	     	- [ ] 13.2.3 프로필화면의 Microposts를 테스트해보자
-	     - [ ] 13.3 Microposts를 조작해보자
-	     	- [ ] 13.3.1 Microposts의 접근제어
-	     	- [ ] 13.3.2 Microposts를 작성해보자
-	     	- [ ] 13.3.3 피드의 원형
-	     	- [ ] 13.3.4 Microposts를 삭제해보자
-	     	- [ ] 13.3.5 피드화면의 Microposts를 테스트해보자
-	     - [ ] 13.4 Microposts의 영상 업로드
-	     	- [ ] 13.4.1 기본적인 영상 업로드
-	     	- [ ] 13.4.2 영상의 검증
-	     	- [ ] 13.4.3 영상 리사이즈
-	     	- [ ] 13.4.4 실제 배포환경에서의 영상 업로드
-	     - [ ] 13.5 마지막으로
-	     	- [ ] 13.5.1 13장의 정리
-	- [ ] 14장 유저를 Follow해보자 
-	 - [ ] 14.1 Relationship Model
-	     - [ ] 14.1.1 데이터 모델의 문제 ( 및 해결책)
-	     	- [ ] 14.1.2 User/Relationship의 관련짓기
-	     	- [ ] 14.1.3 Relationship의 Validation
-	     	- [ ] 14.1.4 Follow하고 있는 유저
-	     	- [ ] 14.1.5 Follower
-	     - [ ] 14.2  「Follow」 의 Web Interface
-	     	- [ ] 14.2.1 Follow 의 Sample data
-	     	- [ ] 14.2.2 통계와 「Follow」 유저
-	     	- [ ] 14.2.3  「Following」 과  「Followers」  페이지
-	     	- [ ] 14.2.4 「Follow」 버튼 (기본편)
-	     	- [ ] 14.2.5 「Follow」 버튼 (Ajax편)
-	     	- [ ] 14.2.6 フォローをテストする
-	     - [ ] 14.3 Status Feed
-	     	- [ ] 14.3.1 작성동기와 계획
-	     	- [ ] 14.3.2 피드를 처음으로 작성해보자
-	     	- [ ] 14.3.3 Subselect
-	     - [ ] 14.4 마지막으로
-	     	- [ ] 14.4.1 Sample Application의 기능을 확장해보자
-	     	- [ ] 14.4.2 읽을거리
-	     	- [ ] 14.4.3 14장의 정리
-	     	- [ ] 14.4.4 역자의 후기
+
+- [ ] [제 11장 Account의 유효화](Documentation/Chapter11.md)
+  - [ ] [11.1 Account Activations Resource](Documentation/Chapter11.md#111-account-activations-resource)
+    - [ ] [11.1.1 Account Activations Controller](Documentation/Chapter11.md#1111-account-activations-controller)
+    - [ ] [11.1.2 Account Activation DataModel](Documentation/Chapter11.md#1112-account-activation-datamodel)
+  - [ ] [11.2 Account의 유효화와 메일 발신](Documentation/Chapter11.md#112-account의-유효화와-메일-발신)
+    - [ ] [11.2.1 발신 메일의 Template](Documentation/Chapter11.md#1121-발신-메일의-template)
+    - [ ] [11.2.2 발신 메일의 Preview](Documentation/Chapter11.md#1122-발신-메일의-preview)
+    - [ ] [11.2.3 발신 메일의 테스트](Documentation/Chapter11.md#1123-발신-메일의-테스트)
+    - [ ] [11.2.4 User의 Create action을 수정해보자](Documentation/Chapter11.md#1124-user의-create-action을-수정해보자)
+  - [ ] [11.3 Account를 유효하게 해보자](Documentation/Chapter11.md#113-account를-유효하게-해보자)
+    - [ ] [11.3.1 authenticated? Method의 추상화](Documentation/Chapter11.md#1131-authenticated-method의-추상화)
+    - [ ] [11.3.2 Edit action에서의 유효화](Documentation/Chapter11.md#1132-edit-action에서의-유효화)
+    - [ ] [11.3.3 유효화의 테스트와 Refactoring](Documentation/Chapter11.md#1133-유효화의-테스트와-refactoring)
+  - [ ] [11.4 실제 배포환경에서의 메일 송신](Documentation/Chapter11.md#114-실제-배포환경에서의-메일-송신)
+  - [ ] [11.5 마지막으로](Documentation/Chapter11.md#115-마지막으로)
+    - [ ] [11.5.1 11장의 정리](Documentation/Chapter11.md#1151-11장의-정리)
+
+[제 12장 패스워드의 재설정](Documentation/Chapter12.md)
+
+[12.1 PasswordResets Resource](Documentation/Chapter12.md#121-passwordresets-resource)
+
+[12.1.1 PasswordResets Controller](Documentation/Chapter12.md#1211-passwordresets-controller)
+
+[12.1.2 새로운 패스워드 설정](Documentation/Chapter12.md#1212-새로운-패스워드-설정)
+
+[12.1.3 create action에서의 패스워드 재설정](Documentation/Chapter12.md#1213-create-action에서의-패스워드-재설정)
+
+[12.2 패스워드 재설정 메일 발신](Documentation/Chapter12.md#122-패스워드-재설정의-메일-발신)
+
+[12.2.1 패스워드 재설정 메일과 Template](Documentation/Chapter12.md#1221-패스워드-재설정의-메일과-template)
+
+[12.2.2 발신 메일 테스트](Documentation/Chapter12.md#1222-발신-메일의-테스트)
+
+[12.3 패스워드를 재설정해보자](Documentation/Chapter12.md#123-패스워드를-재설정해보자)
+
+[12.3.1 edit action에서의 재설정](Documentation/Chapter12.md#1231-edit-action에서의-재설정)
+
+[12.3.2 패스워드를 수정해보자](Documentation/Chapter12.md#1232-패스워드를-수정해보자)
+
+[12.3.3 패스워드 재설정을 테스트해보자](Documentation/Chapter12.md#1233-패스워드-재설정을-테스트해보자)
+
+[12.4 실제 배포환경에서의 메일 발신](Documentation/Chapter12.md#124-실제-배포환경에서의-메일-발신)
+
+[12.5 마지막으로](Documentation/Chapter12.md#125-마지막으로)
+
+[12.5.1 12장의 정리](Documentation/Chapter12.md#1251-12장의-정리)
+
+- [ ] 제 13장 유저의 Microposts
+ - [ ] 13.1 Micropost model
+     - [ ] 13.1.1 기본적인 모델
+     	- [ ] 13.1.2 Micropost의 Validation
+     	- [ ] 13.1.3 User/Micropost의 관련짓기
+     	- [ ] 13.1.4 Microposts를 개선해보자
+     - [ ] 13.2 Microposts를 표시해보자
+     	- [ ] 13.2.1 Microposts의 표시
+     	- [ ] 13.2.2 Microposts의 sample
+     	- [ ] 13.2.3 프로필화면의 Microposts를 테스트해보자
+     - [ ] 13.3 Microposts를 조작해보자
+     	- [ ] 13.3.1 Microposts의 접근제어
+     	- [ ] 13.3.2 Microposts를 작성해보자
+     	- [ ] 13.3.3 피드의 원형
+     	- [ ] 13.3.4 Microposts를 삭제해보자
+     	- [ ] 13.3.5 피드화면의 Microposts를 테스트해보자
+     - [ ] 13.4 Microposts의 영상 업로드
+     	- [ ] 13.4.1 기본적인 영상 업로드
+     	- [ ] 13.4.2 영상의 검증
+     	- [ ] 13.4.3 영상 리사이즈
+     	- [ ] 13.4.4 실제 배포환경에서의 영상 업로드
+     - [ ] 13.5 마지막으로
+     	- [ ] 13.5.1 13장의 정리
+- [ ] 14장 유저를 Follow해보자 
+ - [ ] 14.1 Relationship Model
+     - [ ] 14.1.1 데이터 모델의 문제 ( 및 해결책)
+     	- [ ] 14.1.2 User/Relationship의 관련짓기
+     	- [ ] 14.1.3 Relationship의 Validation
+     	- [ ] 14.1.4 Follow하고 있는 유저
+     	- [ ] 14.1.5 Follower
+     - [ ] 14.2  「Follow」 의 Web Interface
+     	- [ ] 14.2.1 Follow 의 Sample data
+     	- [ ] 14.2.2 통계와 「Follow」 유저
+     	- [ ] 14.2.3  「Following」 과  「Followers」  페이지
+     	- [ ] 14.2.4 「Follow」 버튼 (기본편)
+     	- [ ] 14.2.5 「Follow」 버튼 (Ajax편)
+     	- [ ] 14.2.6 フォローをテストする
+     - [ ] 14.3 Status Feed
+     	- [ ] 14.3.1 작성동기와 계획
+     	- [ ] 14.3.2 피드를 처음으로 작성해보자
+     	- [ ] 14.3.3 Subselect
+     - [ ] 14.4 마지막으로
+     	- [ ] 14.4.1 Sample Application의 기능을 확장해보자
+     	- [ ] 14.4.2 읽을거리
+     	- [ ] 14.4.3 14장의 정리
+     	- [ ] 14.4.4 역자의 후기
 
 
