@@ -513,9 +513,9 @@ $ rails db:seed
 
 ### 14.2.2 통계와 [Follow] Form
 
-이것으로  sample user에게 follow하고 있는 유저와, follower를 만들어주었습니다. 프로필 페이지와 home페이지를 갱신하여 이것을 반영해봅시다. 제일 처음으로는 프로필 페이지와 home 페이지에 follow하고있는 유저와 follower의 통계정보를 표시하기위한 partial을 생성해봅니다. 다음으로 follow용과 follow해제용의 form을 작성합니다. 그리고 follow하고 있는 유저의 리스트 ("following") 과 follower의 리스트("followers") 를 표시하는 전용 페이지를 만들어 볼 것 입니다.
+이것으로  sample user에게 follow하고 있는 유저와, follower를 만들어주었습니다. 프로필 페이지와 home페이지를 갱신하여 이것을 반영해봅시다. 제일 처음으로는 프로필 페이지와 home 페이지에 follow하고있는 유저와 follower의 통계정보를 표시하기위한 partial을 생성해봅니다. 다음으로 follow용과 unFollow용의 form을 작성합니다. 그리고 follow하고 있는 유저의 리스트 ("following") 과 follower의 리스트("followers") 를 표시하는 전용 페이지를 만들어 볼 것 입니다.
 
-[14.1.1](#1411-datamodel의-문제-및-해결책) 에서 지적한 것 처럼, Twitter의 관섬에 따라 follow수의 단위에는 "following" 을 사용합니다. 예를 들어 "50 following" 과 같은 경우에 사용합니다. 이 단위는 목업 캡쳐의 일부에도 이미 사용되어있었습니다. 해당 부분을 확대하면 아래와 같이 표시됩니다.
+[14.1.1](#1411-datamodel의-문제-및-해결책) 에서 지적한 것 처럼, Twitter의 관습에 따라 follow수의 단위에는 "following" 을 사용합니다. 예를 들어 "50 following" 과 같은 경우에 사용합니다. 이 단위는 목업 캡쳐의 일부에도 이미 사용되어있었습니다. 해당 부분을 확대하면 아래와 같이 표시됩니다.
 
 ![](../image/Chapter14/stats_partial_mockup.png)
 
@@ -546,7 +546,7 @@ Rails.application.routes.draw do
 end
 ```
 
-이 경우의 URL은 /user/1/following 이나 /users/1/followers 와 같이 되지 않을까하고 추측하고 계신분들도 있을것이라 생각합니다. 그리고 위 코드는 그야말로 그 추측대로 실행됩니다. 또한 어느쪽도 데이터를 _표시_ 하는 페이지이기 때문에, 적절한 HTTP 메소드는 GET 리퀘스트가 됩니다. 따라서 `get` 메소드를 사용하여 적절한 response를 리턴하도록 합니다. 여담으로, `member` 메소드를 사용하면 유저 id가 포함된 URL을 다룰 수 있도록 되빈다만, id를 지정하지 않고 모든 멤버를 표시하기 위해서는 다음과 같이 `collection ` 메소드를 사용합니다.
+이 경우의 URL은 /user/1/following 이나 /users/1/followers 와 같이 되지 않을까하고 추측하고 계신분들도 있을것이라 생각합니다. 그리고 위 코드는 그야말로 그 추측대로 실행됩니다. 또한 어느쪽도 데이터를 _표시_ 하는 페이지이기 때문에, 적절한 HTTP 메소드는 GET 리퀘스트가 됩니다. 따라서 `get` 메소드를 사용하여 적절한 response를 리턴하도록 합니다. 여담으로, `member` 메소드를 사용하면 유저 id가 포함된 URL을 다룰 수 있도록 됩니다만, id를 지정하지 않고 모든 멤버를 표시하기 위해서는 다음과 같이 `collection ` 메소드를 사용합니다.
 
 ```
 resources :users do
@@ -588,13 +588,13 @@ end
 </div>
 ```
 
-이 partial은 프로필페이지와 home 페이지의 양쪽다 표시되기 때문에 코드의 제일 첫 줄에서 현재의 유저를 조회합니다.
+이 partial은 프로필페이지와 home 페이지의 양 쪽 다 표시되기 때문에 코드의 제일 첫 줄에서 현재의 유저를 조회합니다.
 
 ```
 <% @user ||= current_user %>
 ```
 
-이것은 컬럼8.1에서도 설명했듯, `@user` 가 `nil` 이 아닌 경우 (즉 프로필 페이지의 경우)에는 아무것도 하지 않고, `nil` 의 경우 (즉, home페이지의 경우)에는 `@user` 에 `current_user` 를 대입하는 코드입니다. 이 후 follow하고 있는 유저의 숫자를 다음과 같이 관계를 이용하여 계산합니다.
+이것은 [컬럼8.1](Chapter8.md#칼럼81-||=-은-무엇인가)에서도 설명했듯, `@user` 가 `nil` 이 아닌 경우 (즉 프로필 페이지의 경우)에는 아무것도 하지 않고, `nil` 의 경우 (즉, home페이지의 경우)에는 `@user` 에 `current_user` 를 대입하는 코드입니다. 이 후 follow하고 있는 유저의 숫자를 다음과 같이 관계를 이용하여 계산합니다.
 
 `@user.following.count`
 
@@ -616,9 +616,7 @@ end
 </strong>
 ```
 
-이렇게 해놓는다면 14.2.5에서 배울 Ajax를 구현할 때에 편리합니다. 거기서는 unique한 id를 지정하여 페이지 요소에 접근합니다.
-
-
+이렇게 해놓는다면 [14.2.5](#1425-follow-버튼-ajax)에서 배울 Ajax를 구현할 때에 편리합니다. 거기서는 unique한 id를 지정하여 페이지 요소에 접근합니다.
 
 이것으로 통계정보 partial이 완성되었습니다. Home페이지에 이 통계정보를 표시하기 위해서는 아래처럼 해주면 간단합니다.
 
@@ -652,7 +650,7 @@ end
 위 통계정보에 스타일을 부여하기 위해서는 아래와 같은 SCSS를 추가해봅시다. (또한, 이 SCSS에는 이번 챕터에서 사용하는 모든 스타일이 포함되어 있습니다.) 변경한 결과, Home페이지는 아래 캡쳐와 같이 됩니다.
 
 ```scss
-app/assets/stylesheets/custom.scss
+/* app/assets/stylesheets/custom.scss */
 .
 .
 .
@@ -734,7 +732,7 @@ app/assets/stylesheets/custom.scss
 이 코드는 `follow` 와 `unfollow` 의 partial 입니다. partial에서는 Relationship 리소스용의 새로운 라우팅이 필요합니다. 이전 13장에서의 Microposts 리소스를 참고하여서 작성해봅시다.
 
 ```ruby
-config/routes.rb
+# config/routes.rb
 Rails.application.routes.draw do
   root                'static_pages#home'
   get    'help'    => 'static_pages#help'
@@ -776,7 +774,7 @@ app/views/users/_unfollow.html.erb -->
 <% end %>
 ```
 
-이 두 개의 form에서는 양쪽 다 `form_for` 를 사용하여 Relationship 모델 오브젝트를 조작하고 있습니다. 이 2개의 form의 큰 차이점으로는, 위 첫 번째 코드에서는 _새로운_ Relationship을 생성하는 것에 반해, 위 두 번째 코드에서는 기존의 Relationship을 찾아내는 점입니다. 즉, 전자는 POST 리퀘스트를 Relationship 컨트롤러에 보내어 Relationship을 `create`(작성) 하고, 후자는 DELETE 리퀘스트를 송신하여 Relationship을 `destory` (삭제) 하는 점 입니다. (이 액션들은 14.2.4에서 구현해봅니다.) 마지막으로는 이 follow / unfollow form에는 버튼밖에 없는 것을 이해하셨으리라 생각합니다. 그러나 그렇다고하여도 이 form은 `followed_id` 를 컨트롤러에 송신할 필요가 있습니다. 이것에 대응하기 위해 위 첫 번째 코드에서의  `hidden_field_tag` 메소드를 사용합니다. 이 메소드는 다음의 form html을 생성합니다.
+이 두 개의 form에서는 양쪽 다 `form_for` 를 사용하여 Relationship 모델 오브젝트를 조작하고 있습니다. 이 2개의 form의 큰 차이점으로는, 위 첫 번째 코드에서는 _새로운_ Relationship을 생성하는 것에 반해, 위 두 번째 코드에서는 기존의 Relationship을 찾아내는 점입니다. 즉, 전자는 POST 리퀘스트를 Relationship 컨트롤러에 보내어 Relationship을 `create`(작성) 하고, 후자는 DELETE 리퀘스트를 송신하여 Relationship을 `destory` (삭제) 하는 점 입니다. (이 액션들은 [14.2.4](#1424-follow-버튼-기본편)에서 구현해봅니다.) 마지막으로는 이 follow / unfollow form에는 버튼밖에 없는 것을 이해하셨으리라 생각합니다. 그러나 그렇다고하여도 이 form은 `followed_id` 를 컨트롤러에 송신할 필요가 있습니다. 이것에 대응하기 위해 위 첫 번째 코드에서의  `hidden_field_tag` 메소드를 사용합니다. 이 메소드는 다음의 form html을 생성합니다.
 
 ```html
 <input id="followed_id" name="followed_id" type="hidden" value="3" />
@@ -824,7 +822,7 @@ app/views/users/_unfollow.html.erb -->
 
 1. 브라우저에서 /user/2에 접속하여, follow 버튼이 표시되고 있는 것을 확인해봅시다. 마찬가지로  /users/5 에서는 [Unfollow] 버튼이 표시되고 있을 것 입니다. 그럼 /users/1 에 접속해보면 어떠한 결과가 표시되나요?
 2. 브라우저에서 home페이지와 프로필 페이지를 표시하여보고 통계정보가 올바르게 표시되는지를 확인해봅시다.
-3. Home 페이지에 표시되는 통계정보에 대해 테스트를 작성해봅시다. *Hint* : 이전 13장에서 작성한 테스트 코드를에 추가해보세요. 마찬가지로  프로필페이지에도 테스트를 추가해보세요.
+3. Home 페이지에 표시되는 통계정보에 대해 테스트를 작성해봅시다. *Hint* : 이전 13장에서 작성한 테스트 코드를 추가해보세요. 마찬가지로  프로필페이지에도 테스트를 추가해보세요.
 
 ```ruby
 # test/integration/users_profile_test.rb
@@ -848,6 +846,9 @@ class UsersProfileTest < ActionDispatch::IntegrationTest
     @user.microposts.paginate(page: 1).each do |micropost|
       assert_match micropost.content, response.body
     end
+    
+    
+    
   end
 end
 ```
@@ -887,7 +888,7 @@ class UsersControllerTest < ActionDispatch::IntegrationTest
 end
 ```
 
-이 구현에는 하나의 Tricky한 부분이 있습니다. User 컨트롤러에 2개의 새로운 액션을 추가할 필요가 있는 것 입니다. 이것은 이전에 `routes.rb` 에서 정의한 2개의 새로운 라우팅에 기반한 것이며 이것들은 각각 `following` 및 `followers` 라고 부를 필요가 있습니다. 각각의 액션에서는 title를 정의하고 유저를 검색하여 `@user.following` 혹은 `@user.followers` 로부터 데이터를 꺼내어 pagination을 구현하여페이지를 출력할 필요가 있습니다. 생성한 코드는 아래와 같습니다.
+이 구현에는 하나의 Tricky한 부분이 있습니다. User 컨트롤러에 2개의 새로운 액션을 추가할 필요가 있는 것 입니다. 이것은 이전에 `routes.rb` 에서 정의한 2개의 새로운 라우팅에 기반한 것이며 이것들은 각각 `following` 및 `followers` 라고 부를 필요가 있습니다. 각각의 액션에서는 title를 정의하고 유저를 검색하여 `@user.following` 혹은 `@user.followers` 로부터 데이터를 꺼내어 pagination을 구현하여 페이지를 출력할 필요가 있습니다. 생성한 코드는 아래와 같습니다.
 
 ```ruby
 # app/controllers/users_controller.rb
@@ -1143,7 +1144,7 @@ end
 
 위 코드를 보면, 앞서 Security 문제가 사실은 그리 큰 문제는 아니란 것을 이해할 수 있을 것이라 생각합니다. 만일 로그인하고 있지 않은 유저가 (`curl` 등의 CommandLine tool등을 사용하여) 위 액션에 직접 액세스하려고 한다면, `current_user` 는 `nil` 이 되고, 어느 쪽의 메소드라도 2번째 행에서 Exception을 발생시킬 것 입니다. 에러이긴 하지만 Application이나 데이터에는 영향이 생기지 않습니다. 이대로도 큰 문제는 없습니다만, 역시 이러한 Exception에 기대지 않는 것이 좋기에 위에서는 조금 번거롭지만 Security의 확인을 위한 Layer를 추가해놓은 것 입니다.
 
-이것으로 Follow / Unfollow의 기능이 완성되었스빈다. 어느 유저라도 다른 유저를 Follow하거나, Unfollow할 수 있습니다. 브라우저 상에서 버튼을 클릭하여 확인해보세요. 동작을 검증하는 통합테스트는 14.2.6에서 구현해볼 것 입니다. 일단 2번쨰의 유저를 Follow하기 전의 상태는 아래 첫 번째 캡쳐, Follow한 결과는 아래 두 번째 캡쳐입니다.
+이것으로 Follow / Unfollow의 기능이 완성되었습니다. 어느 유저라도 다른 유저를 Follow하거나, Unfollow할 수 있습니다. 브라우저 상에서 버튼을 클릭하여 확인해보세요. 동작을 검증하는 통합테스트는 14.2.6에서 구현해볼 것 입니다. 일단 2번째의 유저를 Follow하기 전의 상태는 아래 첫 번째 캡쳐, Follow한 결과는 아래 두 번째 캡쳐입니다.
 
 ![](../image/Chapter14/unfollowed_user.png)
 
@@ -1239,7 +1240,7 @@ end
 위 코드에서 Ajax Request에 대응할 수 있게 되었습니다. 이번에는 브라우저 측에서 JavaScript가 무효하게 되어있는 경우 (AjaxRequest를 송신할 수 없는 경우) 라도 제대로 동작하도록 해봅시다.
 
 ```ruby
-config/application.rb
+# config/application.rb
 require File.expand_path('../boot', __FILE__)
 .
 .
@@ -1526,7 +1527,7 @@ Micropost.where("user_id IN (?) OR user_id = ?", following_ids, id)
 의 코드가 무사히 동작하였습니다. 생성한 코드는 아래와 같습니다.
 
 ```ruby
-app/models/user.rb
+# userapp/models/user.rb
 class User < ApplicationRecord
   .
   .
@@ -1711,7 +1712,7 @@ Status Feed가 추가되어 _Ruby on Rails Tutorial_ 의 Sample application이 �
 
 이 것만으로도 상당한 양입니다만, Web 개발에 대해 배워야할 것들은 아직 매우 많습니다. 이후 학습의 시발점이 되기 위하여 이번 섹션에서는 좀 더 심화적인 학습방법을 소개하겠습니다.
 
-### 14.4.1 읽을꺼리
+### 14.4.1 읽을거리
 
 읽으면 좋은 Rails 관련 서적이나 Document는 서점이나 Web에서 얼마든지 찾아볼 수 있습니다. 솔직히 너무나도 많아 입이 다물어지지 않을 정도입니다. 본 튜토리얼을 완주한 여러분들께는 대부분의 서적을 읽을 수 있을 것 입니다. 본 튜토리얼 한 번 더 진행하는 경우를 포함하여, 보다 더 심도있는 학습방법(혹은 학습 사이트)에 대해 몇가지 소개하겠습니다.
 
@@ -1727,7 +1728,7 @@ Status Feed가 추가되어 _Ruby on Rails Tutorial_ 의 Sample application이 �
 
 
 
-### 14.4.3 14장의 마무리
+### 14.4.2 14장의 마무리
 
 - `has_many :through` 를 사용하면 복잡한 데이터관계를 모델링할 수 있다.
 - `has_many` 메소드에는 클래스이름이나 Foreign key등 몇가지 Option을 전달할 수 있다.
