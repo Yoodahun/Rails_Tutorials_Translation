@@ -11,13 +11,13 @@
 
 *Ruby on Rails Tutorial*은, Web개발자나 IT창업가를 대상으로한, 매우 우수한 입문서로써 서술되어 있습니다. Ruby의 기초, HTML와CSS, 데이터베이스, 버전관리, 개발 방법 등, Web개발의 모든것이 망라되어 있습니다. 본 튜토리얼은 초심자뿐만 아니라 Web개발의 베테랑에게도 유용합니다. MVC나 REST, Generator, Migration, Routing, ERB 등 Rails Framework의 코어기술을 본 튜토리얼에서 한 번에 배울 수 있습니다. 초심자, 베테랑을 따지지 않고 *Ruby on Rails Tutorial*을 끝까지 완주하는 것을 목표로 한다면, Rails 주변의 한층 더 고급의 내용의 서적, 블로그, 스크린캐스트(동영상) 등을 읽고 푸는 힘을 기를 수 있을 것입니다.
 
-*Ruby on Rails Tutorial*에서는, 일관된 Web개발방법을 배우기 위해 3개의 Sample Application을 만듭니다. *hello* Application ( [1.3](https://railstutorial.jp/chapters/beginning?version=5.1#sec-the_hello_application) ), 좀 더 복잡한 *toy* Application ( [제2장](https://railstutorial.jp/chapters/toy_app?version=5.1#cha-a_toy_app) ), 실전편인 *sample* Application ( [第3章](https://railstutorial.jp/chapters/static_pages?version=5.1#cha-static_pages) 에서 [第14章](https://railstutorial.jp/chapters/following_users?version=5.1#cha-following_users) 까지) 입니다. 어플리케이션 이름을 굳이 구체적으로 해놓지 않은 것으로 부터 알 수 있듯이, *Ruby on Rails Tutorial* 에서 개발하는 어플리케이션에서는 특정의 웹 서비스에 치우치지 않은, 일반적인 기술을 염두에 두고 있으며, 독자의 목적에 관계없이, 본 튜토리얼에서는 웹 개발의 기초를 배울 수 있습니다. 튜토리얼의 마지막에 만드는 *Sample* Application은 「우연스럽게도」 [Twitter](http://twitter.com/) 와 매우 닮아 있습니다. (여담으로, Twiiter의 초기도 Rails로 만들어졌었습니다.) 튜토리얼에서는 일반적인 원칙에 따르는 것을 중시하고 있기 때문에, Twitter에 얽매이지않고, 어떠한 웹 어플리케이션이라도 개발할 수 있는 기초스킬을 배울 수 있습니다.
+*Ruby on Rails Tutorial*에서는, 일관된 Web개발방법을 배우기 위해 3개의 Sample Application을 만듭니다. *hello* Application ( [1.3](Chapter1.md#13-첫-어플리케이션) ), 좀 더 복잡한 *toy* Application ( [제2장](Chapter2.md) ), 실전편인 *sample* Application ( [제 3장](Chapter3.md)) 에서 [제 14장](Chapter14.md)) 까지) 입니다. 어플리케이션 이름을 굳이 구체적으로 해놓지 않은 것으로 부터 알 수 있듯이, *Ruby on Rails Tutorial* 에서 개발하는 어플리케이션에서는 특정의 웹 서비스에 치우치지 않은, 일반적인 기술을 염두에 두고 있으며, 독자의 목적에 관계없이, 본 튜토리얼에서는 웹 개발의 기초를 배울 수 있습니다. 튜토리얼의 마지막에 만드는 *Sample* Application은 「우연스럽게도」 [Twitter](http://twitter.com/) 와 매우 닮아 있습니다. (여담으로, Twiiter의 초기도 Rails로 만들어졌었습니다.) 튜토리얼에서는 일반적인 원칙에 따르는 것을 중시하고 있기 때문에, Twitter에 얽매이지않고, 어떠한 웹 어플리케이션이라도 개발할 수 있는 기초스킬을 배울 수 있습니다.
 
 제1장에서는 제일 처음으로 필요한 소프트웨어를 설치하고, 개발환경을 정리한 다음 Ruby on Rails를 동작시킬 준비를 합니다. 그 다음 **hello_app** 이라고 하는 Rails 어플리케이션을 첫 샘플로써 제작하게 됩니다. *Rails Tutorial* 에서는 소프트웨어 개발의 현장에서도 바로 사용할 수 있는 최적의 기술을 익히기 위해서, 새로운 Rails프로젝트를 작성한 다음은 바로  Git을 사용하여 버전을 관리하게됩니다. 제 1장의 마지막에서는 작성한 어플리케이션을 빠르고 실제 환경에 배포하여 일반에 공개하는 것 까지 연습해봅니다.
 
 제 2장에서는 Rails 어플리케이션의 기본적인 구조를 맛보기 위해, 또 다른 프로젝트를 작성합니다. 2장에서의 **Toy_app** 에서는, *scaffold* 를 이용하여 단기간에 코드를 자동생성합니다. 단, *scaffold*로 자동생성된 코드는 매우 읽기 난잡하기 때문에, 2장에서 자동생성된 코드의 해설은 하지 않습니다. 그 대신, 자동 생성된 URI(이른바 URLs)를 Web브라우저에서 확인하는 것은 해보도록 하겠습니다.
 
-제 3장 이후에서는 드디어 본격적인 대규모 *Sample* Application을 개발합니다. 자동생성 코드는 사용하지 않고, 아무것도 없는 백지상태에서부터 코드를 작성해갑니다. *Sample* 어플리케이션의 개발에서는 **목업**, **테스트 구동 개발** *(TDD)* , **결합 테스트** 의 방법을 경험해볼 것입니다. 제 3장에서는 정적인 페이지를 작성하여, 거기에 동적인 요소를 순차적으로 추가해나갈 것입니다. 4정에서는 조금 멀리 돌아가 Rails를 받치고 있는 *Ruby*에 대하여 학습해봅니다. 제 5장부터 12장에 걸쳐 레이아웃, 유저의 데이터모델, 유저의 등록/인증시스템의 순으로 개발하고 *Sample* 어플리케이션의 기본적인 부분을 구현해봅니다. 마지막으로 13장과 14장에서는 마이크로 블로그 기능과 소셜기능을 구현하여 실제로 동작하는 웹 사이트로 완성시킵니다.
+제 3장 이후에서는 드디어 본격적인 대규모 *Sample* Application을 개발합니다. 자동생성 코드는 사용하지 않고, 아무것도 없는 백지상태에서부터 코드를 작성해갑니다. *Sample* 어플리케이션의 개발에서는 **목업**, **테스트 구동 개발** *(TDD)* , **통합 테스트** 의 방법을 경험해볼 것입니다. 제 3장에서는 정적인 페이지를 작성하여, 거기에 동적인 요소를 순차적으로 추가해나갈 것입니다. 4정에서는 조금 멀리 돌아가 Rails를 받치고 있는 *Ruby*에 대하여 학습해봅니다. 제 5장부터 12장에 걸쳐 레이아웃, 유저의 데이터모델, 유저의 등록/인증시스템의 순으로 개발하고 *Sample* 어플리케이션의 기본적인 부분을 구현해봅니다. 마지막으로 13장과 14장에서는 마이크로 블로그 기능과 소셜기능을 구현하여 실제로 동작하는 웹 사이트로 완성시킵니다.
 
 ###### 컬럼 1.2 너무나도 손쉽고 편한 Scaffold의 달콤한 유혹
 
@@ -53,7 +53,7 @@ Rails가 이렇게 많은 인기를 끄는 것은 왜일까요? 한 가지 이�
     *1.*  [Learn Enough JavaScript to Be Dangerous](https://www.learnenough.com/javascript) 
     *2.*  [Learn Enough Ruby to Be Dangerous](https://www.learnenough.com/ruby) 
 	4. Application Development
-     *1.*  [The Ruby on Rails Tutorial](https://www.railstutorial.org/) 
+       *1.*  [The Ruby on Rails Tutorial](https://www.railstutorial.org/) 
 
 
 
@@ -167,9 +167,9 @@ Ruby의 세계에서는 들여쓰기에 2개의 스페이스를 쓰는 것이 �
 
 어떠한 Rails 어플리케이션이라도 초기의 작성순서는 기본적으로 같습니다. `rails new` 커맨드를 실행하여 작성합니다. 이 커맨드를 실행하는 것으로 지정된 디렉토리에 Rails 어플리케이션의 뼈대를 간단하게 작성할 수 있습니다. C9환경을 사용하지 않는 경우에는 Rails 프로젝트에서 쓰기 위해 `environment` 디렉토리를 만들어주세요.
 ```
-$ cd                  # ホームディレクトリに移動する
-$ mkdir environment     # ‘environment’ ディレクトリを作成する
-$ cd environment/       # ‘environment’ ディレクトリに移動する
+$ cd                  # 홈 디렉토리로 이동한다.
+$ mkdir environment     # ‘environment’ 디렉토리를 만든다.
+$ cd environment/       # ‘environment’ 디렉토리로 이동한다.
 ```
 
 ###### 컬럼 1.3 재빠르게 배우고 싶은 분들을 위한 Unix 커맨드라인 강좌
@@ -867,5 +867,3 @@ Heroku에서는 서브도메인 이외에도 고유 도메인도 사용할 수 �
 - 작성한 어플리케이션을 Heroku의 실제 환경에 배포했습니다.
 
 
-
-<div style="text-align:right"><a href="https://github.com/Yoodahun/Rails_Tutorials_Translation/blob/master/Documentation/Chapter2.md">다음장으로</a></div>

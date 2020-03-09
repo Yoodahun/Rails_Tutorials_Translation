@@ -46,12 +46,12 @@ group :production do
   gem ‘pg’, ‘0.20.0’
 end
 
-# Windows環境ではtzinfo-dataというgemを含める必要があります
+# Windows 환경에서는 tzinfo-data 라고 하는 gem을 포함 시킬 필요가 있습니다.
 gem ‘tzinfo-data’, platforms: [:mingw, :mswin, :x64_mingw, :jruby]
 ```
-위 젬리스트는 1.13에서 말씀드린 리스트와 동일합니다.
+위 젬리스트는 [1.3.1](Chapter1.md#131-bundler) 에서 말씀드린 리스트와 동일합니다.
 
-1.5.1에서 설명드린대로, `--without production` 옵션을 추가하는 것으로, 실제 배포환경의 gem을 제외한 로컬gem을 인스톨 합니다.
+[1.5.1](Chapter1.md#151-heroku-설치)에서 설명드린대로, `--without production` 옵션을 추가하는 것으로, 실제 배포환경의 gem을 제외한 로컬gem을 인스톨 합니다.
 `bundle install --without production`
 혹시 실행되지 않는다면, 1.3.1에서 설명드린 것 처럼, `bundle update` 을 실행해보세요.
 
@@ -69,7 +69,7 @@ $ git push -u origin —all
 ```
 ![](../image/Chapter2/create_demo_repo_bitbucket.png)
 
-마지막으로 1.3.4에서 소개해드린 *Hello world!* 와 같은 순서로 배포준비를 해주세요.
+마지막으로 [1.3.4](Chapter1.md#134-hello-world)에서 소개해드린 *Hello world!* 와 같은 순서로 배포준비를 해주세요.
 
 *application_controller.rb*
 
@@ -195,17 +195,17 @@ $ rails db:migrate
 migration작업이 끝나면, 다음 커맨드로 로컬 Web서버를 실행할 수 있습니다.
 `rails server`
 
-이것으로 1.3.2에서 설명드린 대로, 로컬서버가 동작할 것입니다. (클라우드IDE로 작업하는 분은, IDE에 탑재된 간단한 브라우저가 아닌, 반드시 *Chrome*이나 *Firefox* 등의 범용브라우저의 별도 탭을 이용하여 development서버의 결과를 확인해주세요.)
+이것으로 [1.3.2](Chapter1.md#132-rails-server)에서 설명드린 대로, 로컬서버가 동작할 것입니다. (클라우드IDE로 작업하는 분은, IDE에 탑재된 간단한 브라우저가 아닌, 반드시 *Chrome*이나 *Firefox* 등의 범용브라우저의 별도 탭을 이용하여 development서버의 결과를 확인해주세요.)
 
 ### 2.2.1 Users 화면을 움직여보자.
 브라우저에서 루트URL (/) 로 접속해보면, *hello world!* 페이지가 표시되겠지만, Users리소스를 scaffold로 생성하였기 때문에, 유저관리용 화면이 많이 추가되어있는 점이 이전과는 다른 점입니다. 예를 들어, /user를 표시하면 모든 유저의 리스트를 표시하며, /user/new를 표시하면 신규 유저 작성 페이지가 표시됩니다. 본 장에서는 유저에 관련된 페이지에 대해 간단하게 설명하겠습니다. 아래에 작성되어 있는 페이지와 URL의 관계를 참조한다면 알기 쉬울 것 입니다.
 
-| URL           | アクション | 用途                             |
-| ------------- | ---------- | -------------------------------- |
-| /users        | index      | すべてのユーザーを一覧するページ |
-| /users/1      | show       | id=1のユーザーを表示するページ   |
-| /users/new    | new        | 新規ユーザーを作成するページ     |
-| /users/1/edit | edit       | id=1のユーザーを編集するページ   |
+| URL           | Action | Remarks                          |
+| ------------- | ------ | -------------------------------- |
+| /users        | index  | すべてのユーザーを一覧するページ |
+| /users/1      | show   | id=1のユーザーを表示するページ   |
+| /users/new    | new    | 新規ユーザーを作成するページ     |
+| /users/1/edit | edit   | id=1のユーザーを編集するページ   |
 
 
 
@@ -814,5 +814,3 @@ Git 커밋은 되도록이면 자주 해주세요. 편집한 이력이 많이 �
 - Rails 콘솔을 사용하면, 커맨드 라인을 이용하여 Rails 어플리케이션을 조작할 수 있다.
 
    
-
-[다음 장으로](Chapter3.md)
